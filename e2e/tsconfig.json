@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "CommonJS",
-    "moduleResolution": "node", // Ensures it resolves type packages correctly
+    "module": "node16",
+    "moduleResolution": "node16", // Ensures it resolves type packages correctly
     "types": ["node"],          // Tells TS to load Node global types
     "strict": true,
     "esModuleInterop": true,

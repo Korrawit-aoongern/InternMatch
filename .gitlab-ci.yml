@@ -41,18 +41,16 @@ lint_and_unit_test:
   script:
     - echo "Installing root & workspace dependencies..."
     - npm ci
-    
-    - echo "Running backend lint and unit tests..."
-    - cd backend
-    - npm ci
-    - npm run lint --if-present
-    - npm run test --if-present
-    
-    - echo "Running frontend lint and type checks..."
-    - cd ../frontend
-    - npm ci
-    - npm run lint --if-present
-    - npm run build --dry-run || echo "Build check passed"
+
+    - echo "Running linting across all workspaces..."
+    - npm run lint --workspaces
+
+    - echo "Running backend tests..."
+    - npm run test --workspace=back
+
+    - echo "Building frontend app to verify production build..."
+    - npm run build --workspace=front
+
   rules:
     - if: '$DEPLOY_ONLY == "true"'
       when: never

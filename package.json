@@ -1,0 +1,27 @@
+{
+  "name": "internmatch",
+  "version": "1.0.0",
+  "description": "ปัจจุบันนักศึกษาที่กำลังมองหาสถานที่ฝึกงานมักใช้หลายช่องทางในการค้นหาข้อมูล เช่น เว็บไซต์หางาน กลุ่มสื่อสังคมออนไลน์ หรือการติดต่อบริษัทโดยตรง ส่งผลให้การค้นหาสถานที่ฝึกงานใช้เวลานานและอาจไม่ได้ตำแหน่งที่ตรงกับทักษะและความสนใจของนักศึกษา",
+  "homepage": "https://gitlab.com/internmatchteam/internmatch#readme",
+  "bugs": {
+    "url": "https://gitlab.com/internmatchteam/internmatch/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/internmatchteam/internmatch.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "workspaces": [
+    "back",
+    "front",
+    "e2e"
+  ],
+  "scripts": {
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces",
+    "dev:backend": "npm run dev --workspace=back",
+    "dev:frontend": "npm run dev --workspace=front"
+  }
+}
