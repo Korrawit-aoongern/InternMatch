@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { registerCompanyAction } from "./actions";
 
 export default function RegisterCompanyPage() {
+  const router = useRouter();
   const [passwordType, setPasswordType] = useState("password");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -41,11 +43,14 @@ export default function RegisterCompanyPage() {
 
     setIsLoading(false);
     if (result.success) {
-      setSuccess(result.message);
+      setSuccess(result.message + " Redirecting to login page...");
       setFields({ 
         email: "", username: "", password: "", company_name: "", 
         description: "", website: "", address: "", province: "", logo: "" 
       });
+      setTimeout(() => {
+        router.push("/login");
+      }, 1500);
     } else {
       setError(result.error);
     }

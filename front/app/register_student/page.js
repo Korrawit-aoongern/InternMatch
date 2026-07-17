@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { registerStudentAction } from "./actions";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [passwordType, setPasswordType] = useState("password");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -43,13 +45,16 @@ export default function RegisterPage() {
 
     setIsLoading(false);
     if (result.success) {
-      setSuccess(result.message);
+      setSuccess(result.message + " Redirecting to login page...");
       // เคลียร์ฟอร์มเมื่อสำเร็จ
       setFields({ 
         email: "", username: "", password: "", fullname: "", phone: "", 
         university: "", faculty: "", major: "", study_year: "", 
         profile_image: "", resume_url: "" 
       });
+      setTimeout(() => {
+        router.push("/login");
+      }, 1500);
     } else {
       setError(result.error);
     }
