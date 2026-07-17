@@ -37,10 +37,9 @@ workflow:
 # ==========================================
 lint_and_unit_test:
   stage: pre-build
-  image: node:20.19.0-alpine3.20
+  image: node:22-alpine
   script:
     - echo "Installing root & workspace dependencies..."
-    - npm i
     - npm ci
 
     - echo "Running linting across all workspaces..."
