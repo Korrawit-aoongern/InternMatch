@@ -65,7 +65,7 @@ export default function LoginPage() {
 
       // ตรวจสอบเรียบร้อย รหัสผ่านถูก ตั๋ว JWT ถูกสร้างและเก็บลง Cookie/LocalStorage เสร็จสิ้น
       // พาผู้ใช้ย้ายหน้าไปยัง app/page.js ทันที
-      router.push("/Register_company");
+      router.push("/dashboard");
 
     } catch (error) {
       console.error("Login client error:", error);
@@ -180,6 +180,15 @@ export default function LoginPage() {
                 </button>
               </div>
             </form>
+             {/* Register Link */}
+            <div className="mt-lg text-center">
+              <p className="text-on-surface-variant text-sm">
+                {"Don't have an account?"}{" "}
+                <Link className="font-semibold text-primary hover:text-surface-tint transition-colors" href="/register_sc">
+                  Register
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>
