@@ -69,7 +69,7 @@ build_artifacts:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     
     - echo "Building frontend image..."
-    - docker build -f frontend/Dockerfile -t "$FRONTEND_IMAGE" ./frontend
+    - docker build -f frontend/Dockerfile -t "$FRONTEND_IMAGE" ./front
     
     - echo "Pushing frontend image to Registry..."
     - docker push "$FRONTEND_IMAGE"
