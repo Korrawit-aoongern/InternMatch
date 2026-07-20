@@ -3,7 +3,19 @@
 import { createClient } from "@supabase/supabase-js";
 import bcrypt from "bcryptjs";
 
-export async function registerCompanyAction(formData) {
+export interface CompanyFormData {
+  email: string;
+  username: string;
+  password: string;
+  company_name: string;
+  description?: string;
+  website?: string;
+  address?: string;
+  province?: string;
+  logo?: string;
+}
+
+export async function registerCompanyAction(formData: CompanyFormData) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; 
 

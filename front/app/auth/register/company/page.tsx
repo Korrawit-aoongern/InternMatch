@@ -29,12 +29,12 @@ export default function RegisterCompanyPage() {
     setPasswordType(passwordType === "password" ? "text" : "password");
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFields((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
@@ -50,10 +50,10 @@ export default function RegisterCompanyPage() {
         description: "", website: "", address: "", province: "", logo: "" 
       });
       setTimeout(() => {
-        router.push("/login");
+        router.push("/auth/login");
       }, 1500);
     } else {
-      setError(result.error);
+      setError(result.error || "An error occurred");
     }
   };
 
@@ -175,13 +175,13 @@ export default function RegisterCompanyPage() {
                   {/* Address */}
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="address">Full Address</label>
-                    <textarea className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 px-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="address" name="address" rows="3" placeholder="123 Sukhumvit Rd..." value={fields.address} onChange={handleChange}></textarea>
+                    <textarea className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 px-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="address" name="address" rows={3} placeholder="123 Sukhumvit Rd..." value={fields.address} onChange={handleChange}></textarea>
                   </div>
 
                   {/* Description */}
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="description">About the Company</label>
-                    <textarea className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 px-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="description" name="description" rows="3" placeholder="Brief info about your business, culture, or projects..." value={fields.description} onChange={handleChange}></textarea>
+                    <textarea className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 px-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="description" name="description" rows={3} placeholder="Brief info about your business, culture, or projects..." value={fields.description} onChange={handleChange}></textarea>
                   </div>
                 </div>
               </div>
@@ -217,7 +217,7 @@ export default function RegisterCompanyPage() {
             <div className="mt-lg text-center">
               <p className="text-on-surface-variant text-sm">
                 Already have an account?{" "}
-                <Link className="text-blue-600 font-semibold hover:underline" href="/login">
+                <Link className="text-blue-600 font-semibold hover:underline" href="/auth/login">
                   Sign In
                 </Link>
               </p>

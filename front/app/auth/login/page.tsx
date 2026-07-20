@@ -1,19 +1,20 @@
 "use client";
+
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // 1. นำเข้าระบบจัดการเส้นทางของ Next.js
+import { useRouter } from "next/navigation";
 import { checkUserExists } from "@/app/login/actions/auth-check";
 
 export default function LoginPage() {
-  const router = useRouter(); // 2. ประกาศเรียกใช้งาน router
+  const router = useRouter();
   const [passwordType, setPasswordType] = useState("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [identityError, setIdentityError] = useState("");
   const [isChecking, setIsChecking] = useState(false);
-  const [loginError, setLoginError] = useState(""); // เพิ่ม State สำหรับจับข้อผิดพลาดตอนล็อกอิน (เช่น รหัสผ่านผิด)
+  const [loginError, setLoginError] = useState("");
 
   const handleTogglePassword = () => {
     setPasswordType(passwordType === "password" ? "text" : "password");
@@ -39,16 +40,13 @@ export default function LoginPage() {
     setIsChecking(false);
   };
 
-  // 3. ปรับปรุงฟังก์ชันส่งฟอร์มเพื่อเข้าสู่ระบบ
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (identityError || isChecking) return;
 
-    setLoginError(""); // ล้างข้อความแจ้งเตือนเดิมก่อนเริ่มทำงาน
+    setLoginError("");
 
     try {
-      // ยิง Request ไปยัง Endpoint ตรวจสอบสิทธิ์ของสถาปัตยกรรม Bcrypt + JWT ที่คุณออกแบบไว้
-      // (ตัวอย่างนี้อิงตามการทำ API Route ทั่วไป ถ้าคุณใช้ Server Action สามารถเปลี่ยนไปเรียกใช้งานตรงๆ ได้เลยครับ)
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -58,13 +56,10 @@ export default function LoginPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        // ถ้ารหัสผ่านไม่ถูกต้อง หรือมีอะไรผิดพลาดฝั่งเซิร์ฟเวอร์
         setLoginError(result.message || "Invalid password or login failed.");
         return;
       }
 
-      // ตรวจสอบเรียบร้อย รหัสผ่านถูก ตั๋ว JWT ถูกสร้างและเก็บลง Cookie/LocalStorage เสร็จสิ้น
-      // พาผู้ใช้ย้ายหน้าไปยัง app/page.js ทันที
       router.push("/dashboard");
     } catch (error) {
       console.error("Login client error:", error);
@@ -93,7 +88,6 @@ export default function LoginPage() {
 
           <div className="bg-surface rounded-xl p-lg md:p-xl shadow-[0_4px_6px_-1px_rgb(0_0_0/0.1)] border border-outline-variant/30">
             <form onSubmit={handleSubmit} className="space-y-lg">
-              {/* แสดงกล่องแจ้งเตือนความผิดพลาดระดับฟอร์ม (เช่น ถ้ารหัสผ่านผิดจะโชว์ตรงนี้) */}
               {loginError && (
                 <div className="p-sm bg-error/10 border border-error/20 text-error rounded-lg text-sm font-medium flex items-center gap-2">
                   <AlertCircle className="w-4 h-4" />
@@ -215,7 +209,7 @@ export default function LoginPage() {
                 {"Don't have an account?"}{" "}
                 <Link
                   className="font-semibold text-primary hover:text-surface-tint transition-colors"
-                  href="/register_sc"
+                  href="/auth/register"
                 >
                   Register
                 </Link>

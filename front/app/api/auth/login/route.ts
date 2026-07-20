@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { createClient } from "@supabase/supabase-js";
@@ -9,11 +9,11 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_
 }
 
 const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 );
 
-export async function POST(request) {
+export async function POST(request: NextRequest) {
     try {
         const { identity, password } = await request.json();
         const cleanIdentity = identity.trim().toLowerCase();
@@ -60,7 +60,7 @@ export async function POST(request) {
 
         return response;
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Login API Error:", error);
         return NextResponse.json({ message: "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์" }, { status: 500 });
     }

@@ -4,8 +4,8 @@ import Link from "next/link";
 import { 
   School,
   Building2
+} from "lucide-react";
 
- } from "lucide-react";
 export default function RegisterPortalPage() {
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen flex items-center justify-center p-6 antialiased relative overflow-hidden w-full">
@@ -34,7 +34,7 @@ export default function RegisterPortalPage() {
           <div className="grid grid-cols-2 gap-4">
             {/* ปุ่มทางเข้าฝั่ง นักศึกษา */}
             <Link
-              href="/register_student"
+              href="register/student"
               className="group flex flex-col items-center p-6 rounded-xl border border-slate-200 bg-white hover:bg-blue-50/50 hover:border-blue-400 transition-all duration-200 shadow-sm hover:shadow text-center"
             >
               <School className="w-9 h-9 text-blue-600 mb-2 group-hover:scale-110 transition-transform" />{" "}
@@ -48,7 +48,7 @@ export default function RegisterPortalPage() {
 
             {/* ปุ่มทางเข้าฝั่ง บริษัท */}
             <Link
-              href="/register_company"
+              href="register/company"
               className="group flex flex-col items-center p-6 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50/50 hover:border-indigo-400 transition-all duration-200 shadow-sm hover:shadow text-center"
             >
               <Building2 className="w-9 h-9 text-indigo-600 mb-2 group-hover:scale-110 transition-transform" />
@@ -67,7 +67,7 @@ export default function RegisterPortalPage() {
             Already have an account?{" "}
             <Link
               className="text-blue-600 font-semibold hover:underline"
-              href="/login"
+              href="/auth/login"
             >
               Login
             </Link>

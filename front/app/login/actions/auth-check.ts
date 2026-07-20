@@ -4,11 +4,11 @@ import { createClient } from "@supabase/supabase-js";
 
 // สร้าง Instance พิเศษใช้คีย์ลับหลังบ้าน (Service Role Key) เพื่อคุยกับฐานข้อมูลแบบ Full Access
 const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 );
 
-export async function checkUserExists(identity) {
+export async function checkUserExists(identity: string) {
     if (!identity) return { exists: false };
 
     const cleanIdentity = identity.trim().toLowerCase();

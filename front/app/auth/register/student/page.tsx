@@ -31,12 +31,12 @@ export default function RegisterPage() {
     setPasswordType(passwordType === "password" ? "text" : "password");
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFields((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
@@ -54,10 +54,10 @@ export default function RegisterPage() {
         profile_image: "", resume_url: "" 
       });
       setTimeout(() => {
-        router.push("/login");
+        router.push("/auth/login");
       }, 1500);
     } else {
-      setError(result.error);
+      setError(result.error || "An error occurred");
     }
   };
 
@@ -243,7 +243,7 @@ export default function RegisterPage() {
             <div className="mt-lg text-center">
               <p className="text-on-surface-variant text-sm">
                 Already have an account?{" "}
-                <Link className="text-blue-600 font-semibold hover:underline" href="/login">
+                <Link className="text-blue-600 font-semibold hover:underline" href="/auth/login">
                   Sign In
                 </Link>
               </p>

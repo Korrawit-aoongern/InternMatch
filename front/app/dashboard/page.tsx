@@ -21,20 +21,26 @@ import {
   Plus 
 } from "lucide-react";
 
-// app/dashboard/page.js
+interface DecodedToken {
+  userId: string;
+  email: string;
+  username: string;
+  fullname?: string;
+}
 
-async function getUserData() {
-  // 🌟 จุดสำคัญ: เพิ่ม await หน้า cookies() เพราะใน Next.js เวอร์ชันใหม่เป็น Promise แล้ว
+async function getUserData(): Promise<DecodedToken | null> {
   const cookieStore = await cookies(); 
-  const token = cookieStore.get("token")?.value;
+  const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
 
   if (!token) {
     return null;
   }
 
   try {
-    // ถอดรหัสตั๋ว JWT ด้วย Secret Key
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(
+      token, 
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+    ) as unknown as DecodedToken;
     return decoded;
   } catch (err) {
     return null;
@@ -42,11 +48,8 @@ async function getUserData() {
 }
 
 export default async function DashboardPage() {
-  // ดึงข้อมูลผู้ใช้จริง เช่น userId, email, fullname ที่ฝังไว้ตอน Login
   const user = await getUserData();
-  
-  // ชื่อผู้ใช้งานเริ่มต้นหากยังไม่ได้ล็อกอินหรือระบุข้อมูล
-  const displayName = user?.fullname || "Guest User";
+  const displayName = user?.fullname || user?.username || "Guest User";
 
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
@@ -86,6 +89,12 @@ export default async function DashboardPage() {
               </Link>
             </li>
             <li>
+              <Link href="/messages" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
+                <MessageSquare className="w-5 h-5" />
+                Messages
+              </Link>
+            </li>
+            <li>
               <Link href="/settings" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
                 <Settings className="w-5 h-5" />
                 Settings
@@ -104,7 +113,7 @@ export default async function DashboardPage() {
               </Link>
             </li>
             <li>
-              <Link href="/login" className="flex items-center gap-4 text-red-500 py-2.5 px-4 text-sm hover:bg-red-50 rounded-lg transition-colors">
+              <Link href="/auth/login" className="flex items-center gap-4 text-red-500 py-2.5 px-4 text-sm hover:bg-red-50 rounded-lg transition-colors">
                 <LogOut className="w-5 h-5" />
                 Logout
               </Link>
@@ -144,7 +153,6 @@ export default async function DashboardPage() {
           {/* Welcome Section */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
-              {/* 🌟 แสดงชื่อจริงจาก Token ล็อกอินอัตโนมัติ */}
               <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Welcome back, {displayName}!</h2>
               <p className="text-sm text-slate-500 mt-1">Here's your career progress at a glance.</p>
             </div>
@@ -160,8 +168,8 @@ export default async function DashboardPage() {
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
               <div className="relative w-14 h-14 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                  <path className="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3.5"></path>
-                  <path className="text-blue-600" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeDasharray="85, 100" strokeLinecap="round" strokeWidth="3.5"></path>
+                  <path className="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth={3.5}></path>
+                  <path className="text-blue-600" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeDasharray="85, 100" strokeLinecap="round" strokeWidth={3.5}></path>
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-blue-600">85%</div>
               </div>
