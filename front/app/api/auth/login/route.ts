@@ -1,17 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { createClient } from "@supabase/supabase-js";
-
-// ดักเช็กตรงนี้เลยว่าอ่านค่าจาก .env ออกไหม
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error("❌ พัง! แอปอ่านไฟล์ .env ไม่เจอ หรือสะกดชื่อคีย์ไม่ตรง");
-}
-
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
     try {
@@ -21,6 +11,7 @@ export async function POST(request: NextRequest) {
         // 🎯 เพิ่ม console.log ตัวนี้เพื่อดูว่าหน้าบ้านส่งอะไรมา และหลังบ้านกำลังหาคำว่าอะไร
         console.log("กำลังค้นหาผู้ใช้ด้วยคำว่า:", cleanIdentity);
 
+        const supabaseAdmin = getSupabaseAdmin();
         const { data: user, error } = await supabaseAdmin
             .from("users")
             .select("id, email, username, password")

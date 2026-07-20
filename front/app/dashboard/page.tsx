@@ -89,13 +89,7 @@ export default async function DashboardPage() {
               </Link>
             </li>
             <li>
-              <Link href="/messages" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
-                <MessageSquare className="w-5 h-5" />
-                Messages
-              </Link>
-            </li>
-            <li>
-              <Link href="/settings" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
+              <Link href="dashboard/profile" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
                 <Settings className="w-5 h-5" />
                 Settings
               </Link>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Briefcase, Mail, User, Lock, Eye, EyeOff, Image, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { registerStudentAction } from "../../register_student/actions";
+import { registerUser } from "@/lib/actions/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -42,7 +42,7 @@ export default function RegisterPage() {
     setError("");
     setSuccess("");
 
-    const result = await registerStudentAction(fields);
+    const result = await registerUser(fields, "student");
 
     setIsLoading(false);
     if (result.success) {

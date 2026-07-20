@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Building2, Mail, User, Lock, Eye, EyeOff, Image } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { registerCompanyAction } from "../../register_company/actions";
+import { registerUser } from "@/lib/actions/auth";
 
 export default function RegisterCompanyPage() {
   const router = useRouter();
@@ -40,7 +40,7 @@ export default function RegisterCompanyPage() {
     setError("");
     setSuccess("");
 
-    const result = await registerCompanyAction(fields);
+    const result = await registerUser(fields, "company");
 
     setIsLoading(false);
     if (result.success) {

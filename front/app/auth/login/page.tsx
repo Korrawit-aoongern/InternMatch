@@ -4,7 +4,7 @@ import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { checkUserExists } from "@/app/login/actions/auth-check";
+import { checkUserExists } from "@/lib/actions/auth";
 
 export default function LoginPage() {
   const router = useRouter();
