@@ -6,23 +6,22 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 export async function POST(request: NextRequest) {
     try {
         const { identity, password } = await request.json();
+        
+        if (!identity || !password) {
+            return NextResponse.json({ message: "กรุณากรอกข้อมูลให้ครบถ้วน" }, { status: 400 });
+        }
+
         const cleanIdentity = identity.trim().toLowerCase();
-
-        // 🎯 เพิ่ม console.log ตัวนี้เพื่อดูว่าหน้าบ้านส่งอะไรมา และหลังบ้านกำลังหาคำว่าอะไร
-        console.log("กำลังค้นหาผู้ใช้ด้วยคำว่า:", cleanIdentity);
-
         const supabaseAdmin = getSupabaseAdmin();
-        const { data: user, error } = await supabaseAdmin
+
+        // 1. ค้นหาผู้ใช้จากตาราง users
+        const { data: user, error: userError } = await supabaseAdmin
             .from("users")
-            .select("id, email, username, password")
+            .select("id, email, username, password, role")
             .or(`email.eq.${cleanIdentity},username.eq.${cleanIdentity}`)
             .maybeSingle();
 
-        // 🎯 ดูผลลัพธ์จาก Supabase ใน Terminal
-        console.log("ผลลัพธ์จาก Supabase -> Error:", error, "Data:", user);
-
-        if (error || !user) {
-            // ปรับ Message ให้บอกชัดขึ้นเล็กน้อยตอนทำระบบ
+        if (userError || !user) {
             return NextResponse.json({ message: "ไม่พบบัญชีผู้ใช้นี้ในระบบ" }, { status: 401 });
         }
 
@@ -32,15 +31,51 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: "รหัสผ่านไม่ถูกต้อง" }, { status: 401 });
         }
 
-        // 3. ออกตั๋ว JWT
+        // 3. ดึงข้อมูล fullname หรือชื่อบริษัทตาม Role ของผู้ใช้งานเพื่อใส่ใน JWT Payload
+        let fullname = "";
+        if (user.role === "student") {
+            const { data: student } = await supabaseAdmin
+                .from("students")
+                .select("fullname")
+                .eq("user_id", user.id)
+                .maybeSingle();
+            if (student) {
+                fullname = student.fullname;
+            }
+        } else if (user.role === "company") {
+            const { data: company } = await supabaseAdmin
+                .from("companies")
+                .select("company_name")
+                .eq("user_id", user.id)
+                .maybeSingle();
+            if (company) {
+                fullname = company.company_name;
+            }
+        }
+
+        // 4. รับคีย์ลับสำหรับ JWT (ไม่อนุญาตให้ใช้ค่าเริ่มต้นที่ฮาร์ดโค้ดเพื่อความปลอดภัย)
+        const jwtSecret = process.env.JWT_SECRET || process.env.JWT_SECRET_KEY;
+        if (!jwtSecret) {
+            console.error("❌ JWT Secret Key is missing in environment variables!");
+            return NextResponse.json({ message: "เกิดข้อผิดพลาดในการกำหนดค่าระบบความปลอดภัยหลังบ้าน" }, { status: 500 });
+        }
+
+        // 5. ออกตั๋ว JWT พร้อมข้อมูลผู้ใช้งานครบถ้วน
         const token = jwt.sign(
-            { userId: user.id, email: user.email, username: user.username },
-            process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY",
+            { 
+                userId: user.id, 
+                email: user.email, 
+                username: user.username,
+                role: user.role,
+                fullname: fullname
+            },
+            jwtSecret,
             { expiresIn: "7d" }
         );
 
-        const response = NextResponse.json({ success: true }, { status: 200 });
+        const response = NextResponse.json({ success: true, role: user.role }, { status: 200 });
 
+        // 6. บันทึก Cookie ลงในเว็บบราวเซอร์
         response.cookies.set("auth_token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",

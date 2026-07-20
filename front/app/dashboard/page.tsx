@@ -107,10 +107,10 @@ export default async function DashboardPage() {
               </Link>
             </li>
             <li>
-              <Link href="/auth/login" className="flex items-center gap-4 text-red-500 py-2.5 px-4 text-sm hover:bg-red-50 rounded-lg transition-colors">
+              <a href="/api/auth/logout" className="flex items-center gap-4 text-red-500 py-2.5 px-4 text-sm hover:bg-red-50 rounded-lg transition-colors">
                 <LogOut className="w-5 h-5" />
                 Logout
-              </Link>
+              </a>
             </li>
           </ul>
           <Link href="/internships" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center shadow-sm">
