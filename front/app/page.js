@@ -1,5 +1,12 @@
 import Link from "next/link";
-
+import { 
+  School,        // นักศึกษา / การศึกษา
+  Cpu,           // Memory / ประมวลผล / AI
+  Sliders,       // Tune / ปรับแต่ง
+  Bell,
+  Search,
+  ArrowRight
+} from 'lucide-react';
 export default function Home() {
   return (
     <>
@@ -27,7 +34,7 @@ export default function Home() {
             <h1 className="font-h1 text-h1 md:text-[48px] md:leading-[1.1] text-on-background">
               ค้นหาที่ฝึกงานที่ใช่ด้วยระบบ <span className="text-primary-container">AI อัจฉริยะ</span>
             </h1>
-            <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+            <p >
               จับคู่ทักษะของคุณกับบริษัทชั้นนำ พร้อมวิเคราะห์ Skill Gap เพื่อเตรียมความพร้อมก่อนทำงานจริง
             </p>
             <div className="flex flex-wrap gap-md pt-sm">
@@ -35,7 +42,7 @@ export default function Home() {
                 href="{{DATA:SCREEN:SCREEN_13}}"
                 className="flex items-center gap-2 bg-primary-container text-white px-6 py-3 rounded-lg font-body-sm text-body-sm font-medium hover:bg-primary transition-colors hover:-translate-y-1 shadow-md"
               >
-                <span className="material-symbols-outlined" data-icon="search" style={{ fontVariationSettings: "'FILL' 0" }}>search</span>
+                <Search/>
                 ค้นหาที่ฝึกงาน
               </a>
               <a
@@ -43,7 +50,7 @@ export default function Home() {
                 className="flex items-center gap-2 border border-primary-container text-primary-container px-6 py-3 rounded-lg font-body-sm text-body-sm font-medium hover:bg-primary-container/10 transition-colors hover:-translate-y-1"
               >
                 สร้างบัญชีผู้ใช้
-                <span className="material-symbols-outlined" data-icon="arrow_forward" style={{ fontVariationSettings: "'FILL' 0" }}>arrow_forward</span>
+                <ArrowRight className="w-5 h-5" />
               </a>
             </div>
           </div>
@@ -86,7 +93,7 @@ export default function Home() {
             {/* Card 1 */}
             <div className="bg-surface rounded-[16px] p-lg transition-transform duration-300 hover:-translate-y-[4px] hover:shadow-[0_4px_6px_-1px_rgb(0,0,0,0.1),_0_2px_4px_-2px_rgb(0,0,0,0.1)] border border-outline-variant/30">
               <div className="w-12 h-12 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-container mb-md">
-                <span className="material-symbols-outlined text-[28px]" data-icon="memory">memory</span>
+                <Cpu/>
               </div>
               <h3 className="font-h2-mobile text-h2-mobile mb-2">ระบบจับคู่อัจฉริยะ</h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant">วิเคราะห์โปรไฟล์และจับคู่กับตำแหน่งที่เหมาะสมที่สุด</p>
@@ -94,7 +101,7 @@ export default function Home() {
             {/* Card 2 */}
             <div className="bg-surface rounded-[16px] p-lg transition-transform duration-300 hover:-translate-y-[4px] hover:shadow-[0_4px_6px_-1px_rgb(0,0,0,0.1),_0_2px_4px_-2px_rgb(0,0,0,0.1)] border border-outline-variant/30">
               <div className="w-12 h-12 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-container mb-md">
-                <span className="material-symbols-outlined text-[28px]" data-icon="school">school</span>
+                <School />
               </div>
               <h3 className="font-h2-mobile text-h2-mobile mb-2">แนะนำคอร์สเรียนเพิ่มทักษะ</h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant">เรียนรู้ทักษะที่ขาดเพื่อเตรียมพร้อมสู่โลกการทำงาน</p>
@@ -102,7 +109,7 @@ export default function Home() {
             {/* Card 3 */}
             <div className="bg-surface rounded-[16px] p-lg transition-transform duration-300 hover:-translate-y-[4px] hover:shadow-[0_4px_6px_-1px_rgb(0,0,0,0.1),_0_2px_4px_-2px_rgb(0,0,0,0.1)] border border-outline-variant/30">
               <div className="w-12 h-12 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-container mb-md">
-                <span className="material-symbols-outlined text-[28px]" data-icon="tune">tune</span>
+                <Sliders/>
               </div>
               <h3 className="font-h2-mobile text-h2-mobile mb-2">ค้นหาง่ายและตรงจุด</h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant">ฟิลเตอร์การค้นหาที่ละเอียดและใช้งานง่าย</p>
@@ -110,7 +117,7 @@ export default function Home() {
             {/* Card 4 */}
             <div className="bg-surface rounded-[16px] p-lg transition-transform duration-300 hover:-translate-y-[4px] hover:shadow-[0_4px_6px_-1px_rgb(0,0,0,0.1),_0_2px_4px_-2px_rgb(0,0,0,0.1)] border border-outline-variant/30">
               <div className="w-12 h-12 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-container mb-md">
-                <span className="material-symbols-outlined text-[28px]" data-icon="notifications">notifications</span>
+                <Bell/>
               </div>
               <h3 className="font-h2-mobile text-h2-mobile mb-2">แจ้งเตือนไม่พลาดทุกโอกาส</h3>
               <p className="font-body-sm text-body-sm text-on-surface-variant">รับข่าวสารและตำแหน่งงานใหม่ๆ ที่ตรงกับคุณทันที</p>

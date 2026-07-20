@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Briefcase, Mail, User, Lock, Eye, EyeOff, Image, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { registerStudentAction } from "./actions";
+import { registerStudentAction } from "../../register_student/actions";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -70,7 +71,7 @@ export default function RegisterPage() {
         
         <div className="relative z-10">
           <Link className="inline-flex items-center gap-sm" href="/">
-            <span className="material-symbols-outlined text-white text-[32px]">work</span>
+            <Briefcase className="w-8 h-8 text-white" />
             <span className="text-white font-bold text-3xl">InternMatch</span>
           </Link>
         </div>
@@ -94,7 +95,7 @@ export default function RegisterPage() {
           {/* Mobile Logo */}
           <div className="mb-2xl flex justify-center lg:hidden">
             <Link className="inline-flex items-center gap-sm" href="/">
-              <span className="material-symbols-outlined text-primary text-[24px]">work</span>
+              <Briefcase className="w-6 h-6 text-primary" />
               <span className="text-primary font-bold text-2xl">InternMatch</span>
             </Link>
           </div>
@@ -120,7 +121,7 @@ export default function RegisterPage() {
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="email">Email</label>
                     <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><span className="material-symbols-outlined text-outline">mail</span></div>
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><Mail className="w-5 h-5 text-slate-400" /></div>
                       <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="email" name="email" placeholder="you@example.com" required type="email" value={fields.email} onChange={handleChange} />
                     </div>
                   </div>
@@ -129,7 +130,7 @@ export default function RegisterPage() {
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="username">Username</label>
                     <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><span className="material-symbols-outlined text-outline">person</span></div>
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><User className="w-5 h-5 text-slate-400" /></div>
                       <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="username" name="username" placeholder="hajimon01" required type="text" value={fields.username} onChange={handleChange} />
                     </div>
                   </div>
@@ -138,10 +139,14 @@ export default function RegisterPage() {
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="password">Password</label>
                     <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><span className="material-symbols-outlined text-outline">lock</span></div>
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><Lock className="w-5 h-5 text-slate-400" /></div>
                       <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-[40px] text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="password" name="password" placeholder="••••••••" required type={passwordType} value={fields.password} onChange={handleChange} />
                       <button className="absolute inset-y-0 right-0 flex items-center pr-sm text-outline hover:text-on-surface-variant focus:outline-none" type="button" onClick={handleTogglePassword}>
-                        <span className="material-symbols-outlined">{passwordType === "password" ? "visibility" : "visibility_off"}</span>
+                        {passwordType === "password" ? (
+                          <EyeOff className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors" />
+                        ) : (
+                          <Eye className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -207,7 +212,7 @@ export default function RegisterPage() {
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="profile_image">Profile Image URL</label>
                     <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><span className="material-symbols-outlined text-outline">image</span></div>
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><Image className="w-5 h-5 text-slate-400" /></div>
                       <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="profile_image" name="profile_image" placeholder="https://example.com/avatar.jpg" type="url" value={fields.profile_image} onChange={handleChange} />
                     </div>
                   </div>
@@ -216,7 +221,7 @@ export default function RegisterPage() {
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="resume_url">Resume PDF URL</label>
                     <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><span className="material-symbols-outlined text-outline">description</span></div>
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><FileText className="w-5 h-5 text-slate-400" /></div>
                       <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="resume_url" name="resume_url" placeholder="https://example.com/my-resume.pdf" type="url" value={fields.resume_url} onChange={handleChange} />
                     </div>
                   </div>
