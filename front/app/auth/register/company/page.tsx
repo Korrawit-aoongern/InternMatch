@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Building2, Mail, User, Lock, Eye, EyeOff, Image } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { registerCompanyAction } from "./actions";
+import { registerUser } from "@/lib/actions/auth";
 
 export default function RegisterCompanyPage() {
   const router = useRouter();
@@ -28,18 +29,18 @@ export default function RegisterCompanyPage() {
     setPasswordType(passwordType === "password" ? "text" : "password");
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFields((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
     setSuccess("");
 
-    const result = await registerCompanyAction(fields);
+    const result = await registerUser(fields, "company");
 
     setIsLoading(false);
     if (result.success) {
@@ -49,10 +50,10 @@ export default function RegisterCompanyPage() {
         description: "", website: "", address: "", province: "", logo: "" 
       });
       setTimeout(() => {
-        router.push("/login");
+        router.push("/auth/login");
       }, 1500);
     } else {
-      setError(result.error);
+      setError(result.error || "An error occurred");
     }
   };
 
@@ -66,7 +67,7 @@ export default function RegisterCompanyPage() {
         
         <div className="relative z-10">
           <Link className="inline-flex items-center gap-sm" href="/">
-            <span className="material-symbols-outlined text-white text-[32px]">domain</span>
+            <Building2 className="w-8 h-8 text-white" />
             <span className="text-white font-bold text-3xl">InternMatch</span>
           </Link>
         </div>
@@ -90,7 +91,7 @@ export default function RegisterCompanyPage() {
           {/* Mobile Logo */}
           <div className="mb-2xl flex justify-center lg:hidden">
             <Link className="inline-flex items-center gap-sm" href="/">
-              <span className="material-symbols-outlined text-primary text-[24px]">domain</span>
+              <Building2 className="w-6 h-6 text-primary" />
               <span className="text-primary font-bold text-2xl">InternMatch</span>
             </Link>
           </div>
@@ -116,7 +117,7 @@ export default function RegisterCompanyPage() {
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="email">Corporate Email</label>
                     <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><span className="material-symbols-outlined text-outline">mail</span></div>
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><Mail className="w-5 h-5 text-slate-400" /></div>
                       <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="email" name="email" placeholder="hr@company.com" required type="email" value={fields.email} onChange={handleChange} />
                     </div>
                   </div>
@@ -125,7 +126,7 @@ export default function RegisterCompanyPage() {
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="username">Username</label>
                     <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><span className="material-symbols-outlined text-outline">person</span></div>
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><User className="w-5 h-5 text-slate-400" /></div>
                       <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="username" name="username" placeholder="company_hr" required type="text" value={fields.username} onChange={handleChange} />
                     </div>
                   </div>
@@ -134,10 +135,14 @@ export default function RegisterCompanyPage() {
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="password">Password</label>
                     <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><span className="material-symbols-outlined text-outline">lock</span></div>
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><Lock className="w-5 h-5 text-slate-400" /></div>
                       <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-[40px] text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="password" name="password" placeholder="••••••••" required type={passwordType} value={fields.password} onChange={handleChange} />
                       <button className="absolute inset-y-0 right-0 flex items-center pr-sm text-outline hover:text-on-surface-variant focus:outline-none" type="button" onClick={handleTogglePassword}>
-                        <span className="material-symbols-outlined">{passwordType === "password" ? "visibility" : "visibility_off"}</span>
+                        {passwordType === "password" ? (
+                          <EyeOff className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors" />
+                        ) : (
+                          <Eye className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors" />
+                        )}
                       </button>
                     </div>
                   </div>
@@ -170,13 +175,13 @@ export default function RegisterCompanyPage() {
                   {/* Address */}
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="address">Full Address</label>
-                    <textarea className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 px-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="address" name="address" rows="3" placeholder="123 Sukhumvit Rd..." value={fields.address} onChange={handleChange}></textarea>
+                    <textarea className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 px-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="address" name="address" rows={3} placeholder="123 Sukhumvit Rd..." value={fields.address} onChange={handleChange}></textarea>
                   </div>
 
                   {/* Description */}
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="description">About the Company</label>
-                    <textarea className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 px-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="description" name="description" rows="3" placeholder="Brief info about your business, culture, or projects..." value={fields.description} onChange={handleChange}></textarea>
+                    <textarea className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 px-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="description" name="description" rows={3} placeholder="Brief info about your business, culture, or projects..." value={fields.description} onChange={handleChange}></textarea>
                   </div>
                 </div>
               </div>
@@ -190,7 +195,7 @@ export default function RegisterCompanyPage() {
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="logo">Company Logo URL</label>
                     <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><span className="material-symbols-outlined text-outline">image</span></div>
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><Image className="w-5 h-5 text-slate-400" /></div>
                       <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="logo" name="logo" placeholder="https://example.com/logo.png" type="url" value={fields.logo} onChange={handleChange} />
                     </div>
                   </div>
@@ -212,7 +217,7 @@ export default function RegisterCompanyPage() {
             <div className="mt-lg text-center">
               <p className="text-on-surface-variant text-sm">
                 Already have an account?{" "}
-                <Link className="text-blue-600 font-semibold hover:underline" href="/login">
+                <Link className="text-blue-600 font-semibold hover:underline" href="/auth/login">
                   Sign In
                 </Link>
               </p>

@@ -1,6 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { 
+  School,
+  Building2
+} from "lucide-react";
 
 export default function RegisterPortalPage() {
   return (
@@ -13,35 +17,47 @@ export default function RegisterPortalPage() {
         {/* หัวข้อเว็บ */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-blue-600">InternMatch</h1>
-          <p className="text-sm text-slate-500 mt-1">AI Career Portal Registration</p>
+          <p className="text-sm text-slate-500 mt-1">
+            AI Career Portal Registration
+          </p>
         </div>
 
         {/* การ์ดแก้วตัวเลือกทางเข้า */}
         <div className="bg-white/80 backdrop-blur-xl border border-white/50 shadow-xl rounded-2xl p-6 md:p-8 space-y-6">
           <div className="text-center">
             <h2 className="text-xl font-bold text-slate-800 mb-1">Join Us</h2>
-            <p className="text-sm text-slate-500">Select your account type to begin.</p>
+            <p className="text-sm text-slate-500">
+              Select your account type to begin.
+            </p>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             {/* ปุ่มทางเข้าฝั่ง นักศึกษา */}
             <Link
-              href="/register_student"
+              href="register/student"
               className="group flex flex-col items-center p-6 rounded-xl border border-slate-200 bg-white hover:bg-blue-50/50 hover:border-blue-400 transition-all duration-200 shadow-sm hover:shadow text-center"
             >
-              <span className="material-symbols-outlined text-4xl text-blue-600 mb-2 group-hover:scale-110 transition-transform">school</span>
-              <span className="text-sm font-semibold text-slate-800">Student</span>
-              <span className="text-[11px] text-slate-400 mt-1 block">สมัครรับทุนและฝึกงาน</span>
+              <School className="w-9 h-9 text-blue-600 mb-2 group-hover:scale-110 transition-transform" />{" "}
+              <span className="text-sm font-semibold text-slate-800">
+                Student
+              </span>
+              <span className="text-[11px] text-slate-400 mt-1 block">
+                สมัครรับทุนและฝึกงาน
+              </span>
             </Link>
 
             {/* ปุ่มทางเข้าฝั่ง บริษัท */}
             <Link
-              href="/register_company"
+              href="register/company"
               className="group flex flex-col items-center p-6 rounded-xl border border-slate-200 bg-white hover:bg-indigo-50/50 hover:border-indigo-400 transition-all duration-200 shadow-sm hover:shadow text-center"
             >
-              <span className="material-symbols-outlined text-4xl text-indigo-600 mb-2 group-hover:scale-110 transition-transform">domain</span>
-              <span className="text-sm font-semibold text-slate-800">Company</span>
-              <span className="text-[11px] text-slate-400 mt-1 block">ลงทะเบียนเปิดรับ นศ.</span>
+              <Building2 className="w-9 h-9 text-indigo-600 mb-2 group-hover:scale-110 transition-transform" />
+              <span className="text-sm font-semibold text-slate-800">
+                Company
+              </span>
+              <span className="text-[11px] text-slate-400 mt-1 block">
+                ลงทะเบียนเปิดรับ นศ.
+              </span>
             </Link>
           </div>
         </div>
@@ -49,7 +65,10 @@ export default function RegisterPortalPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-slate-500">
             Already have an account?{" "}
-            <Link className="text-blue-600 font-semibold hover:underline" href="/login">
+            <Link
+              className="text-blue-600 font-semibold hover:underline"
+              href="/auth/login"
+            >
               Login
             </Link>
           </p>

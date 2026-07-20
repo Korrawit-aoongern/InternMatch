@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -11,18 +12,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "InternMatch - AI Career Portal",
   description: "AI Career Portal สำหรับนักศึกษาและบริษัทชั้นนำ",
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html
       lang="th"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-on-background font-body-lg">{children}</body>
+      <body className="min-h-full flex flex-col bg-background text-on-background font-body-lg">
+        {children}
+      </body>
     </html>
   );
 }

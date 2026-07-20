@@ -1,19 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { createClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 
-// ดักเช็กตรงนี้เลยว่าอ่านค่าจาก .env ออกไหม
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error("❌ พัง! แอปอ่านไฟล์ .env ไม่เจอ หรือสะกดชื่อคีย์ไม่ตรง");
-}
-
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-export async function POST(request) {
+export async function POST(request: NextRequest) {
     try {
         const { identity, password } = await request.json();
         const cleanIdentity = identity.trim().toLowerCase();
@@ -21,6 +11,7 @@ export async function POST(request) {
         // 🎯 เพิ่ม console.log ตัวนี้เพื่อดูว่าหน้าบ้านส่งอะไรมา และหลังบ้านกำลังหาคำว่าอะไร
         console.log("กำลังค้นหาผู้ใช้ด้วยคำว่า:", cleanIdentity);
 
+        const supabaseAdmin = getSupabaseAdmin();
         const { data: user, error } = await supabaseAdmin
             .from("users")
             .select("id, email, username, password")
@@ -60,7 +51,7 @@ export async function POST(request) {
 
         return response;
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Login API Error:", error);
         return NextResponse.json({ message: "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์" }, { status: 500 });
     }

@@ -1,21 +1,46 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import { 
+  LayoutDashboard, 
+  Briefcase, 
+  Brain, 
+  MessageSquare, 
+  Settings, 
+  HelpCircle, 
+  LogOut, 
+  Menu, 
+  Bell, 
+  Sparkles, 
+  Send, 
+  Lightbulb, 
+  Megaphone, 
+  CircleDot, 
+  Cpu, 
+  GitFork, 
+  Plus 
+} from "lucide-react";
 
-// app/dashboard/page.js
+interface DecodedToken {
+  userId: string;
+  email: string;
+  username: string;
+  fullname?: string;
+}
 
-async function getUserData() {
-  // 🌟 จุดสำคัญ: เพิ่ม await หน้า cookies() เพราะใน Next.js เวอร์ชันใหม่เป็น Promise แล้ว
+async function getUserData(): Promise<DecodedToken | null> {
   const cookieStore = await cookies(); 
-  const token = cookieStore.get("token")?.value;
+  const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
 
   if (!token) {
     return null;
   }
 
   try {
-    // ถอดรหัสตั๋ว JWT ด้วย Secret Key
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(
+      token, 
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+    ) as unknown as DecodedToken;
     return decoded;
   } catch (err) {
     return null;
@@ -23,11 +48,8 @@ async function getUserData() {
 }
 
 export default async function DashboardPage() {
-  // ดึงข้อมูลผู้ใช้จริง เช่น userId, email, fullname ที่ฝังไว้ตอน Login
   const user = await getUserData();
-  
-  // ชื่อผู้ใช้งานเริ่มต้นหากยังไม่ได้ล็อกอินหรือระบุข้อมูล
-  const displayName = user?.fullname || "Guest User";
+  const displayName = user?.fullname || user?.username || "Guest User";
 
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
@@ -50,31 +72,25 @@ export default async function DashboardPage() {
           <ul className="space-y-1">
             <li>
               <Link href="/dashboard" className="flex items-center gap-4 border-l-4 border-blue-600 bg-blue-50/50 text-blue-700 py-3 px-6 text-sm font-semibold transition-colors">
-                <span className="material-symbols-outlined text-xl">dashboard</span>
+                <LayoutDashboard className="w-5 h-5" />
                 Dashboard
               </Link>
             </li>
             <li>
               <Link href="/applications" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
-                <span className="material-symbols-outlined text-xl">work</span>
+                <Briefcase className="w-5 h-5" />
                 Applications
               </Link>
             </li>
             <li>
               <Link href="/matches" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
-                <span className="material-symbols-outlined text-xl">psychology</span>
+                <Brain className="w-5 h-5" />
                 Matches
               </Link>
             </li>
             <li>
-              <Link href="/messages" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
-                <span className="material-symbols-outlined text-xl">chat</span>
-                Messages
-              </Link>
-            </li>
-            <li>
-              <Link href="/settings" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
-                <span className="material-symbols-outlined text-xl">settings</span>
+              <Link href="dashboard/profile" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
+                <Settings className="w-5 h-5" />
                 Settings
               </Link>
             </li>
@@ -86,13 +102,13 @@ export default async function DashboardPage() {
           <ul className="space-y-1">
             <li>
               <Link href="/help" className="flex items-center gap-4 text-slate-500 py-2.5 px-4 text-sm hover:bg-slate-50 hover:text-slate-800 rounded-lg transition-colors">
-                <span className="material-symbols-outlined text-xl">help</span>
+                <HelpCircle className="w-5 h-5" />
                 Help Center
               </Link>
             </li>
             <li>
-              <Link href="/login" className="flex items-center gap-4 text-red-500 py-2.5 px-4 text-sm hover:bg-red-50 rounded-lg transition-colors">
-                <span className="material-symbols-outlined text-xl">logout</span>
+              <Link href="/auth/login" className="flex items-center gap-4 text-red-500 py-2.5 px-4 text-sm hover:bg-red-50 rounded-lg transition-colors">
+                <LogOut className="w-5 h-5" />
                 Logout
               </Link>
             </li>
@@ -110,13 +126,13 @@ export default async function DashboardPage() {
         <header className="sticky top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 py-3 shadow-sm">
           <div className="flex items-center gap-4">
             <button className="md:hidden text-slate-600 hover:bg-slate-100 rounded-full p-2 transition-colors">
-              <span className="material-symbols-outlined text-blue-600">menu</span>
+              <Menu className="w-6 h-6 text-blue-600" />
             </button>
             <h1 className="text-lg md:text-xl font-bold text-slate-800">Dashboard</h1>
           </div>
           <div className="flex items-center gap-4">
             <button className="text-slate-500 hover:bg-slate-100 rounded-full p-2 transition-colors relative">
-              <span className="material-symbols-outlined text-xl">notifications</span>
+              <Bell className="w-5 h-5" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
             <Link href="/settings" className="w-8 h-8 rounded-full border border-slate-200 overflow-hidden hover:opacity-90 transition-opacity">
@@ -131,12 +147,11 @@ export default async function DashboardPage() {
           {/* Welcome Section */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
-              {/* 🌟 แสดงชื่อจริงจาก Token ล็อกอินอัตโนมัติ */}
               <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Welcome back, {displayName}!</h2>
               <p className="text-sm text-slate-500 mt-1">Here's your career progress at a glance.</p>
             </div>
             <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center gap-2">
-              <span className="material-symbols-outlined text-lg">magic_button</span>
+              <Sparkles className="w-4 h-4" />
               AI Resume Review
             </button>
           </div>
@@ -147,8 +162,8 @@ export default async function DashboardPage() {
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
               <div className="relative w-14 h-14 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                  <path className="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="3.5"></path>
-                  <path className="text-blue-600" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeDasharray="85, 100" strokeLinecap="round" strokeWidth="3.5"></path>
+                  <path className="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth={3.5}></path>
+                  <path className="text-blue-600" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeDasharray="85, 100" strokeLinecap="round" strokeWidth={3.5}></path>
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-blue-600">85%</div>
               </div>
@@ -161,7 +176,7 @@ export default async function DashboardPage() {
             {/* Applied */}
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
               <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                <span className="material-symbols-outlined">send</span>
+                <Send className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Applied</p>
@@ -172,7 +187,7 @@ export default async function DashboardPage() {
             {/* Recommended */}
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
               <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600">
-                <span className="material-symbols-outlined">lightbulb</span>
+                <Lightbulb className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Recommended</p>
@@ -183,7 +198,7 @@ export default async function DashboardPage() {
             {/* Alerts */}
             <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
               <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600">
-                <span className="material-symbols-outlined">campaign</span>
+                <Megaphone className="w-5 h-5" />
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alerts</p>
@@ -240,7 +255,7 @@ export default async function DashboardPage() {
                   {/* Company 1 */}
                   <div className="min-w-[160px] bg-white rounded-2xl border border-slate-200 p-4 shadow-sm snap-start text-center flex flex-col items-center justify-center gap-3 hover:-translate-y-1 transition-transform">
                     <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center p-2">
-                      <span className="material-symbols-outlined text-2xl text-slate-600">token</span>
+                      <CircleDot className="w-6 h-6 text-slate-600" />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-800">TechFlow</p>
@@ -251,7 +266,7 @@ export default async function DashboardPage() {
                   {/* Company 2 */}
                   <div className="min-w-[160px] bg-white rounded-2xl border border-slate-200 p-4 shadow-sm snap-start text-center flex flex-col items-center justify-center gap-3 hover:-translate-y-1 transition-transform">
                     <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center p-2">
-                      <span className="material-symbols-outlined text-2xl text-slate-600">blur_on</span>
+                      <Cpu className="w-6 h-6 text-slate-600" />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-800">DesignSynergy</p>
@@ -262,7 +277,7 @@ export default async function DashboardPage() {
                   {/* Company 3 */}
                   <div className="min-w-[160px] bg-white rounded-2xl border border-slate-200 p-4 shadow-sm snap-start text-center flex flex-col items-center justify-center gap-3 hover:-translate-y-1 transition-transform">
                     <div className="w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center p-2">
-                      <span className="material-symbols-outlined text-2xl text-slate-600">hub</span>
+                      <GitFork className="w-6 h-6 text-slate-600" />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-800">DataCore</p>
@@ -277,7 +292,7 @@ export default async function DashboardPage() {
             <div className="lg:col-span-4">
               <div className="bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm rounded-2xl p-6 lg:sticky lg:top-24 space-y-4">
                 <div className="flex items-center gap-2 text-blue-600">
-                  <span className="material-symbols-outlined font-semibold">psychology</span>
+                  <Brain className="w-5 h-5" />
                   <h3 className="text-base font-bold text-slate-800">AI Insights</h3>
                 </div>
                 
@@ -287,7 +302,7 @@ export default async function DashboardPage() {
                     Adding <strong className="text-slate-700">Figma</strong> and <strong className="text-slate-700">Prototyping</strong> to your skills could increase your match rate by 15% based on current market trends.
                   </p>
                   <button className="mt-4 w-full bg-white border border-blue-600 text-blue-600 hover:bg-blue-50 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1 shadow-xs">
-                    <span className="material-symbols-outlined text-sm">add</span>
+                    <Plus className="w-4 h-4" />
                     Update Skills
                   </button>
                 </div>
