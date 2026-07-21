@@ -10,13 +10,12 @@ const supabaseAdmin = createClient(
 export async function POST(request: NextRequest) {
     try {
         const { email } = await request.json();
-        const cleanEmail = email.trim().toLowerCase();
 
         // 1. เช็กว่ามีผู้ใช้อีเมลนี้ในตาราง users ไหม
         const { data: user, error } = await supabaseAdmin
             .from("users")
             .select("id, email")
-            .eq("email", cleanEmail)
+            .eq("email", email)
             .maybeSingle();
 
         if (error || !user) {
