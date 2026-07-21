@@ -4,7 +4,7 @@ import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { checkUserExists } from "@/lib/actions/auth";
+// 🎯 เอา import { checkUserExists } ออกไปแล้วเพื่อไม่ให้เรียกใช้งาน
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,23 +20,9 @@ export default function LoginPage() {
     setPasswordType(passwordType === "password" ? "text" : "password");
   };
 
+  // 🎯 เคลียร์ระบบเช็กข้างในออกทั้งหมด เหลือเพียงการรีเซ็ตข้อความปกติ เพื่อไม่ให้ยิงไปฐานข้อมูล
   const handleIdentityCheck = async () => {
-    if (!email) {
-      setIdentityError("");
-      return;
-    }
-    setIsChecking(true);
     setIdentityError("");
-
-    const result = await checkUserExists(email);
-
-    if (result.error) {
-      setIdentityError("Cannot verify account status at this moment.");
-    } else if (!result.exists) {
-      setIdentityError("This email or username does not exist in our system.");
-    } else {
-      setIdentityError("");
-    }
     setIsChecking(false);
   };
 
@@ -108,11 +94,10 @@ export default function LoginPage() {
                     <Mail />
                   </div>
                   <input
-                    className={`block w-full rounded-lg border bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:ring-2 focus:ring-primary/20 focus:outline-none transition-shadow text-sm ${
-                      identityError
-                        ? "border-error focus:border-error"
-                        : "border-outline-variant focus:border-primary"
-                    }`}
+                    className={`block w-full rounded-lg border bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:ring-2 focus:ring-primary/20 focus:outline-none transition-shadow text-sm ${identityError
+                      ? "border-error focus:border-error"
+                      : "border-outline-variant focus:border-primary"
+                      }`}
                     id="email"
                     name="email"
                     placeholder="you@example.com or username"
@@ -120,7 +105,7 @@ export default function LoginPage() {
                     type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    onBlur={handleIdentityCheck}
+                    onBlur={handleIdentityCheck} // คงไว้ที่เดิมตามโครงสร้าง
                   />
                 </div>
                 {isChecking && (
@@ -187,7 +172,7 @@ export default function LoginPage() {
                   </label>
                 </div>
                 <div className="text-sm">
-                  <a className="font-semibold text-primary text-sm" href="#">
+                  <a className="font-semibold text-primary text-sm" href="/forgot-password">
                     Forgot password?
                   </a>
                 </div>

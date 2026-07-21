@@ -38,7 +38,7 @@ function ResetPasswordForm() {
                 setStatus("error");
             } else {
                 // 🎯 สั่งเปลี่ยนหน้าไปที่ /login ทันทีที่เปลี่ยนรหัสผ่านสำเร็จ ไม่ต้องรอ 3 วินาทีแล้ว
-                router.push("/login");
+                router.push("/auth/login");
             }
         } catch {
             setMessage("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");

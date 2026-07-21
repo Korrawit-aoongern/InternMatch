@@ -84,7 +84,7 @@ export default function ForgotPassword() {
 
                     <div className="text-center pt-2">
                         <Link
-                            href="/login"
+                            href="/auth/login"
                             className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
                         >
                             ← กลับไปหน้าเข้าสู่ระบบ
