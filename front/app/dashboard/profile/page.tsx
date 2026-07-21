@@ -16,7 +16,7 @@ import {
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import SkillsManagement from "@/components/ui/SkillsManagement";
-import { getStudentProfile, updateStudentProfile } from "@/lib/actions/auth";
+import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile } from "@/lib/actions/auth";
 
 interface Skill {
   id: string;
@@ -25,6 +25,7 @@ interface Skill {
 }
 
 interface StudentProfile {
+  // Student-specific
   fullname: string;
   phone: string;
   university: string;
@@ -33,12 +34,24 @@ interface StudentProfile {
   study_year: number;
   profile_image: string;
   resume_url: string;
+
+  // Company-specific
+  company_name: string;
+  description: string;
+  website: string;
+  address: string;
+  province: string;
+  logo: string;
+
+  // Shared / mock links
   linkedin: string;
   github: string;
   portfolio: string;
 }
 
-export default function StudentProfilePage() {
+export default function ProfilePage() {
+  const [role, setRole] = useState<"student" | "company">("student");
+  
   const [profile, setProfile] = useState<StudentProfile>({
     fullname: "",
     phone: "",
@@ -48,8 +61,16 @@ export default function StudentProfilePage() {
     study_year: 1,
     profile_image: "",
     resume_url: "",
-    linkedin: "",
-    github: "",
+
+    company_name: "",
+    description: "",
+    website: "",
+    address: "",
+    province: "",
+    logo: "",
+
+    linkedin: "linkedin.com/company/arivera",
+    github: "github.com/arivera-org",
     portfolio: "",
   });
 
@@ -77,17 +98,19 @@ export default function StudentProfilePage() {
   });
   const [passwordMsg, setPasswordMsg] = useState<{ text: string; type: "error" | "success" } | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: name === "study_year" ? Number(value) : value }));
   };
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const res = await getStudentProfile();
-      if (res.success && res.profile) {
-        const p = res.profile;
-        setProfile({
+      const studentRes = await getStudentProfile();
+      if (studentRes.success && studentRes.profile) {
+        setRole("student");
+        const p = studentRes.profile;
+        setProfile((prev) => ({
+          ...prev,
           fullname: p.fullname || "",
           phone: p.phone || "",
           university: p.university || "",
@@ -96,10 +119,23 @@ export default function StudentProfilePage() {
           study_year: p.study_year || 1,
           profile_image: p.profile_image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop",
           resume_url: p.resume_url || "",
-          linkedin: "linkedin.com/in/arivera", // fallback mock
-          github: "github.com/arivera-dev", // fallback mock
-          portfolio: "", // fallback mock
-        });
+        }));
+        return;
+      }
+
+      const companyRes = await getCompanyProfile();
+      if (companyRes.success && companyRes.profile) {
+        setRole("company");
+        const c = companyRes.profile;
+        setProfile((prev) => ({
+          ...prev,
+          company_name: c.company_name || "",
+          description: c.description || "",
+          website: c.website || "",
+          address: c.address || "",
+          province: c.province || "",
+          logo: c.logo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=300&auto=format&fit=crop",
+        }));
       }
     };
     fetchProfile();
@@ -150,16 +186,28 @@ export default function StudentProfilePage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    const res = await updateStudentProfile({
-      fullname: profile.fullname,
-      phone: profile.phone || null,
-      university: profile.university || null,
-      faculty: profile.faculty || null,
-      major: profile.major || null,
-      study_year: Number(profile.study_year) || null,
-      profile_image: profile.profile_image || null,
-      resume_url: profile.resume_url || null,
-    });
+    let res;
+    if (role === "student") {
+      res = await updateStudentProfile({
+        fullname: profile.fullname,
+        phone: profile.phone || null,
+        university: profile.university || null,
+        faculty: profile.faculty || null,
+        major: profile.major || null,
+        study_year: Number(profile.study_year) || null,
+        profile_image: profile.profile_image || null,
+        resume_url: profile.resume_url || null,
+      });
+    } else {
+      res = await updateCompanyProfile({
+        company_name: profile.company_name,
+        description: profile.description || null,
+        website: profile.website || null,
+        address: profile.address || null,
+        province: profile.province || null,
+        logo: profile.logo || null,
+      });
+    }
     setIsSaving(false);
     if (res.success) {
       alert(res.message);
@@ -181,7 +229,7 @@ export default function StudentProfilePage() {
           <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
-                Student Profile
+                {role === "company" ? "Company Profile" : "Student Profile"}
               </h1>
               <p className="text-sm text-slate-500 mt-1">
                 Manage your personal information, security, and portfolio.
@@ -209,8 +257,8 @@ export default function StudentProfilePage() {
                   <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden shadow-sm relative">
                     <img
                       className="w-full h-full object-cover"
-                      alt="Student Profile Avatar"
-                      src={profile.profile_image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop"}
+                      alt={role === "company" ? "Company Profile Logo" : "Student Profile Avatar"}
+                      src={role === "company" ? (profile.logo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=300&auto=format&fit=crop") : (profile.profile_image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop")}
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <Camera className="w-8 h-8 text-white" />
@@ -219,128 +267,228 @@ export default function StudentProfilePage() {
                 </div>
 
                 <h3 className="text-xl font-bold text-slate-800 mt-4">
-                  {profile.fullname}
+                  {role === "company" ? profile.company_name : profile.fullname}
                 </h3>
                 <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                  {profile.major}
+                  {role === "company" ? profile.province : profile.major}
                 </p>
 
                 <div className="w-full mt-6 space-y-4 text-left">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Full Name
-                    </label>
-                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                      <input
-                        className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
-                        type="text"
-                        name="fullname"
-                        value={profile.fullname}
-                        onChange={handleInputChange}
-                      />
-                      <Edit2 className="w-4 h-4 text-slate-400" />
-                    </div>
-                  </div>
+                  {role === "student" ? (
+                    <>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Full Name
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="fullname"
+                            value={profile.fullname}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Major
-                    </label>
-                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                      <input
-                        className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
-                        type="text"
-                        name="major"
-                        value={profile.major}
-                        onChange={handleInputChange}
-                      />
-                      <Edit2 className="w-4 h-4 text-slate-400" />
-                    </div>
-                  </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Major
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="major"
+                            value={profile.major}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      University
-                    </label>
-                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                      <input
-                        className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
-                        type="text"
-                        name="university"
-                        value={profile.university}
-                        onChange={handleInputChange}
-                      />
-                      <Edit2 className="w-4 h-4 text-slate-400" />
-                    </div>
-                  </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          University
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="university"
+                            value={profile.university}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Faculty
-                    </label>
-                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                      <input
-                        className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
-                        type="text"
-                        name="faculty"
-                        value={profile.faculty}
-                        onChange={handleInputChange}
-                      />
-                      <Edit2 className="w-4 h-4 text-slate-400" />
-                    </div>
-                  </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Faculty
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="faculty"
+                            value={profile.faculty}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Study Year
-                    </label>
-                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                      <select
-                        className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800 cursor-pointer"
-                        name="study_year"
-                        value={profile.study_year}
-                        onChange={handleInputChange}
-                      >
-                        <option value={1}>Year 1</option>
-                        <option value={2}>Year 2</option>
-                        <option value={3}>Year 3</option>
-                        <option value={4}>Year 4</option>
-                        <option value={5}>Year 5+</option>
-                      </select>
-                    </div>
-                  </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Study Year
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <select
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800 cursor-pointer"
+                            name="study_year"
+                            value={profile.study_year}
+                            onChange={handleInputChange}
+                          >
+                            <option value={1}>Year 1</option>
+                            <option value={2}>Year 2</option>
+                            <option value={3}>Year 3</option>
+                            <option value={4}>Year 4</option>
+                            <option value={5}>Year 5+</option>
+                          </select>
+                        </div>
+                      </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Phone Number
-                    </label>
-                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                      <input
-                        className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
-                        type="text"
-                        name="phone"
-                        value={profile.phone}
-                        onChange={handleInputChange}
-                      />
-                      <Edit2 className="w-4 h-4 text-slate-400" />
-                    </div>
-                  </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Phone Number
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="phone"
+                            value={profile.phone}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Profile Image URL
-                    </label>
-                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                      <input
-                        className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
-                        type="text"
-                        name="profile_image"
-                        value={profile.profile_image}
-                        onChange={handleInputChange}
-                      />
-                      <Edit2 className="w-4 h-4 text-slate-400" />
-                    </div>
-                  </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Profile Image URL
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="profile_image"
+                            value={profile.profile_image}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Company Name
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="company_name"
+                            value={profile.company_name}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Website URL
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="website"
+                            value={profile.website}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Province
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="province"
+                            value={profile.province}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Address
+                        </label>
+                        <div className="flex items-start justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <textarea
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800 min-h-[60px] resize-none"
+                            name="address"
+                            value={profile.address}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400 mt-1" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Description
+                        </label>
+                        <div className="flex items-start justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <textarea
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800 min-h-[80px] resize-none"
+                            name="description"
+                            value={profile.description}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400 mt-1" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Company Logo URL
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="logo"
+                            value={profile.logo}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -452,86 +600,154 @@ export default function StudentProfilePage() {
 
             {/* Right Column (8 cols) */}
             <div className="lg:col-span-8 flex flex-col gap-6">
-              {/* Skills Management Card */}
-              <SkillsManagement skills={skills} onAddSkill={handleAddSkill} onRemoveSkill={handleRemoveSkill} />
+              {role === "student" && (
+                <SkillsManagement skills={skills} onAddSkill={handleAddSkill} onRemoveSkill={handleRemoveSkill} />
+              )}
 
               {/* Resume & Portfolio Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Resume Card */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 h-full flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
-                      <FileText className="w-5 h-5 text-blue-600" />
-                      Resume
-                    </h3>
+              {role === "student" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Resume Card */}
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 h-full flex flex-col justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+                        <FileText className="w-5 h-5 text-blue-600" />
+                        Resume
+                      </h3>
 
-                    {profile.resume_url ? (
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <div className="bg-red-100 text-red-600 p-2 rounded-lg flex-shrink-0">
+                      {profile.resume_url ? (
+                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="bg-red-100 text-red-600 p-2 rounded-lg flex-shrink-0">
+                              <FileText className="w-5 h-5" />
+                            </div>
+                            <div className="truncate">
+                              <p className="text-xs font-bold text-slate-800 truncate">
+                                {profile.resume_url.split("/").pop()}
+                              </p>
+                              <p className="text-[10px] text-slate-400 truncate">
+                                {profile.resume_url}
+                              </p>
+                            </div>
+                          </div>
+                          <a
+                            href={profile.resume_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-500 hover:text-blue-700 text-xs font-semibold px-2 py-1"
+                          >
+                            View
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center gap-3 mb-4">
+                          <div className="bg-slate-200 text-slate-400 p-2 rounded-lg flex-shrink-0">
                             <FileText className="w-5 h-5" />
                           </div>
-                          <div className="truncate">
-                            <p className="text-xs font-bold text-slate-800 truncate">
-                              {profile.resume_url.split("/").pop()}
-                            </p>
-                            <p className="text-[10px] text-slate-400 truncate">
-                              {profile.resume_url}
+                          <div>
+                            <p className="text-xs font-bold text-slate-400">
+                              No resume uploaded
                             </p>
                           </div>
                         </div>
-                        <a
-                          href={profile.resume_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-blue-500 hover:text-blue-700 text-xs font-semibold px-2 py-1"
-                        >
-                          View
-                        </a>
+                      )}
+                    </div>
+
+                    <div className="mt-4">
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                        Resume URL
+                      </label>
+                      <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                        <input
+                          className="bg-transparent border-none outline-none w-full text-xs font-semibold text-slate-800"
+                          type="text"
+                          name="resume_url"
+                          placeholder="https://example.com/resume.pdf"
+                          value={profile.resume_url}
+                          onChange={handleInputChange}
+                        />
+                        <Edit2 className="w-4 h-4 text-slate-400" />
                       </div>
-                    ) : (
-                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center gap-3 mb-4">
-                        <div className="bg-slate-200 text-slate-400 p-2 rounded-lg flex-shrink-0">
-                          <FileText className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-400">
-                            No resume uploaded
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
 
-                  <div className="mt-4">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Resume URL
-                    </label>
-                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                      <input
-                        className="bg-transparent border-none outline-none w-full text-xs font-semibold text-slate-800"
-                        type="text"
-                        name="resume_url"
-                        placeholder="https://example.com/resume.pdf"
-                        value={profile.resume_url}
-                        onChange={handleInputChange}
-                      />
-                      <Edit2 className="w-4 h-4 text-slate-400" />
+                  {/* External Links Card */}
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 h-full">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+                      <Link2 className="w-5 h-5 text-blue-600" />
+                      External Links
+                    </h3>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          LinkedIn Profile
+                        </label>
+                        <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <div className="bg-slate-100 p-2.5 border-r border-slate-200 text-slate-500">
+                            <Globe className="w-4 h-4" />
+                          </div>
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-xs font-semibold text-slate-800 px-3 py-2"
+                            type="text"
+                            name="linkedin"
+                            value={profile.linkedin}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          GitHub Repository
+                        </label>
+                        <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <div className="bg-slate-100 p-2.5 border-r border-slate-200 text-slate-500">
+                            <Code className="w-4 h-4" />
+                          </div>
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-xs font-semibold text-slate-800 px-3 py-2"
+                            type="text"
+                            name="github"
+                            value={profile.github}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Personal Portfolio
+                        </label>
+                        <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <div className="bg-slate-100 p-2.5 border-r border-slate-200 text-slate-500">
+                            <Globe className="w-4 h-4" />
+                          </div>
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-xs font-semibold text-slate-800 px-3 py-2"
+                            type="text"
+                            name="portfolio"
+                            placeholder="https://yourwebsite.com"
+                            value={profile.portfolio}
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* External Links Card */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 h-full">
+              ) : (
+                /* Company: showing only External Links Card (adjusting labels for corporate links if necessary) */
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 w-full">
                   <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
                     <Link2 className="w-5 h-5 text-blue-600" />
-                    External Links
+                    Corporate Links
                   </h3>
 
                   <div className="space-y-4">
                     <div>
                       <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        LinkedIn Profile
+                        Company LinkedIn
                       </label>
                       <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
                         <div className="bg-slate-100 p-2.5 border-r border-slate-200 text-slate-500">
@@ -549,7 +765,7 @@ export default function StudentProfilePage() {
 
                     <div>
                       <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        GitHub Repository
+                        Company GitHub / GitLab
                       </label>
                       <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
                         <div className="bg-slate-100 p-2.5 border-r border-slate-200 text-slate-500">
@@ -567,7 +783,7 @@ export default function StudentProfilePage() {
 
                     <div>
                       <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Personal Portfolio
+                        Corporate Website
                       </label>
                       <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
                         <div className="bg-slate-100 p-2.5 border-r border-slate-200 text-slate-500">
@@ -577,7 +793,7 @@ export default function StudentProfilePage() {
                           className="bg-transparent border-none outline-none w-full text-xs font-semibold text-slate-800 px-3 py-2"
                           type="text"
                           name="portfolio"
-                          placeholder="https://yourwebsite.com"
+                          placeholder="https://companywebsite.com"
                           value={profile.portfolio}
                           onChange={handleInputChange}
                         />
@@ -585,8 +801,7 @@ export default function StudentProfilePage() {
                     </div>
                   </div>
                 </div>
-
-              </div>
+              )}
             </div>
 
           </div>
