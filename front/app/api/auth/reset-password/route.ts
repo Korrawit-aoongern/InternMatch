@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
         let decoded: DecodedToken;
         try {
             decoded = jwt.verify(token, process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY") as DecodedToken;
-        } catch (err) {
+        } catch {
             return NextResponse.json({ message: "ลิงก์หมดอายุ หรือไม่ถูกต้อง กรุณาขอลิงก์ใหม่อีกครั้ง" }, { status: 401 });
         }
 

@@ -4,7 +4,6 @@ import { Mail, Lock, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { checkUserExists } from "@/lib/actions/auth";
 import FormInput from "@/components/ui/FormInput";
 
 export default function LoginPage() {

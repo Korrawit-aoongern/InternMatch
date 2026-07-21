@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Save,
   Camera,
@@ -10,8 +9,6 @@ import {
   EyeOff,
   ShieldCheck,
   FileText,
-  FileUp,
-  MoreVertical,
   Globe,
   Code,
   Link2,
@@ -19,6 +16,7 @@ import {
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import SkillsManagement from "@/components/ui/SkillsManagement";
+import { getStudentProfile, updateStudentProfile } from "@/lib/actions/auth";
 
 interface Skill {
   id: string;
@@ -27,11 +25,14 @@ interface Skill {
 }
 
 interface StudentProfile {
-  fullName: string;
-  major: string;
+  fullname: string;
+  phone: string;
   university: string;
-  graduationYear: string;
-  location: string;
+  faculty: string;
+  major: string;
+  study_year: number;
+  profile_image: string;
+  resume_url: string;
   linkedin: string;
   github: string;
   portfolio: string;
@@ -39,13 +40,16 @@ interface StudentProfile {
 
 export default function StudentProfilePage() {
   const [profile, setProfile] = useState<StudentProfile>({
-    fullName: "Alex Rivera",
-    major: "B.S. Computer Science",
-    university: "Stanford University",
-    graduationYear: "Class of 2025",
-    location: "San Francisco, CA",
-    linkedin: "linkedin.com/in/arivera",
-    github: "github.com/arivera-dev",
+    fullname: "",
+    phone: "",
+    university: "",
+    faculty: "",
+    major: "",
+    study_year: 1,
+    profile_image: "",
+    resume_url: "",
+    linkedin: "",
+    github: "",
     portfolio: "",
   });
 
@@ -73,10 +77,33 @@ export default function StudentProfilePage() {
   });
   const [passwordMsg, setPasswordMsg] = useState<{ text: string; type: "error" | "success" } | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
+    setProfile((prev) => ({ ...prev, [name]: name === "study_year" ? Number(value) : value }));
   };
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const res = await getStudentProfile();
+      if (res.success && res.profile) {
+        const p = res.profile;
+        setProfile({
+          fullname: p.fullname || "",
+          phone: p.phone || "",
+          university: p.university || "",
+          faculty: p.faculty || "",
+          major: p.major || "",
+          study_year: p.study_year || 1,
+          profile_image: p.profile_image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop",
+          resume_url: p.resume_url || "",
+          linkedin: "linkedin.com/in/arivera", // fallback mock
+          github: "github.com/arivera-dev", // fallback mock
+          portfolio: "", // fallback mock
+        });
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -121,12 +148,24 @@ export default function StudentProfilePage() {
     setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      alert("บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว!");
-    }, 1000);
+    const res = await updateStudentProfile({
+      fullname: profile.fullname,
+      phone: profile.phone || null,
+      university: profile.university || null,
+      faculty: profile.faculty || null,
+      major: profile.major || null,
+      study_year: Number(profile.study_year) || null,
+      profile_image: profile.profile_image || null,
+      resume_url: profile.resume_url || null,
+    });
+    setIsSaving(false);
+    if (res.success) {
+      alert(res.message);
+    } else {
+      alert("เกิดข้อผิดพลาด: " + res.error);
+    }
   };
 
   return (
@@ -171,7 +210,7 @@ export default function StudentProfilePage() {
                     <img
                       className="w-full h-full object-cover"
                       alt="Student Profile Avatar"
-                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop"
+                      src={profile.profile_image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop"}
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <Camera className="w-8 h-8 text-white" />
@@ -180,13 +219,45 @@ export default function StudentProfilePage() {
                 </div>
 
                 <h3 className="text-xl font-bold text-slate-800 mt-4">
-                  {profile.fullName}
+                  {profile.fullname}
                 </h3>
                 <p className="text-xs font-semibold text-slate-500 mt-0.5">
                   {profile.major}
                 </p>
 
                 <div className="w-full mt-6 space-y-4 text-left">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Full Name
+                    </label>
+                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                      <input
+                        className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                        type="text"
+                        name="fullname"
+                        value={profile.fullname}
+                        onChange={handleInputChange}
+                      />
+                      <Edit2 className="w-4 h-4 text-slate-400" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Major
+                    </label>
+                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                      <input
+                        className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                        type="text"
+                        name="major"
+                        value={profile.major}
+                        onChange={handleInputChange}
+                      />
+                      <Edit2 className="w-4 h-4 text-slate-400" />
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                       University
@@ -205,14 +276,14 @@ export default function StudentProfilePage() {
 
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Graduation Year
+                      Faculty
                     </label>
                     <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
                       <input
                         className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
                         type="text"
-                        name="graduationYear"
-                        value={profile.graduationYear}
+                        name="faculty"
+                        value={profile.faculty}
                         onChange={handleInputChange}
                       />
                       <Edit2 className="w-4 h-4 text-slate-400" />
@@ -221,14 +292,50 @@ export default function StudentProfilePage() {
 
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Location
+                      Study Year
+                    </label>
+                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                      <select
+                        className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800 cursor-pointer"
+                        name="study_year"
+                        value={profile.study_year}
+                        onChange={handleInputChange}
+                      >
+                        <option value={1}>Year 1</option>
+                        <option value={2}>Year 2</option>
+                        <option value={3}>Year 3</option>
+                        <option value={4}>Year 4</option>
+                        <option value={5}>Year 5+</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Phone Number
                     </label>
                     <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
                       <input
                         className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
                         type="text"
-                        name="location"
-                        value={profile.location}
+                        name="phone"
+                        value={profile.phone}
+                        onChange={handleInputChange}
+                      />
+                      <Edit2 className="w-4 h-4 text-slate-400" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Profile Image URL
+                    </label>
+                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                      <input
+                        className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                        type="text"
+                        name="profile_image"
+                        value={profile.profile_image}
                         onChange={handleInputChange}
                       />
                       <Edit2 className="w-4 h-4 text-slate-400" />
@@ -351,41 +458,66 @@ export default function StudentProfilePage() {
               {/* Resume & Portfolio Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Resume Card */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 h-full flex flex-col">
-                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                    Resume
-                  </h3>
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 h-full flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                      Resume
+                    </h3>
 
-                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                      <div className="bg-red-100 text-red-600 p-2 rounded-lg flex-shrink-0">
-                        <FileText className="w-5 h-5" />
+                    {profile.resume_url ? (
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <div className="bg-red-100 text-red-600 p-2 rounded-lg flex-shrink-0">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div className="truncate">
+                            <p className="text-xs font-bold text-slate-800 truncate">
+                              {profile.resume_url.split("/").pop()}
+                            </p>
+                            <p className="text-[10px] text-slate-400 truncate">
+                              {profile.resume_url}
+                            </p>
+                          </div>
+                        </div>
+                        <a
+                          href={profile.resume_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-blue-500 hover:text-blue-700 text-xs font-semibold px-2 py-1"
+                        >
+                          View
+                        </a>
                       </div>
-                      <div className="truncate">
-                        <p className="text-xs font-bold text-slate-800 truncate">
-                          Alex_Rivera_Resume_2026.pdf
-                        </p>
-                        <p className="text-[10px] text-slate-400">
-                          Updated 2 days ago • 1.2 MB
-                        </p>
+                    ) : (
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center gap-3 mb-4">
+                        <div className="bg-slate-200 text-slate-400 p-2 rounded-lg flex-shrink-0">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-400">
+                            No resume uploaded
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <button className="text-slate-400 hover:text-slate-600 p-1">
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
+                    )}
                   </div>
 
-                  <div className="flex-1 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors flex flex-col items-center justify-center p-6 cursor-pointer group">
-                    <div className="bg-white p-3 rounded-full shadow-xs mb-2 group-hover:scale-110 transition-transform">
-                      <FileUp className="w-5 h-5 text-blue-600" />
+                  <div className="mt-4">
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Resume URL
+                    </label>
+                    <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                      <input
+                        className="bg-transparent border-none outline-none w-full text-xs font-semibold text-slate-800"
+                        type="text"
+                        name="resume_url"
+                        placeholder="https://example.com/resume.pdf"
+                        value={profile.resume_url}
+                        onChange={handleInputChange}
+                      />
+                      <Edit2 className="w-4 h-4 text-slate-400" />
                     </div>
-                    <p className="text-xs font-bold text-slate-700">
-                      Click to replace resume
-                    </p>
-                    <p className="text-[10px] text-slate-400 mt-1">
-                      PDF, DOCX up to 5MB
-                    </p>
                   </div>
                 </div>
 

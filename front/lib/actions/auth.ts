@@ -2,6 +2,15 @@
 
 import bcrypt from "bcryptjs";
 import { getSupabaseAdmin } from "../supabase/server";
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
+
+interface DecodedToken {
+  userId: string;
+  email: string;
+  username: string;
+  fullname?: string;
+}
 
 export interface UserRegisterFormData {
   email: string;
@@ -137,3 +146,91 @@ export async function registerUser(formData: UserRegisterFormData, role: "studen
     return { success: false, error: "เกิดข้อผิดพลาดรุนแรงภายในระบบหลังบ้าน" };
   }
 }
+
+export async function getStudentProfile() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
+    
+    if (!token) {
+      return { success: false, error: "Not authenticated" };
+    }
+    
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+    ) as unknown as DecodedToken;
+    
+    const supabase = getSupabaseAdmin();
+    const { data: student, error } = await supabase
+      .from("students")
+      .select("*")
+      .eq("user_id", decoded.userId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error("Error fetching student profile:", error);
+      return { success: false, error: error.message };
+    }
+    
+    if (!student) {
+      return { success: false, error: "Student profile not found" };
+    }
+    
+    return { success: true, profile: student };
+  } catch (err) {
+    console.error("Error in getStudentProfile:", err);
+    return { success: false, error: "Failed to get profile" };
+  }
+}
+
+export async function updateStudentProfile(profileData: {
+  fullname: string;
+  phone: string | null;
+  university: string | null;
+  faculty: string | null;
+  major: string | null;
+  study_year: number | null;
+  profile_image: string | null;
+  resume_url: string | null;
+}) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
+    
+    if (!token) {
+      return { success: false, error: "Not authenticated" };
+    }
+    
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+    ) as unknown as DecodedToken;
+    
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase
+      .from("students")
+      .update({
+        fullname: profileData.fullname,
+        phone: profileData.phone,
+        university: profileData.university,
+        faculty: profileData.faculty,
+        major: profileData.major,
+        study_year: profileData.study_year,
+        profile_image: profileData.profile_image,
+        resume_url: profileData.resume_url,
+      })
+      .eq("user_id", decoded.userId);
+      
+    if (error) {
+      console.error("Error updating student profile:", error);
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true, message: "อัปเดตข้อมูลโปรไฟล์สำเร็จเรียบร้อย! 🎉" };
+  } catch (err) {
+    console.error("Error in updateStudentProfile:", err);
+    return { success: false, error: "Failed to update profile" };
+  }
+}
+
