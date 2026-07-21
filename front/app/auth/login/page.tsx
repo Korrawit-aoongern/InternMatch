@@ -17,22 +17,7 @@ export default function LoginPage() {
   const [loginError, setLoginError] = useState("");
 
   const handleIdentityCheck = async () => {
-    if (!email) {
-      setIdentityError("");
-      return;
-    }
-    setIsChecking(true);
     setIdentityError("");
-
-    const result = await checkUserExists(email);
-
-    if (result.error) {
-      setIdentityError("Cannot verify account status at this moment.");
-    } else if (!result.exists) {
-      setIdentityError("This email or username does not exist in our system.");
-    } else {
-      setIdentityError("");
-    }
     setIsChecking(false);
   };
 
@@ -134,7 +119,7 @@ export default function LoginPage() {
                   </label>
                 </div>
                 <div className="text-sm">
-                  <a className="font-semibold text-primary text-sm" href="#">
+                  <a className="font-semibold text-primary text-sm" href="/forgot-password">
                     Forgot password?
                   </a>
                 </div>
