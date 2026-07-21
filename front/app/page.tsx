@@ -7,26 +7,13 @@ import {
   Search,
   ArrowRight
 } from 'lucide-react';
+import LandingNavbar from "@/components/layout/LandingNavbar";
+import LandingFooter from "@/components/layout/LandingFooter";
 
 export default function Home() {
   return (
     <>
-      {/* TopNavBar */}
-      <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md dark:bg-surface/70 border-b border-white/20 shadow-sm transition-transform duration-200">
-        <div className="flex items-center justify-between px-lg py-md max-w-container-max mx-auto">
-          <div className="font-h2 text-h2 font-bold text-primary">InternMatch</div>
-          <div className="hidden md:flex items-center gap-lg font-body-lg text-body-lg">
-            <a className="text-on-surface-variant hover:text-primary transition-colors hover:opacity-80" href="#features">Features</a>
-            <a className="text-on-surface-variant hover:text-primary transition-colors hover:opacity-80" href="#how-it-works">How It Works</a>
-            <a className="text-on-surface-variant hover:text-primary transition-colors hover:opacity-80" href="#testimonials">Testimonials</a>
-            <a className="text-on-surface-variant hover:text-primary transition-colors hover:opacity-80" href="#faq">FAQ</a>
-          </div>
-          <div className="flex items-center gap-md">
-            <Link href="/auth/login" className="font-body-sm text-body-sm text-primary hover:opacity-80 transition-all px-4 py-2 rounded-lg font-medium border border-transparent flex items-center justify-center">Login</Link>
-            <Link href="/auth/register" className="font-body-sm text-body-sm bg-primary-container text-white px-4 py-2 rounded-lg font-medium hover:bg-primary transition-colors active:scale-95 shadow-md flex items-center justify-center">Get Started</Link>
-          </div>
-        </div>
-      </nav>
+      <LandingNavbar />
 
       <main className="pt-[96px] pb-3xl space-y-[96px]">
         {/* Hero Section */}
@@ -127,44 +114,7 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full py-2xl bg-surface-container-low dark:bg-surface-dim border-t border-outline-variant">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-lg px-lg max-w-container-max mx-auto">
-          <div className="space-y-md">
-            <div className="font-h2 text-h2 font-bold text-primary">InternMatch</div>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">
-              AI Career Portal สำหรับนักศึกษาและบริษัทชั้นนำ
-            </p>
-            <div className="font-body-sm text-body-sm text-on-surface-variant mt-xl opacity-100">
-              © 2024 InternMatch AI. All rights reserved.
-            </div>
-          </div>
-          <div className="space-y-sm">
-            <h4 className="font-body-lg text-body-lg font-bold text-on-background mb-sm">Platform</h4>
-            <ul className="space-y-2 font-body-sm text-body-sm">
-              <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Features</a></li>
-              <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">How It Works</a></li>
-              <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Pricing</a></li>
-            </ul>
-          </div>
-          <div className="space-y-sm">
-            <h4 className="font-body-lg text-body-lg font-bold text-on-background mb-sm">Legal</h4>
-            <ul className="space-y-2 font-body-sm text-body-sm">
-              <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Privacy Policy</a></li>
-              <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Terms of Service</a></li>
-              <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Cookie Policy</a></li>
-            </ul>
-          </div>
-          <div className="space-y-sm">
-            <h4 className="font-body-lg text-body-lg font-bold text-on-background mb-sm">Support</h4>
-            <ul className="space-y-2 font-body-sm text-body-sm">
-              <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Contact Us</a></li>
-              <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Help Center</a></li>
-              <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">FAQ</a></li>
-            </ul>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
     </>
   );
 }

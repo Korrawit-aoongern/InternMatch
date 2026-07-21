@@ -1,24 +1,20 @@
 "use client";
 
-import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Mail, Lock, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { checkUserExists } from "@/lib/actions/auth";
+import FormInput from "@/components/ui/FormInput";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [passwordType, setPasswordType] = useState("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [identityError, setIdentityError] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [loginError, setLoginError] = useState("");
-
-  const handleTogglePassword = () => {
-    setPasswordType(passwordType === "password" ? "text" : "password");
-  };
 
   const handleIdentityCheck = async () => {
     if (!email) {
@@ -95,81 +91,32 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Email or Username Input */}
-              <div>
-                <label
-                  className="block text-on-surface mb-sm text-sm font-semibold"
-                  htmlFor="email"
-                >
-                  Email or Username
-                </label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm">
-                    <Mail />
-                  </div>
-                  <input
-                    className={`block w-full rounded-lg border bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:ring-2 focus:ring-primary/20 focus:outline-none transition-shadow text-sm ${
-                      identityError
-                        ? "border-error focus:border-error"
-                        : "border-outline-variant focus:border-primary"
-                    }`}
-                    id="email"
-                    name="email"
-                    placeholder="you@example.com or username"
-                    required
-                    type="text"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onBlur={handleIdentityCheck}
-                  />
-                </div>
-                {isChecking && (
-                  <p className="text-xs text-on-surface-variant mt-1">
-                    Checking account...
-                  </p>
-                )}
-                {identityError && (
-                  <p className="text-error text-xs mt-1 font-medium">
-                    {identityError}
-                  </p>
-                )}
-              </div>
+              <FormInput
+                label="Email or Username"
+                id="email"
+                name="email"
+                type="text"
+                placeholder="you@example.com or username"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={handleIdentityCheck}
+                icon={Mail}
+                error={identityError}
+                isChecking={isChecking}
+              />
 
-              {/* Password Input */}
-              <div>
-                <label
-                  className="block text-on-surface mb-sm text-sm font-semibold"
-                  htmlFor="password"
-                >
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm">
-                    <Lock />
-                  </div>
-                  <input
-                    className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-[40px] text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-shadow text-sm"
-                    id="password"
-                    name="password"
-                    placeholder="••••••••"
-                    required
-                    type={passwordType}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <button
-                    className="absolute inset-y-0 right-0 flex items-center pr-sm text-outline"
-                    type="button"
-                    onClick={handleTogglePassword}
-                  >
-                    {passwordType === "password" ? (
-                      <EyeOff className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors" />
-                    ) : (
-                      <Eye className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors" />
-                    )}
-                  </button>
-                </div>
-              </div>
+              <FormInput
+                label="Password"
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                icon={Lock}
+              />
 
               {/* Remember Me & Button */}
               <div className="flex items-center justify-between">

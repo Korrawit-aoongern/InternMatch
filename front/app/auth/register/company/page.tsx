@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, Mail, User, Lock, Eye, EyeOff, Image } from "lucide-react";
+import { Building2, Mail, User, Lock, Image } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { registerUser } from "@/lib/actions/auth";
+import FormInput from "@/components/ui/FormInput";
 
 export default function RegisterCompanyPage() {
   const router = useRouter();
-  const [passwordType, setPasswordType] = useState("password");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -24,10 +24,6 @@ export default function RegisterCompanyPage() {
     province: "",
     logo: "",
   });
-
-  const handleTogglePassword = () => {
-    setPasswordType(passwordType === "password" ? "text" : "password");
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -113,39 +109,41 @@ export default function RegisterCompanyPage() {
                 <span className="text-xs font-bold text-primary uppercase tracking-wider block mb-4">Account Information</span>
                 
                 <div className="space-y-4">
-                  {/* Email */}
-                  <div>
-                    <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="email">Corporate Email</label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><Mail className="w-5 h-5 text-slate-400" /></div>
-                      <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="email" name="email" placeholder="hr@company.com" required type="email" value={fields.email} onChange={handleChange} />
-                    </div>
-                  </div>
+                  <FormInput
+                    label="Corporate Email"
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="hr@company.com"
+                    required
+                    value={fields.email}
+                    onChange={handleChange}
+                    icon={Mail}
+                  />
 
-                  {/* Username */}
-                  <div>
-                    <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="username">Username</label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><User className="w-5 h-5 text-slate-400" /></div>
-                      <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="username" name="username" placeholder="company_hr" required type="text" value={fields.username} onChange={handleChange} />
-                    </div>
-                  </div>
+                  <FormInput
+                    label="Username"
+                    id="username"
+                    name="username"
+                    type="text"
+                    placeholder="company_hr"
+                    required
+                    value={fields.username}
+                    onChange={handleChange}
+                    icon={User}
+                  />
 
-                  {/* Password */}
-                  <div>
-                    <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="password">Password</label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><Lock className="w-5 h-5 text-slate-400" /></div>
-                      <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-[40px] text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="password" name="password" placeholder="••••••••" required type={passwordType} value={fields.password} onChange={handleChange} />
-                      <button className="absolute inset-y-0 right-0 flex items-center pr-sm text-outline hover:text-on-surface-variant focus:outline-none" type="button" onClick={handleTogglePassword}>
-                        {passwordType === "password" ? (
-                          <EyeOff className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors" />
-                        ) : (
-                          <Eye className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                  <FormInput
+                    label="Password"
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    required
+                    value={fields.password}
+                    onChange={handleChange}
+                    icon={Lock}
+                  />
                 </div>
               </div>
 
@@ -191,14 +189,16 @@ export default function RegisterCompanyPage() {
                 <span className="text-xs font-bold text-primary uppercase tracking-wider block mb-4">Media & Identity</span>
                 
                 <div className="space-y-4">
-                  {/* Logo URL */}
-                  <div>
-                    <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="logo">Company Logo URL</label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><Image className="w-5 h-5 text-slate-400" /></div>
-                      <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="logo" name="logo" placeholder="https://example.com/logo.png" type="url" value={fields.logo} onChange={handleChange} />
-                    </div>
-                  </div>
+                  <FormInput
+                    label="Company Logo URL"
+                    id="logo"
+                    name="logo"
+                    type="url"
+                    placeholder="https://example.com/logo.png"
+                    value={fields.logo}
+                    onChange={handleChange}
+                    icon={Image}
+                  />
                 </div>
               </div>
 

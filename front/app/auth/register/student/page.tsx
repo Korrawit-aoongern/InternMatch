@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Briefcase, Mail, User, Lock, Eye, EyeOff, Image, FileText } from "lucide-react";
+import { Briefcase, Mail, User, Lock, Image, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { registerUser } from "@/lib/actions/auth";
+import FormInput from "@/components/ui/FormInput";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [passwordType, setPasswordType] = useState("password");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -26,10 +26,6 @@ export default function RegisterPage() {
     profile_image: "",
     resume_url: "",
   });
-
-  const handleTogglePassword = () => {
-    setPasswordType(passwordType === "password" ? "text" : "password");
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -117,39 +113,41 @@ export default function RegisterPage() {
                 <span className="text-xs font-bold text-primary uppercase tracking-wider block mb-4">Account Information</span>
                 
                 <div className="space-y-4">
-                  {/* Email */}
-                  <div>
-                    <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="email">Email</label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><Mail className="w-5 h-5 text-slate-400" /></div>
-                      <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="email" name="email" placeholder="you@example.com" required type="email" value={fields.email} onChange={handleChange} />
-                    </div>
-                  </div>
+                  <FormInput
+                    label="Email"
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    required
+                    value={fields.email}
+                    onChange={handleChange}
+                    icon={Mail}
+                  />
 
-                  {/* Username (แก้ปัญหา Not-Null) */}
-                  <div>
-                    <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="username">Username</label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><User className="w-5 h-5 text-slate-400" /></div>
-                      <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="username" name="username" placeholder="hajimon01" required type="text" value={fields.username} onChange={handleChange} />
-                    </div>
-                  </div>
+                  <FormInput
+                    label="Username"
+                    id="username"
+                    name="username"
+                    type="text"
+                    placeholder="hajimon01"
+                    required
+                    value={fields.username}
+                    onChange={handleChange}
+                    icon={User}
+                  />
 
-                  {/* Password */}
-                  <div>
-                    <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="password">Password</label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><Lock className="w-5 h-5 text-slate-400" /></div>
-                      <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-[40px] text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="password" name="password" placeholder="••••••••" required type={passwordType} value={fields.password} onChange={handleChange} />
-                      <button className="absolute inset-y-0 right-0 flex items-center pr-sm text-outline hover:text-on-surface-variant focus:outline-none" type="button" onClick={handleTogglePassword}>
-                        {passwordType === "password" ? (
-                          <EyeOff className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors" />
-                        ) : (
-                          <Eye className="w-5 h-5 text-slate-400 hover:text-slate-600 transition-colors" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                  <FormInput
+                    label="Password"
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    required
+                    value={fields.password}
+                    onChange={handleChange}
+                    icon={Lock}
+                  />
                 </div>
               </div>
 
@@ -208,23 +206,27 @@ export default function RegisterPage() {
                 <span className="text-xs font-bold text-primary uppercase tracking-wider block mb-4">Media & Documents</span>
                 
                 <div className="space-y-4">
-                  {/* Profile Image URL */}
-                  <div>
-                    <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="profile_image">Profile Image URL</label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><Image className="w-5 h-5 text-slate-400" /></div>
-                      <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="profile_image" name="profile_image" placeholder="https://example.com/avatar.jpg" type="url" value={fields.profile_image} onChange={handleChange} />
-                    </div>
-                  </div>
+                  <FormInput
+                    label="Profile Image URL"
+                    id="profile_image"
+                    name="profile_image"
+                    type="url"
+                    placeholder="https://example.com/avatar.jpg"
+                    value={fields.profile_image}
+                    onChange={handleChange}
+                    icon={Image}
+                  />
 
-                  {/* Resume URL */}
-                  <div>
-                    <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="resume_url">Resume PDF URL</label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-sm"><FileText className="w-5 h-5 text-slate-400" /></div>
-                      <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 pl-[40px] pr-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="resume_url" name="resume_url" placeholder="https://example.com/my-resume.pdf" type="url" value={fields.resume_url} onChange={handleChange} />
-                    </div>
-                  </div>
+                  <FormInput
+                    label="Resume PDF URL"
+                    id="resume_url"
+                    name="resume_url"
+                    type="url"
+                    placeholder="https://example.com/my-resume.pdf"
+                    value={fields.resume_url}
+                    onChange={handleChange}
+                    icon={FileText}
+                  />
                 </div>
               </div>
 
