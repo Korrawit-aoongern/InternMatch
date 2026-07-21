@@ -13,7 +13,7 @@ export default function CompanyDashboard({ displayName }: CompanyDashboardProps)
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Welcome, {displayName}!</h2>
-          <p className="text-sm text-slate-500 mt-1">Here's your recruitment status at a glance.</p>
+          <p className="text-sm text-slate-500 mt-1">{"Here's your recruitment status at a glance."}</p>
         </div>
         <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center gap-2">
           <Sparkles className="w-4 h-4" />
