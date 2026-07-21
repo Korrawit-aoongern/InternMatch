@@ -16,7 +16,7 @@ import {
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import SkillsManagement from "@/components/ui/SkillsManagement";
-import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile } from "@/lib/actions/auth";
+import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile, changeUserPassword } from "@/lib/actions/auth";
 
 interface Skill {
   id: string;
@@ -51,7 +51,7 @@ interface StudentProfile {
 
 export default function ProfilePage() {
   const [role, setRole] = useState<"student" | "company">("student");
-  
+
   const [profile, setProfile] = useState<StudentProfile>({
     fullname: "",
     phone: "",
@@ -160,7 +160,7 @@ export default function ProfilePage() {
   };
 
   // ฟังก์ชันเปลี่ยนรหัสผ่าน
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordMsg(null);
 
@@ -179,9 +179,15 @@ export default function ProfilePage() {
       return;
     }
 
-    // จำลองการอัปเดตรหัสผ่าน
-    setPasswordMsg({ text: "อัปเดตรหัสผ่านสำเร็จเรียบร้อย!", type: "success" });
-    setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    // Call the server action to verify current password and update new password
+    const result = await changeUserPassword(passwords.currentPassword, passwords.newPassword);
+
+    if (result.success) {
+      setPasswordMsg({ text: result.message || "อัปเดตรหัสผ่านสำเร็จเรียบร้อย!", type: "success" });
+      setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } else {
+      setPasswordMsg({ text: result.error || "เกิดข้อผิดพลาด", type: "error" });
+    }
   };
 
   const handleSave = async () => {
@@ -246,7 +252,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            
+
             {/* Left Column (4 cols) */}
             <div className="lg:col-span-4 flex flex-col gap-6">
               {/* Personal Info Card */}
@@ -501,11 +507,10 @@ export default function ProfilePage() {
 
                 {passwordMsg && (
                   <div
-                    className={`p-3 rounded-xl text-xs font-semibold mb-4 ${
-                      passwordMsg.type === "error"
-                        ? "bg-red-50 text-red-600 border border-red-200"
-                        : "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                    }`}
+                    className={`p-3 rounded-xl text-xs font-semibold mb-4 ${passwordMsg.type === "error"
+                      ? "bg-red-50 text-red-600 border border-red-200"
+                      : "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                      }`}
                   >
                     {passwordMsg.text}
                   </div>
