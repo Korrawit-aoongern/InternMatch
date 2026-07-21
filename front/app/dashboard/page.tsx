@@ -1,16 +1,7 @@
-import Link from "next/link";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { 
-  LayoutDashboard, 
-  Briefcase, 
   Brain, 
-  MessageSquare, 
-  Settings, 
-  HelpCircle, 
-  LogOut, 
-  Menu, 
-  Bell, 
   Sparkles, 
   Send, 
   Lightbulb, 
@@ -20,6 +11,9 @@ import {
   GitFork, 
   Plus 
 } from "lucide-react";
+import DashboardSidebar from "@/components/layout/DashboardSidebar";
+import DashboardHeader from "@/components/layout/DashboardHeader";
+import StatsCard from "@/components/ui/StatsCard";
 
 interface DecodedToken {
   userId: string;
@@ -55,91 +49,13 @@ export default async function DashboardPage() {
     <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
       
       {/* --- SideNavBar (Web Only) --- */}
-      <nav className="hidden md:flex flex-col h-full border-r border-slate-200 bg-white fixed left-0 top-0 w-[260px] shadow-sm z-50">
-        {/* Header Branding */}
-        <div className="p-6 flex items-center gap-4 border-b border-slate-100">
-          <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold text-lg">
-            IM
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-blue-600 leading-tight">InternMatch</h1>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">AI Career Portal</p>
-          </div>
-        </div>
-
-        {/* Main Nav Links */}
-        <div className="flex-1 py-6 overflow-y-auto">
-          <ul className="space-y-1">
-            <li>
-              <Link href="/dashboard" className="flex items-center gap-4 border-l-4 border-blue-600 bg-blue-50/50 text-blue-700 py-3 px-6 text-sm font-semibold transition-colors">
-                <LayoutDashboard className="w-5 h-5" />
-                Dashboard
-              </Link>
-            </li>
-            <li>
-              <Link href="/applications" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
-                <Briefcase className="w-5 h-5" />
-                Applications
-              </Link>
-            </li>
-            <li>
-              <Link href="/matches" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
-                <Brain className="w-5 h-5" />
-                Matches
-              </Link>
-            </li>
-            <li>
-              <Link href="dashboard/profile" className="flex items-center gap-4 text-slate-500 py-3 px-6 text-sm hover:bg-slate-50 hover:text-slate-800 transition-colors border-l-4 border-transparent">
-                <Settings className="w-5 h-5" />
-                Settings
-              </Link>
-            </li>
-          </ul>
-        </div>
-
-        {/* Footer Nav */}
-        <div className="p-6 border-t border-slate-100 space-y-4">
-          <ul className="space-y-1">
-            <li>
-              <Link href="/help" className="flex items-center gap-4 text-slate-500 py-2.5 px-4 text-sm hover:bg-slate-50 hover:text-slate-800 rounded-lg transition-colors">
-                <HelpCircle className="w-5 h-5" />
-                Help Center
-              </Link>
-            </li>
-            <li>
-              <Link href="/auth/login" className="flex items-center gap-4 text-red-500 py-2.5 px-4 text-sm hover:bg-red-50 rounded-lg transition-colors">
-                <LogOut className="w-5 h-5" />
-                Logout
-              </Link>
-            </li>
-          </ul>
-          <Link href="/internships" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center shadow-sm">
-            Find Internships
-          </Link>
-        </div>
-      </nav>
+      <DashboardSidebar />
 
       {/* --- Main Content Wrapper --- */}
       <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
         
         {/* TopAppBar */}
-        <header className="sticky top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 py-3 shadow-sm">
-          <div className="flex items-center gap-4">
-            <button className="md:hidden text-slate-600 hover:bg-slate-100 rounded-full p-2 transition-colors">
-              <Menu className="w-6 h-6 text-blue-600" />
-            </button>
-            <h1 className="text-lg md:text-xl font-bold text-slate-800">Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="text-slate-500 hover:bg-slate-100 rounded-full p-2 transition-colors relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-            <Link href="/settings" className="w-8 h-8 rounded-full border border-slate-200 overflow-hidden hover:opacity-90 transition-opacity">
-              <img alt="User Profile" className="w-full h-full object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" />
-            </Link>
-          </div>
-        </header>
+        <DashboardHeader title="Dashboard" />
 
         {/* Dashboard Canvas Content */}
         <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-8">
@@ -158,53 +74,29 @@ export default async function DashboardPage() {
 
           {/* Stats Summary Row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Match Score */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-              <div className="relative w-14 h-14 flex items-center justify-center">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                  <path className="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth={3.5}></path>
-                  <path className="text-blue-600" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeDasharray="85, 100" strokeLinecap="round" strokeWidth={3.5}></path>
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-blue-600">85%</div>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Match Score</p>
-                <p className="text-lg font-bold text-slate-800 mt-0.5">High</p>
-              </div>
-            </div>
-
-            {/* Applied */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                <Send className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Applied</p>
-                <p className="text-lg font-bold text-slate-800 mt-0.5">12 Positions</p>
-              </div>
-            </div>
-
-            {/* Recommended */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600">
-                <Lightbulb className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Recommended</p>
-                <p className="text-lg font-bold text-slate-800 mt-0.5">48 Matches</p>
-              </div>
-            </div>
-
-            {/* Alerts */}
-            <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600">
-                <Megaphone className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Alerts</p>
-                <p className="text-lg font-bold text-slate-800 mt-0.5">3 New</p>
-              </div>
-            </div>
+            <StatsCard
+              label="Match Score"
+              value="High"
+              progressPercent={85}
+            />
+            <StatsCard
+              label="Applied"
+              value="12 Positions"
+              icon={Send}
+              variant="blue"
+            />
+            <StatsCard
+              label="Recommended"
+              value="48 Matches"
+              icon={Lightbulb}
+              variant="green"
+            />
+            <StatsCard
+              label="Alerts"
+              value="3 New"
+              icon={Megaphone}
+              variant="red"
+            />
           </div>
 
           {/* Main Grid Section */}

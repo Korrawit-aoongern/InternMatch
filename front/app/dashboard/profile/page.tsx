@@ -1,35 +1,24 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
 import {
-  Sparkles,
-  LayoutDashboard,
-  Briefcase,
-  Brain,
-  MessageSquare,
-  Settings,
-  Search,
-  HelpCircle,
-  LogOut,
-  Menu,
-  Bell,
   Save,
   Camera,
   Edit2,
-  Plus,
-  X,
+  Lock,
+  Eye,
+  EyeOff,
+  ShieldCheck,
   FileText,
   FileUp,
   MoreVertical,
   Globe,
   Code,
   Link2,
-  Lock,
-  Eye,
-  EyeOff,
-  ShieldCheck,
 } from "lucide-react";
+import DashboardSidebar from "@/components/layout/DashboardSidebar";
+import DashboardHeader from "@/components/layout/DashboardHeader";
+import SkillsManagement from "@/components/ui/SkillsManagement";
 
 interface Skill {
   id: string;
@@ -69,7 +58,6 @@ export default function StudentProfilePage() {
     { id: "6", name: "AWS", level: "beginner" },
   ]);
 
-  const [newSkillName, setNewSkillName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   // State สำหรับฟอร์มเปลี่ยนรหัสผ่าน
@@ -99,15 +87,13 @@ export default function StudentProfilePage() {
     setSkills(skills.filter((skill) => skill.id !== id));
   };
 
-  const handleAddSkill = () => {
-    if (!newSkillName.trim()) return;
+  const handleAddSkill = (name: string) => {
     const newSkill: Skill = {
       id: Date.now().toString(),
-      name: newSkillName.trim(),
+      name: name,
       level: "intermediate",
     };
     setSkills([...skills, newSkill]);
-    setNewSkillName("");
   };
 
   // ฟังก์ชันเปลี่ยนรหัสผ่าน
@@ -146,101 +132,11 @@ export default function StudentProfilePage() {
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen flex antialiased w-full">
       {/* SideNavBar */}
-      <nav className="hidden md:flex flex-col h-full border-r border-slate-200 fixed left-0 top-0 w-[260px] bg-white shadow-sm z-50">
-        <div className="p-6 border-b border-slate-100">
-          <h1 className="text-xl font-bold text-blue-600 flex items-center gap-2">
-            <Sparkles className="w-6 h-6 fill-blue-600 text-blue-600" />
-            InternMatch
-          </h1>
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">
-            AI Career Portal
-          </p>
-        </div>
-
-        <div className="flex-1 px-3 mt-4 space-y-1 overflow-y-auto">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-4 text-slate-500 py-3 px-4 hover:bg-slate-50 hover:text-slate-800 rounded-xl transition-colors text-sm font-semibold"
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            Dashboard
-          </Link>
-          <Link
-            href="/applications"
-            className="flex items-center gap-4 text-slate-500 py-3 px-4 hover:bg-slate-50 hover:text-slate-800 rounded-xl transition-colors text-sm font-semibold"
-          >
-            <Briefcase className="w-5 h-5" />
-            Applications
-          </Link>
-          <Link
-            href="/matches"
-            className="flex items-center gap-4 text-slate-500 py-3 px-4 hover:bg-slate-50 hover:text-slate-800 rounded-xl transition-colors text-sm font-semibold"
-          >
-            <Brain className="w-5 h-5" />
-            Matches
-          </Link>
-          <Link
-            href="/profile"
-            className="flex items-center gap-4 border-l-4 border-blue-600 bg-blue-50/50 text-blue-700 py-3 px-4 font-bold rounded-r-xl transition-colors text-sm"
-          >
-            <Settings className="w-5 h-5 fill-blue-600/20" />
-            Settings
-          </Link>
-        </div>
-
-        <div className="p-4">
-          <Link
-            href="/internships"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-4 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
-          >
-            <Search className="w-4 h-4" />
-            Find Internships
-          </Link>
-        </div>
-
-        <div className="px-3 pb-6 border-t border-slate-100 pt-4 mt-auto space-y-1">
-          <Link
-            href="/help"
-            className="flex items-center gap-4 text-slate-500 py-2.5 px-4 hover:bg-slate-50 hover:text-slate-800 rounded-xl transition-colors text-sm font-semibold"
-          >
-            <HelpCircle className="w-5 h-5" />
-            Help Center
-          </Link>
-          <Link
-            href="/logout"
-            className="flex items-center gap-4 text-red-500 py-2.5 px-4 hover:bg-red-50 rounded-xl transition-colors text-sm font-semibold"
-          >
-            <LogOut className="w-5 h-5" />
-            Logout
-          </Link>
-        </div>
-      </nav>
+      <DashboardSidebar />
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 md:ml-[260px] relative">
-        <header className="sticky top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-3">
-            <button className="md:hidden text-blue-600 hover:bg-slate-100 rounded-full p-2 transition-colors">
-              <Menu className="w-6 h-6" />
-            </button>
-            <h2 className="text-lg md:text-xl font-bold text-blue-600">
-              Profile Settings
-            </h2>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="text-slate-500 hover:bg-slate-100 rounded-full p-2 transition-colors relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-            <div className="w-8 h-8 rounded-full border border-slate-200 overflow-hidden ml-2">
-              <img
-                alt="User Profile"
-                className="w-full h-full object-cover"
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=120&auto=format&fit=crop"
-              />
-            </div>
-          </div>
-        </header>
+        <DashboardHeader title="Profile Settings" />
 
         <div className="p-6 md:p-10 max-w-7xl mx-auto w-full flex-1">
           <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -450,81 +346,7 @@ export default function StudentProfilePage() {
             {/* Right Column (8 cols) */}
             <div className="lg:col-span-8 flex flex-col gap-6">
               {/* Skills Management Card */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                    <Brain className="w-5 h-5 text-blue-600" />
-                    Skills &amp; Expertise
-                  </h3>
-                  
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder="Add new skill..."
-                      value={newSkillName}
-                      onChange={(e) => setNewSkillName(e.target.value)}
-                      className="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-500 focus:bg-white"
-                    />
-                    <button
-                      onClick={handleAddSkill}
-                      className="bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold text-xs py-1.5 px-3 rounded-xl transition-colors flex items-center gap-1 border border-blue-200"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      Add
-                    </button>
-                  </div>
-                </div>
-
-                <p className="text-xs text-slate-500 mb-4">
-                  Highlight your technical and soft skills to improve AI matching accuracy.
-                </p>
-
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {skills.map((skill) => {
-                    let badgeBg = "bg-slate-100 text-slate-700 border-slate-200";
-                    let dotBg = "bg-slate-400";
-
-                    if (skill.level === "advanced") {
-                      badgeBg = "bg-emerald-50 text-emerald-800 border-emerald-200";
-                      dotBg = "bg-emerald-600";
-                    } else if (skill.level === "intermediate") {
-                      badgeBg = "bg-blue-50 text-blue-800 border-blue-200";
-                      dotBg = "bg-blue-600";
-                    }
-
-                    return (
-                      <div
-                        key={skill.id}
-                        className={`inline-flex items-center gap-1.5 py-1 px-3 rounded-full border text-xs font-semibold group cursor-default ${badgeBg}`}
-                      >
-                        <span>{skill.name}</span>
-                        <span className={`w-1.5 h-1.5 rounded-full ${dotBg}`}></span>
-                        <button
-                          onClick={() => handleRemoveSkill(skill.id)}
-                          className="ml-1 opacity-40 group-hover:opacity-100 transition-opacity hover:text-red-600"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-6 flex gap-4 pt-3 border-t border-slate-100">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-                    <span className="text-[10px] font-bold text-slate-400">Advanced</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-                    <span className="text-[10px] font-bold text-slate-400">Intermediate</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-slate-400"></span>
-                    <span className="text-[10px] font-bold text-slate-400">Beginner</span>
-                  </div>
-                </div>
-              </div>
+              <SkillsManagement skills={skills} onAddSkill={handleAddSkill} onRemoveSkill={handleRemoveSkill} />
 
               {/* Resume & Portfolio Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
