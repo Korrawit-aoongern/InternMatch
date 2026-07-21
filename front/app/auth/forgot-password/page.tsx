@@ -26,7 +26,7 @@ export default function ForgotPassword() {
             // 🎯 1. เพิ่มเงื่อนไขตรวจสอบว่าถ้าส่งสำเร็จและได้ Token มา ให้เด้งเปลี่ยนหน้า
             if (res.ok && data.token) {
                 // 🎯 สั่งให้ router เปลี่ยนหน้าทันทีโดยไม่ต้องง้อ setTimeout แล้ว
-                router.push(`/reset-password?token=${data.token}`);
+                router.push(`reset-password?token=${data.token}`);
             } else {
                 setMessage(data.message || "ดำเนินการเสร็จสิ้น");
             }

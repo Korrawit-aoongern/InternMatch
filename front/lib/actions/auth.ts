@@ -69,7 +69,7 @@ export async function registerUser(formData: UserRegisterFormData, role: "studen
       .from("users")
       .insert([
         {
-          email: formData.email,
+          email: formData.email.trim().toLowerCase(),
           username: formData.username,
           password: hashedPassword,
           role: role,

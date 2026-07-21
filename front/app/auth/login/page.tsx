@@ -118,7 +118,7 @@ export default function LoginPage() {
                   </label>
                 </div>
                 <div className="text-sm">
-                  <a className="font-semibold text-primary text-sm" href="/forgot-password">
+                  <a className="font-semibold text-primary text-sm" href="forgot-password">
                     Forgot password?
                   </a>
                 </div>
