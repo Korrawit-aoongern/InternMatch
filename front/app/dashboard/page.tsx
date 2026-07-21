@@ -36,7 +36,7 @@ async function getUserData(): Promise<DecodedToken | null> {
       process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
     ) as unknown as DecodedToken;
     return decoded;
-  } catch (err) {
+  } catch {
     return null;
   }
 }
@@ -64,7 +64,7 @@ export default async function DashboardPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
               <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Welcome back, {displayName}!</h2>
-              <p className="text-sm text-slate-500 mt-1">Here's your career progress at a glance.</p>
+              <p className="text-sm text-slate-500 mt-1">{"Here's your career progress at a glance."}</p>
             </div>
             <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
