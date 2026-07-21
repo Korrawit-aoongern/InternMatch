@@ -234,3 +234,87 @@ export async function updateStudentProfile(profileData: {
   }
 }
 
+export async function getCompanyProfile() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
+    
+    if (!token) {
+      return { success: false, error: "Not authenticated" };
+    }
+    
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+    ) as unknown as DecodedToken;
+    
+    const supabase = getSupabaseAdmin();
+    const { data: company, error } = await supabase
+      .from("companies")
+      .select("*")
+      .eq("user_id", decoded.userId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error("Error fetching company profile:", error);
+      return { success: false, error: error.message };
+    }
+    
+    if (!company) {
+      return { success: false, error: "Company profile not found" };
+    }
+    
+    return { success: true, profile: company };
+  } catch (err) {
+    console.error("Error in getCompanyProfile:", err);
+    return { success: false, error: "Failed to get profile" };
+  }
+}
+
+export async function updateCompanyProfile(profileData: {
+  company_name: string;
+  description: string | null;
+  website: string | null;
+  address: string | null;
+  province: string | null;
+  logo: string | null;
+}) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
+    
+    if (!token) {
+      return { success: false, error: "Not authenticated" };
+    }
+    
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+    ) as unknown as DecodedToken;
+    
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase
+      .from("companies")
+      .update({
+        company_name: profileData.company_name,
+        description: profileData.description,
+        website: profileData.website,
+        address: profileData.address,
+        province: profileData.province,
+        logo: profileData.logo,
+      })
+      .eq("user_id", decoded.userId);
+      
+    if (error) {
+      console.error("Error updating company profile:", error);
+      return { success: false, error: error.message };
+    }
+    
+    return { success: true, message: "อัปเดตข้อมูลบริษัทสำเร็จเรียบร้อย! 🎉" };
+  } catch (err) {
+    console.error("Error in updateCompanyProfile:", err);
+    return { success: false, error: "Failed to update profile" };
+  }
+}
+
+
