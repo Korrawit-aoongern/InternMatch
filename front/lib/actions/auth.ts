@@ -371,3 +371,53 @@ export async function uploadProfileImage(formData: FormData) {
 
 
 
+    if (!token) {
+      return { success: false, error: "กรุณาเข้าสู่ระบบก่อนดำเนินการ" };
+    }
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+    ) as unknown as DecodedToken;
+
+    const supabase = getSupabaseAdmin();
+
+    // 1. Fetch user's current password hash
+    const { data: user, error: fetchError } = await supabase
+      .from("users")
+      .select("password")
+      .eq("id", decoded.userId)
+      .single();
+
+    if (fetchError || !user) {
+      console.error("Fetch current password error:", fetchError);
+      return { success: false, error: "ไม่พบข้อมูลผู้ใช้งานหรือเกิดข้อผิดพลาด" };
+    }
+
+    // 2. Compare current password with database hash
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return { success: false, error: "รหัสผ่านปัจจุบันไม่ถูกต้อง" };
+    }
+
+    // 3. Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const newPasswordHash = await bcrypt.hash(newPassword, salt);
+
+    // 4. Update password in database
+    const { error: updateError } = await supabase
+      .from("users")
+      .update({ password: newPasswordHash })
+      .eq("id", decoded.userId);
+
+    if (updateError) {
+      console.error("Update password error:", updateError);
+      return { success: false, error: `ไม่สามารถอัปเดตรหัสผ่านใหม่ได้: ${updateError.message}` };
+    }
+
+    return { success: true, message: "อัปเดตรหัสผ่านใหม่สำเร็จเรียบร้อย! 🎉" };
+  } catch (err) {
+    console.error("Error in changeUserPassword action:", err);
+    return { success: false, error: "เกิดข้อผิดพลาดในการตรวจสอบหรืออัปเดตรหัสผ่าน" };
+  }
+}
