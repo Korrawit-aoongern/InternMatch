@@ -127,3 +127,10 @@ body {
   color: var(--color-on-background);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
+
+/* Hide default browser password reveal/clear buttons */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none;
+}
+

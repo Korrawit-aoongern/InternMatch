@@ -22,6 +22,7 @@ export default function FormInput({
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === "password";
   const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+  const hasValue = props.value !== undefined && props.value !== null && props.value !== "";
 
   return (
     <div className="w-full">
@@ -43,7 +44,7 @@ export default function FormInput({
           } ${className}`}
           {...props}
         />
-        {isPassword && (
+        {isPassword && hasValue && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}

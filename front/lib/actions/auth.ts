@@ -317,4 +317,57 @@ export async function updateCompanyProfile(profileData: {
   }
 }
 
+export async function uploadProfileImage(formData: FormData) {
+  try {
+    const file = formData.get("file") as File;
+    if (!file) {
+      return { success: false, error: "No file provided" };
+    }
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const supabase = getSupabaseAdmin();
+
+    // Ensure the bucket 'avatars' exists (or ignore error if it already does)
+    try {
+      await supabase.storage.createBucket("avatars", {
+        public: true,
+      });
+    } catch {
+      // Ignore if bucket already exists
+    }
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    const filePath = `profile-images/${fileName}`;
+
+    const { error } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        duplex: "half",
+      });
+
+    if (error) {
+      console.error("Storage upload error:", error);
+      return { success: false, error: error.message };
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(filePath);
+
+    return { success: true, url: publicUrl };
+  } catch (err) {
+    console.error("Error in uploadProfileImage server action:", err);
+    return { 
+      success: false, 
+      error: err instanceof Error ? err.message : "Failed to upload image" 
+    };
+  }
+}
+
+
 

@@ -16,7 +16,8 @@ import {
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import SkillsManagement from "@/components/ui/SkillsManagement";
-import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile } from "@/lib/actions/auth";
+import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile, uploadProfileImage } from "@/lib/actions/auth";
+
 
 interface Skill {
   id: string;
@@ -51,6 +52,38 @@ interface StudentProfile {
 
 export default function ProfilePage() {
   const [role, setRole] = useState<"student" | "company">("student");
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setIsSaving(true);
+    try {
+      const res = await uploadProfileImage(formData);
+      if (res.success && res.url) {
+        setProfile((prev) => ({
+          ...prev,
+          [role === "company" ? "logo" : "profile_image"]: res.url,
+        }));
+      } else {
+        alert("Upload failed: " + res.error);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("An error occurred during file upload.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   
   const [profile, setProfile] = useState<StudentProfile>({
     fullname: "",
@@ -253,7 +286,10 @@ export default function ProfilePage() {
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 flex flex-col items-center text-center relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-blue-100 to-indigo-100"></div>
 
-                <div className="relative mt-4 group cursor-pointer">
+                <div 
+                  onClick={handleAvatarClick}
+                  className="relative mt-4 group cursor-pointer"
+                >
                   <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden shadow-sm relative">
                     <img
                       className="w-full h-full object-cover"
@@ -265,6 +301,14 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="hidden"
+                />
+
 
                 <h3 className="text-xl font-bold text-slate-800 mt-4">
                   {role === "company" ? profile.company_name : profile.fullname}
@@ -376,21 +420,7 @@ export default function ProfilePage() {
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                          Profile Image URL
-                        </label>
-                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                          <input
-                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
-                            type="text"
-                            name="profile_image"
-                            value={profile.profile_image}
-                            onChange={handleInputChange}
-                          />
-                          <Edit2 className="w-4 h-4 text-slate-400" />
-                        </div>
-                      </div>
+
                     </>
                   ) : (
                     <>
@@ -472,21 +502,7 @@ export default function ProfilePage() {
                         </div>
                       </div>
 
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                          Company Logo URL
-                        </label>
-                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                          <input
-                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
-                            type="text"
-                            name="logo"
-                            value={profile.logo}
-                            onChange={handleInputChange}
-                          />
-                          <Edit2 className="w-4 h-4 text-slate-400" />
-                        </div>
-                      </div>
+
                     </>
                   )}
                 </div>
