@@ -368,8 +368,10 @@ export async function uploadProfileImage(formData: FormData) {
     };
   }
 }
-
-
+export async function changeUserPassword(currentPassword: string, newPassword: string) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
 
     if (!token) {
       return { success: false, error: "กรุณาเข้าสู่ระบบก่อนดำเนินการ" };

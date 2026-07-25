@@ -16,7 +16,7 @@ import {
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import SkillsManagement from "@/components/ui/SkillsManagement";
-import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile } from "@/lib/actions/auth";
+import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile, uploadProfileImage, changeUserPassword } from "@/lib/actions/auth";
 
 interface Skill {
   id: string;
@@ -51,6 +51,38 @@ interface StudentProfile {
 
 export default function ProfilePage() {
   const [role, setRole] = useState<"student" | "company">("student");
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setIsSaving(true);
+    try {
+      const res = await uploadProfileImage(formData);
+      if (res.success && res.url) {
+        setProfile((prev) => ({
+          ...prev,
+          [role === "company" ? "logo" : "profile_image"]: res.url,
+        }));
+      } else {
+        alert("Upload failed: " + res.error);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("An error occurred during file upload.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   
   const [profile, setProfile] = useState<StudentProfile>({
     fullname: "",
