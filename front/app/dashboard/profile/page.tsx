@@ -17,11 +17,13 @@ import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import SkillsManagement from "@/components/ui/SkillsManagement";
 import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile, uploadProfileImage, changeUserPassword } from "@/lib/actions/auth";
+import { getStudentSkills, updateStudentSkills } from "@/lib/actions/skills";
 
 interface Skill {
   id: string;
+  skill_id: number;
   name: string;
-  level: "advanced" | "intermediate" | "beginner";
+  level: "Advanced" | "Intermediate" | "Beginner";
 }
 
 interface StudentProfile {
@@ -106,14 +108,7 @@ export default function ProfilePage() {
     portfolio: "",
   });
 
-  const [skills, setSkills] = useState<Skill[]>([
-    { id: "1", name: "React.js", level: "advanced" },
-    { id: "2", name: "TypeScript", level: "advanced" },
-    { id: "3", name: "Node.js", level: "intermediate" },
-    { id: "4", name: "UI/UX Design", level: "intermediate" },
-    { id: "5", name: "Python", level: "beginner" },
-    { id: "6", name: "AWS", level: "beginner" },
-  ]);
+  const [skills, setSkills] = useState<Skill[]>([]);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -152,6 +147,12 @@ export default function ProfilePage() {
           profile_image: p.profile_image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop",
           resume_url: p.resume_url || "",
         }));
+
+        // โหลดทักษะของนักศึกษาจริงๆ จากฐานข้อมูล
+        const skillsRes = await getStudentSkills();
+        if (skillsRes.success && skillsRes.skills) {
+          setSkills(skillsRes.skills as Skill[]);
+        }
         return;
       }
 
@@ -178,18 +179,7 @@ export default function ProfilePage() {
     setPasswords((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleRemoveSkill = (id: string) => {
-    setSkills(skills.filter((skill) => skill.id !== id));
-  };
-
-  const handleAddSkill = (name: string) => {
-    const newSkill: Skill = {
-      id: Date.now().toString(),
-      name: name,
-      level: "intermediate",
-    };
-    setSkills([...skills, newSkill]);
-  };
+  // Callbacks for skill management are now handled internally by SkillsManagement component
 
   // ฟังก์ชันเปลี่ยนรหัสผ่าน
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -236,6 +226,18 @@ export default function ProfilePage() {
         profile_image: profile.profile_image || null,
         resume_url: profile.resume_url || null,
       });
+
+      if (res.success) {
+        // บันทึกทักษะของนักศึกษาลงฐานข้อมูล
+        const skillsToSave = skills.map((s) => ({
+          skill_id: s.skill_id,
+          level: s.level,
+        }));
+        const skillsRes = await updateStudentSkills(skillsToSave);
+        if (!skillsRes.success) {
+          res = { success: false, error: `โปรไฟล์บันทึกสำเร็จ แต่ทักษะบันทึกไม่สำเร็จ: ${skillsRes.error}` };
+        }
+      }
     } else {
       res = await updateCompanyProfile({
         company_name: profile.company_name,
@@ -621,7 +623,7 @@ export default function ProfilePage() {
             {/* Right Column (8 cols) */}
             <div className="lg:col-span-8 flex flex-col gap-6">
               {role === "student" && (
-                <SkillsManagement skills={skills} onAddSkill={handleAddSkill} onRemoveSkill={handleRemoveSkill} />
+                <SkillsManagement skills={skills} setSkills={setSkills} />
               )}
 
               {/* Resume & Portfolio Section */}
