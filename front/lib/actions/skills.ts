@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "../supabase/server";
 
 interface DecodedToken {
@@ -12,8 +13,18 @@ interface DecodedToken {
   role?: string;
 }
 
+interface StudentSkillQueryResult {
+  id: number;
+  level: string;
+  skill_id: number;
+  skills: {
+    name: string;
+    category: string;
+  } | null;
+}
+
 // Helper to authenticate user and get their student ID
-async function getCurrentStudentId(supabase: any): Promise<string> {
+async function getCurrentStudentId(supabase: SupabaseClient): Promise<string> {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
 
@@ -59,9 +70,12 @@ export async function getMasterSkills() {
     }
 
     return { success: true, skills: data || [] };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Exception in getMasterSkills:", err);
-    return { success: false, error: err.message || "Failed to fetch master skills list" };
+    return { 
+      success: false, 
+      error: err instanceof Error ? err.message : "Failed to fetch master skills list" 
+    };
   }
 }
 
@@ -89,8 +103,9 @@ export async function getStudentSkills() {
       return { success: false, error: error.message };
     }
 
-    // Map nested join results to flat object format
-    const mappedSkills = (data || []).map((item: any) => ({
+    // Map nested join results to flat object format with explicit type casting
+    const queryResults = (data || []) as unknown as StudentSkillQueryResult[];
+    const mappedSkills = queryResults.map((item) => ({
       id: item.id.toString(),
       skill_id: Number(item.skill_id),
       name: item.skills?.name || "Unknown",
@@ -99,9 +114,12 @@ export async function getStudentSkills() {
     }));
 
     return { success: true, skills: mappedSkills };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Exception in getStudentSkills:", err);
-    return { success: false, error: err.message || "Failed to fetch student skills" };
+    return { 
+      success: false, 
+      error: err instanceof Error ? err.message : "Failed to fetch student skills" 
+    };
   }
 }
 
@@ -152,8 +170,11 @@ export async function updateStudentSkills(selectedSkills: { skill_id: number; le
     }
 
     return { success: true, message: "อัปเดตทักษะและความสามารถสำเร็จเรียบร้อย! 🎉", count: data?.length || 0 };
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Exception in updateStudentSkills:", err);
-    return { success: false, error: err.message || "Failed to update student skills" };
+    return { 
+      success: false, 
+      error: err instanceof Error ? err.message : "Failed to update student skills" 
+    };
   }
 }

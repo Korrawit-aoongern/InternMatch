@@ -40,7 +40,10 @@ interface SkillsManagementProps {
 }
 
 // Meta configurations for categories
-const categoryDetails: Record<string, { label: string; icon: any; color: string; bg: string }> = {
+const categoryDetails: Record<
+  string,
+  { label: string; icon: React.ComponentType<{ className?: string }>; color: string; bg: string }
+> = {
   "Programming Language": { label: "Programming Language", icon: Terminal, color: "text-purple-600 border-purple-200", bg: "from-purple-500/8 to-transparent" },
   "Frontend": { label: "🌐 Frontend", icon: Layout, color: "text-blue-600 border-blue-200", bg: "from-blue-500/8 to-transparent" },
   "Backend": { label: "⚙️ Backend", icon: Server, color: "text-emerald-600 border-emerald-200", bg: "from-emerald-500/8 to-transparent" },
@@ -74,9 +77,9 @@ export default function SkillsManagement({ skills, setSkills }: SkillsManagement
   // Track open/closed state for each category (default is all closed initially)
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
-  // Helper to check if a category is expanded (default to FALSE since we want them closed until clicked)
+  // Helper to check if a category is expanded
   const isExpanded = (categoryName: string) => {
-    return expandedCategories[categoryName] === true; // Closed by default
+    return expandedCategories[categoryName] === true;
   };
 
   // Toggle category expansion
@@ -127,7 +130,7 @@ export default function SkillsManagement({ skills, setSkills }: SkillsManagement
       setSkills([
         ...skills,
         {
-          id: `new-${Date.now()}`,
+          id: `new-${masterSkill.id}`, // Deterministic and pure unique key
           skill_id: masterSkill.id,
           name: masterSkill.name,
           level: "Intermediate",
@@ -182,7 +185,8 @@ export default function SkillsManagement({ skills, setSkills }: SkillsManagement
     const collapsed: [string, typeof masterSkills][] = [];
 
     Object.entries(filteredGroupedSkills).forEach(([catName, catSkills]) => {
-      if (isExpanded(catName)) {
+      // Use direct object state lookup here to avoid hook dependencies linting warnings
+      if (expandedCategories[catName] === true) {
         expanded.push([catName, catSkills]);
       } else {
         collapsed.push([catName, catSkills]);
@@ -373,7 +377,7 @@ export default function SkillsManagement({ skills, setSkills }: SkillsManagement
 
       {/* Selected Skills Summary Section */}
       {skills.length > 0 && (
-        <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 animate-fadeIn">
+        <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
           <h4 className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-wider flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             ทักษะที่คุณเลือกไว้ ({skills.length})

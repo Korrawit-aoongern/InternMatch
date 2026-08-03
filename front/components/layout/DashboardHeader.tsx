@@ -15,9 +15,8 @@ export default function DashboardHeader({ title, avatarUrl }: DashboardHeaderPro
   const [avatar, setAvatar] = useState<string | null>(null);
 
   useEffect(() => {
-    // If avatarUrl is explicitly provided (e.g. from parent component state), use it
+    // If avatarUrl is explicitly provided, we do not need to fetch it from the database
     if (avatarUrl) {
-      setAvatar(avatarUrl);
       return;
     }
 
@@ -48,6 +47,8 @@ export default function DashboardHeader({ title, avatarUrl }: DashboardHeaderPro
     loadProfileAvatar();
   }, [avatarUrl]);
 
+  const displayAvatar = avatarUrl || avatar || defaultAvatar;
+
   return (
     <header className="sticky top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 py-3 shadow-sm">
       <div className="flex items-center gap-4">
@@ -62,7 +63,7 @@ export default function DashboardHeader({ title, avatarUrl }: DashboardHeaderPro
           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
         <Link href="/dashboard/profile" className="w-8 h-8 rounded-full border border-slate-200 overflow-hidden hover:opacity-90 transition-opacity">
-          <img alt="User Profile" className="w-full h-full object-cover" src={avatar || avatarUrl || defaultAvatar} />
+          <img alt="User Profile" className="w-full h-full object-cover" src={displayAvatar} />
         </Link>
       </div>
     </header>
