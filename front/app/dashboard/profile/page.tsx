@@ -263,7 +263,7 @@ export default function ProfilePage() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 md:ml-[260px] relative">
-        <DashboardHeader title="Profile Settings" />
+        <DashboardHeader title="Profile Settings" avatarUrl={role === "company" ? profile.logo : profile.profile_image} />
 
         <div className="p-6 md:p-10 max-w-7xl mx-auto w-full flex-1">
           <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
