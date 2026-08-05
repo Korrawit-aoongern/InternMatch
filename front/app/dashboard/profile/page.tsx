@@ -301,7 +301,7 @@ export default function ProfilePage() {
                     <img
                       className="w-full h-full object-cover"
                       alt={role === "company" ? "Company Profile Logo" : "Student Profile Avatar"}
-                      src={role === "company" ? (profile.logo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=300&auto=format&fit=crop") : (profile.profile_image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop")}
+                      src={role === "company" ? (profile.logo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=300&auto=format&fit=crop") : (profile.profile_image || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original")}
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <Camera className="w-8 h-8 text-white" />
