@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, Bell } from "lucide-react";
+import { Menu, Bell, User } from "lucide-react";
 import { getStudentProfile, getCompanyProfile } from "@/lib/actions/auth";
 
 interface DashboardHeaderProps {
@@ -11,7 +11,6 @@ interface DashboardHeaderProps {
 }
 
 export default function DashboardHeader({ title, avatarUrl }: DashboardHeaderProps) {
-  const defaultAvatar = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop";
   const [avatar, setAvatar] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,7 +46,7 @@ export default function DashboardHeader({ title, avatarUrl }: DashboardHeaderPro
     loadProfileAvatar();
   }, [avatarUrl]);
 
-  const displayAvatar = avatarUrl || avatar || defaultAvatar;
+  const displayAvatar = avatarUrl || avatar;
 
   return (
     <header className="sticky top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 py-3 shadow-sm">
@@ -62,8 +61,12 @@ export default function DashboardHeader({ title, avatarUrl }: DashboardHeaderPro
           <Bell className="w-5 h-5" />
           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
-        <Link href="/dashboard/profile" className="w-8 h-8 rounded-full border border-slate-200 overflow-hidden hover:opacity-90 transition-opacity">
-          <img alt="User Profile" className="w-full h-full object-cover" src={displayAvatar} />
+        <Link href="/dashboard/profile" className="w-8 h-8 rounded-full border border-slate-200 overflow-hidden hover:opacity-90 transition-opacity flex items-center justify-center bg-slate-100 text-slate-500">
+          {displayAvatar ? (
+            <img alt="User Profile" className="w-full h-full object-cover" src={displayAvatar} />
+          ) : (
+            <User className="w-4 h-4" />
+          )}
         </Link>
       </div>
     </header>

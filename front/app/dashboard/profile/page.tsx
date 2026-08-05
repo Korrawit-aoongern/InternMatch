@@ -12,6 +12,7 @@ import {
   Globe,
   Code,
   Link2,
+  User,
 } from "lucide-react";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
@@ -144,7 +145,7 @@ export default function ProfilePage() {
           faculty: p.faculty || "",
           major: p.major || "",
           study_year: p.study_year || 1,
-          profile_image: p.profile_image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop",
+          profile_image: p.profile_image || "",
           resume_url: p.resume_url || "",
         }));
 
@@ -167,7 +168,7 @@ export default function ProfilePage() {
           website: c.website || "",
           address: c.address || "",
           province: c.province || "",
-          logo: c.logo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=300&auto=format&fit=crop",
+          logo: c.logo || "",
         }));
       }
     };
@@ -297,12 +298,30 @@ export default function ProfilePage() {
                   onClick={handleAvatarClick}
                   className="relative mt-4 group cursor-pointer"
                 >
-                  <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden shadow-sm relative">
-                    <img
-                      className="w-full h-full object-cover"
-                      alt={role === "company" ? "Company Profile Logo" : "Student Profile Avatar"}
-                      src={role === "company" ? (profile.logo || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=300&auto=format&fit=crop") : (profile.profile_image || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop")}
-                    />
+                  <div className="w-32 h-32 rounded-full border-4 border-white overflow-hidden shadow-sm relative bg-slate-100 flex items-center justify-center text-slate-400">
+                    {role === "company" ? (
+                      profile.logo ? (
+                        <img
+                          className="w-full h-full object-cover"
+                          alt="Company Profile Logo"
+                          src={profile.logo}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-bold text-3xl">
+                          {profile.company_name ? profile.company_name.charAt(0).toUpperCase() : "C"}
+                        </div>
+                      )
+                    ) : (
+                      profile.profile_image ? (
+                        <img
+                          className="w-full h-full object-cover"
+                          alt="Student Profile Avatar"
+                          src={profile.profile_image}
+                        />
+                      ) : (
+                        <User className="w-12 h-12 text-slate-400" />
+                      )
+                    )}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <Camera className="w-8 h-8 text-white" />
                     </div>

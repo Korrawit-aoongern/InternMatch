@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
     try {
-        const { identity, password } = await request.json();
+        const { identity, password, rememberMe } = await request.json();
         
         if (!identity || !password) {
             return NextResponse.json({ message: "กรุณากรอกข้อมูลให้ครบถ้วน" }, { status: 400 });
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: "เกิดข้อผิดพลาดในการกำหนดค่าระบบความปลอดภัยหลังบ้าน" }, { status: 500 });
         }
 
-        // 5. ออกตั๋ว JWT พร้อมข้อมูลผู้ใช้งานครบถ้วน
+        // 5. ออกตั๋ว JWT พร้อมข้อมูลผู้ใช้งานครบถ้วน (หมดอายุใน 30 วันหากติ๊ก Remember Me, ไม่เช่นนั้นหมดอายุใน 1 วัน)
         const token = jwt.sign(
             { 
                 userId: user.id, 
@@ -70,19 +70,24 @@ export async function POST(request: NextRequest) {
                 fullname: fullname
             },
             jwtSecret,
-            { expiresIn: "7d" }
+            { expiresIn: rememberMe ? "30d" : "1d" }
         );
 
         const response = NextResponse.json({ success: true, role: user.role }, { status: 200 });
 
-        // 6. บันทึก Cookie ลงในเว็บบราวเซอร์
-        response.cookies.set("auth_token", token, {
+        // 6. บันทึก Cookie ลงในเว็บบราวเซอร์ (มีอายุ 30 วันหากติ๊ก Remember Me, หรือเป็น session cookie หากไม่ติ๊ก)
+        const cookieOptions: any = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
-            maxAge: 60 * 60 * 24 * 7,
             path: "/",
-        });
+        };
+
+        if (rememberMe) {
+            cookieOptions.maxAge = 60 * 60 * 24 * 30; // 30 วัน
+        }
+
+        response.cookies.set("auth_token", token, cookieOptions);
 
         return response;
 

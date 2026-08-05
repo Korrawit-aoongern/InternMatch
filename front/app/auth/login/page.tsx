@@ -1,7 +1,7 @@
 "use client";
 
 import { Mail, Lock, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import FormInput from "@/components/ui/FormInput";
@@ -10,10 +10,19 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
 
   const [identityError, setIdentityError] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [loginError, setLoginError] = useState("");
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("remembered_email");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleIdentityCheck = async () => {
     setIdentityError("");
@@ -30,7 +39,7 @@ export default function LoginPage() {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identity: email, password: password }),
+        body: JSON.stringify({ identity: email, password: password, rememberMe }),
       });
 
       const result = await response.json();
@@ -38,6 +47,12 @@ export default function LoginPage() {
       if (!response.ok) {
         setLoginError(result.message || "Invalid password or login failed.");
         return;
+      }
+
+      if (rememberMe) {
+        localStorage.setItem("remembered_email", email);
+      } else {
+        localStorage.removeItem("remembered_email");
       }
 
       router.push("/dashboard");
@@ -48,10 +63,32 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex h-full min-h-screen flex-col lg:flex-row bg-background text-on-background">
+    <div className="relative flex h-full min-h-screen flex-col lg:flex-row bg-background text-on-background">
+      {/* Logo for mobile/tablet */}
+      <div className="absolute top-6 left-6 z-50 lg:hidden">
+        <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+          <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center font-bold text-lg shadow-sm">
+            IM
+          </div>
+          <div className="flex flex-col">
+            <span className="text-lg font-bold text-blue-600 leading-tight">InternMatch</span>
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">AI Career Portal</span>
+          </div>
+        </Link>
+      </div>
+
       {/* Branding Section (Left) */}
       <div className="relative hidden w-full lg:w-1/2 lg:flex lg:flex-col lg:justify-between bg-gradient-to-br from-primary to-primary-container p-3xl overflow-hidden">
-        {/* ... (คงส่วนนี้ไว้) ... */}
+        <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity self-start z-50">
+          <div className="w-10 h-10 bg-white text-blue-600 rounded-xl flex items-center justify-center font-bold text-lg shadow-sm">
+            IM
+          </div>
+          <div className="flex flex-col">
+            <span className="text-lg font-bold text-white leading-tight">InternMatch</span>
+            <span className="text-[10px] text-white/70 font-bold uppercase tracking-wider">AI Career Portal</span>
+          </div>
+        </Link>
+        <div></div> {/* Spacer */}
       </div>
 
       {/* Login Form Section (Right) */}
@@ -106,9 +143,11 @@ export default function LoginPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <input
-                    className="h-4 w-4 rounded border-outline-variant text-primary"
+                    className="h-4 w-4 rounded border-outline-variant text-primary cursor-pointer"
                     id="remember-me"
                     type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
                   />
                   <label
                     className="ml-sm block text-on-surface-variant text-sm select-none cursor-pointer"
