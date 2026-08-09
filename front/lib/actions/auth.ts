@@ -164,7 +164,7 @@ export async function getStudentProfile() {
     const supabase = getSupabaseAdmin();
     const { data: student, error } = await supabase
       .from("students")
-      .select("*")
+      .select("*, users (email)")
       .eq("user_id", decoded.userId)
       .maybeSingle();
       

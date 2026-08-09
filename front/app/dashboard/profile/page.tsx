@@ -38,6 +38,7 @@ interface StudentProfile {
   study_year: number;
   profile_image: string;
   resume_url: string;
+  email: string;
 
   // Company-specific
   company_name: string;
@@ -97,6 +98,7 @@ export default function ProfilePage() {
     study_year: 1,
     profile_image: "",
     resume_url: "",
+    email: "",
 
     company_name: "",
     description: "",
@@ -152,6 +154,9 @@ export default function ProfilePage() {
           });
         }
 
+        // โหลดข้อมูลอีเมล
+        const userEmail = p.users ? (Array.isArray(p.users) ? p.users[0]?.email : (p.users as any).email) : "";
+
         setProfile((prev) => ({
           ...prev,
           fullname: p.fullname || "",
@@ -165,6 +170,7 @@ export default function ProfilePage() {
           linkedin: linkedinUrl,
           github: githubUrl,
           portfolio: portfolioUrl,
+          email: userEmail || "",
         }));
 
         // โหลดทักษะของนักศึกษาจริงๆ จากฐานข้อมูล
@@ -393,14 +399,30 @@ export default function ProfilePage() {
 
                       <div>
                         <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                          Major
+                          Email Address
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-100 opacity-70 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-500 cursor-not-allowed"
+                            type="email"
+                            name="email"
+                            value={profile.email}
+                            disabled
+                          />
+                          <Lock className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Phone Number
                         </label>
                         <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
                           <input
                             className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
                             type="text"
-                            name="major"
-                            value={profile.major}
+                            name="phone"
+                            value={profile.phone}
                             onChange={handleInputChange}
                           />
                           <Edit2 className="w-4 h-4 text-slate-400" />
@@ -441,6 +463,22 @@ export default function ProfilePage() {
 
                       <div>
                         <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Major
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="major"
+                            value={profile.major}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                           Study Year
                         </label>
                         <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
@@ -456,22 +494,6 @@ export default function ProfilePage() {
                             <option value={4}>Year 4</option>
                             <option value={5}>Year 5+</option>
                           </select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                          Phone Number
-                        </label>
-                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                          <input
-                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
-                            type="text"
-                            name="phone"
-                            value={profile.phone}
-                            onChange={handleInputChange}
-                          />
-                          <Edit2 className="w-4 h-4 text-slate-400" />
                         </div>
                       </div>
 
