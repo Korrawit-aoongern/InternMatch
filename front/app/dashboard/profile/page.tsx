@@ -19,6 +19,7 @@ import DashboardHeader from "@/components/layout/DashboardHeader";
 import SkillsManagement from "@/components/ui/SkillsManagement";
 import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile, uploadProfileImage, changeUserPassword } from "@/lib/actions/auth";
 import { getStudentSkills, updateStudentSkills } from "@/lib/actions/skills";
+import { getStudentPortfolios, updateStudentPortfolios } from "@/lib/actions/portfolios";
 
 interface Skill {
   id: string;
@@ -137,6 +138,20 @@ export default function ProfilePage() {
       if (studentRes.success && studentRes.profile) {
         setRole("student");
         const p = studentRes.profile;
+
+        // โหลด Portfolio/External Links ของนักศึกษาจริงๆ จากฐานข้อมูล
+        const portfoliosRes = await getStudentPortfolios();
+        let linkedinUrl = "";
+        let githubUrl = "";
+        let portfolioUrl = "";
+        if (portfoliosRes.success && portfoliosRes.portfolios) {
+          portfoliosRes.portfolios.forEach((port: any) => {
+            if (port.title === "LinkedIn") linkedinUrl = port.url || "";
+            else if (port.title === "GitHub") githubUrl = port.url || "";
+            else if (port.title === "Portfolio") portfolioUrl = port.url || "";
+          });
+        }
+
         setProfile((prev) => ({
           ...prev,
           fullname: p.fullname || "",
@@ -147,6 +162,9 @@ export default function ProfilePage() {
           study_year: p.study_year || 1,
           profile_image: p.profile_image || "",
           resume_url: p.resume_url || "",
+          linkedin: linkedinUrl,
+          github: githubUrl,
+          portfolio: portfolioUrl,
         }));
 
         // โหลดทักษะของนักศึกษาจริงๆ จากฐานข้อมูล
@@ -235,7 +253,18 @@ export default function ProfilePage() {
           level: s.level,
         }));
         const skillsRes = await updateStudentSkills(skillsToSave);
-        if (!skillsRes.success) {
+        if (skillsRes.success) {
+          // บันทึกลิงก์ภายนอกลงฐานข้อมูล portfolios
+          const portfoliosToSave = [
+            { title: "LinkedIn", url: profile.linkedin },
+            { title: "GitHub", url: profile.github },
+            { title: "Portfolio", url: profile.portfolio },
+          ];
+          const portfoliosRes = await updateStudentPortfolios(portfoliosToSave);
+          if (!portfoliosRes.success) {
+            res = { success: false, error: `โปรไฟล์และทักษะบันทึกสำเร็จ แต่ลิงก์ภายนอกบันทึกไม่สำเร็จ: ${portfoliosRes.error}` };
+          }
+        } else {
           res = { success: false, error: `โปรไฟล์บันทึกสำเร็จ แต่ทักษะบันทึกไม่สำเร็จ: ${skillsRes.error}` };
         }
       }
