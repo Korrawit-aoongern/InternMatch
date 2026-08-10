@@ -371,9 +371,33 @@ export async function uploadProfileImage(formData: FormData) {
 
 export async function uploadResume(formData: FormData) {
   try {
-    const file = formData.get("file") as File;
-    if (!file) {
-      return { success: false, error: "No file provided" };
+    // 1. Authenticate user
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
+    if (!token) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    try {
+      jwt.verify(
+        token,
+        process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+      );
+    } catch (err) {
+      console.error("JWT verification failed:", err);
+      return { success: false, error: "Invalid token" };
+    }
+
+    // 2. Validate file existence and type
+    const file = formData.get("file");
+    if (!file || !(file instanceof File)) {
+      return { success: false, error: "No file or invalid file provided" };
+    }
+
+    // 3. Limit file size (10MB)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      return { success: false, error: "File size exceeds 10MB limit" };
     }
 
     const bytes = await file.arrayBuffer();
@@ -390,7 +414,8 @@ export async function uploadResume(formData: FormData) {
       // Ignore if bucket already exists
     }
 
-    const fileExt = file.name.split(".").pop();
+    const parts = file.name.split(".");
+    const fileExt = parts.length > 1 ? parts.pop() : "bin";
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
     const filePath = `student-resumes/${fileName}`;
 
@@ -403,7 +428,7 @@ export async function uploadResume(formData: FormData) {
 
     if (error) {
       console.error("Storage upload error:", error);
-      return { success: false, error: error.message };
+      return { success: false, error: "Failed to upload file to storage" };
     }
 
     // Get public URL
