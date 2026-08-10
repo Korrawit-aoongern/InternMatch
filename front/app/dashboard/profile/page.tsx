@@ -13,11 +13,14 @@ import {
   Code,
   Link2,
   User,
+  Trash2,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import SkillsManagement from "@/components/ui/SkillsManagement";
-import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile, uploadProfileImage, changeUserPassword } from "@/lib/actions/auth";
+import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile, uploadProfileImage, changeUserPassword, uploadResume } from "@/lib/actions/auth";
 import { getStudentSkills, updateStudentSkills } from "@/lib/actions/skills";
 import { getStudentPortfolios, updateStudentPortfolios } from "@/lib/actions/portfolios";
 
@@ -57,6 +60,8 @@ interface StudentProfile {
 export default function ProfilePage() {
   const [role, setRole] = useState<"student" | "company">("student");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const resumeInputRef = React.useRef<HTMLInputElement>(null);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -85,6 +90,45 @@ export default function ProfilePage() {
       alert("An error occurred during file upload.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleResumeUploadClick = () => {
+    resumeInputRef.current?.click();
+  };
+
+  const handleResumeFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setIsUploadingResume(true);
+    try {
+      const res = await uploadResume(formData);
+      if (res.success && res.url) {
+        setProfile((prev) => ({
+          ...prev,
+          resume_url: res.url || "",
+        }));
+      } else {
+        alert("Upload failed: " + res.error);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("An error occurred during file upload.");
+    } finally {
+      setIsUploadingResume(false);
+    }
+  };
+
+  const handleDeleteResume = () => {
+    if (confirm("Are you sure you want to delete your resume?")) {
+      setProfile((prev) => ({
+        ...prev,
+        resume_url: "",
+      }));
     }
   };
 
@@ -708,10 +752,10 @@ export default function ProfilePage() {
                       </h3>
 
                       {profile.resume_url ? (
-                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-3 overflow-hidden">
-                            <div className="bg-red-100 text-red-600 p-2 rounded-lg flex-shrink-0">
-                              <FileText className="w-5 h-5" />
+                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/60 flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3 overflow-hidden mr-2">
+                            <div className="bg-red-100 text-red-600 p-2.5 rounded-lg flex-shrink-0">
+                              <FileText className="w-6 h-6" />
                             </div>
                             <div className="truncate">
                               <p className="text-xs font-bold text-slate-800 truncate">
@@ -722,44 +766,55 @@ export default function ProfilePage() {
                               </p>
                             </div>
                           </div>
-                          <a
-                            href={profile.resume_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-blue-500 hover:text-blue-700 text-xs font-semibold px-2 py-1"
-                          >
-                            View
-                          </a>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={profile.resume_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              View
+                            </a>
+                            <button
+                              type="button"
+                              onClick={handleDeleteResume}
+                              className="text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 text-xs font-bold p-1.5 rounded-lg transition-colors"
+                              title="Delete Resume"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       ) : (
-                        <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center gap-3 mb-4">
-                          <div className="bg-slate-200 text-slate-400 p-2 rounded-lg flex-shrink-0">
-                            <FileText className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-slate-400">
-                              No resume uploaded
-                            </p>
-                          </div>
+                        <div 
+                          onClick={handleResumeUploadClick}
+                          className="border-2 border-dashed border-slate-200 hover:border-blue-400 bg-slate-50 hover:bg-blue-50/20 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all mb-4 text-center group"
+                        >
+                          {isUploadingResume ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                              <p className="text-xs font-bold text-slate-500">Uploading...</p>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="bg-slate-100 group-hover:bg-blue-100 text-slate-400 group-hover:text-blue-600 p-3 rounded-full transition-colors mb-2">
+                                <Upload className="w-6 h-6" />
+                              </div>
+                              <p className="text-xs font-bold text-slate-700">Click to upload resume</p>
+                              <p className="text-[10px] text-slate-400 mt-1">PDF, Word, or images</p>
+                            </>
+                          )}
                         </div>
                       )}
-                    </div>
-
-                    <div className="mt-4">
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Resume URL
-                      </label>
-                      <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                        <input
-                          className="bg-transparent border-none outline-none w-full text-xs font-semibold text-slate-800"
-                          type="text"
-                          name="resume_url"
-                          placeholder="https://example.com/resume.pdf"
-                          value={profile.resume_url}
-                          onChange={handleInputChange}
-                        />
-                        <Edit2 className="w-4 h-4 text-slate-400" />
-                      </div>
+                      
+                      <input
+                        type="file"
+                        ref={resumeInputRef}
+                        onChange={handleResumeFileChange}
+                        accept=".pdf,.doc,.docx,image/*"
+                        className="hidden"
+                      />
                     </div>
                   </div>
 
