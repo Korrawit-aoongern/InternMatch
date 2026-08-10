@@ -368,6 +368,59 @@ export async function uploadProfileImage(formData: FormData) {
     };
   }
 }
+
+export async function uploadResume(formData: FormData) {
+  try {
+    const file = formData.get("file") as File;
+    if (!file) {
+      return { success: false, error: "No file provided" };
+    }
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const supabase = getSupabaseAdmin();
+
+    // Ensure the bucket 'resumes' exists (public access)
+    try {
+      await supabase.storage.createBucket("resumes", {
+        public: true,
+      });
+    } catch {
+      // Ignore if bucket already exists
+    }
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    const filePath = `student-resumes/${fileName}`;
+
+    const { error } = await supabase.storage
+      .from("resumes")
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        duplex: "half",
+      });
+
+    if (error) {
+      console.error("Storage upload error:", error);
+      return { success: false, error: error.message };
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from("resumes")
+      .getPublicUrl(filePath);
+
+    return { success: true, url: publicUrl };
+  } catch (err) {
+    console.error("Error in uploadResume server action:", err);
+    return { 
+      success: false, 
+      error: err instanceof Error ? err.message : "Failed to upload resume" 
+    };
+  }
+}
+
 export async function changeUserPassword(currentPassword: string, newPassword: string) {
   try {
     const cookieStore = await cookies();
