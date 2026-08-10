@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
-import { Briefcase, Mail, User, Lock, Image, FileText } from "lucide-react";
+import { Briefcase, Mail, User, Lock, Image, FileText, Upload, Trash2, Loader2, Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { registerUser } from "@/lib/actions/auth";
+import { registerUser, uploadResume } from "@/lib/actions/auth";
 import FormInput from "@/components/ui/FormInput";
 
 export default function RegisterPage() {
@@ -24,8 +24,53 @@ export default function RegisterPage() {
     major: "",
     study_year: "",
     profile_image: "",
+    resume_path: "",
     resume_url: "",
   });
+
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
+
+  const handleResumeUploadClick = () => {
+    resumeInputRef.current?.click();
+  };
+
+  const handleResumeFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setIsUploadingResume(true);
+    try {
+      const res = await uploadResume(formData);
+      if (res.success && res.url) {
+        setFields((prev) => ({
+          ...prev,
+          resume_path: res.path || "",
+          resume_url: res.url || "",
+        }));
+      } else {
+        alert("Upload failed: " + res.error);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("An error occurred during file upload.");
+    } finally {
+      setIsUploadingResume(false);
+    }
+  };
+
+  const handleDeleteResume = () => {
+    if (confirm("Are you sure you want to delete your resume?")) {
+      setFields((prev) => ({
+        ...prev,
+        resume_path: "",
+        resume_url: "",
+      }));
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -47,7 +92,7 @@ export default function RegisterPage() {
       setFields({ 
         email: "", username: "", password: "", fullname: "", phone: "", 
         university: "", faculty: "", major: "", study_year: "", 
-        profile_image: "", resume_url: "" 
+        profile_image: "", resume_path: "", resume_url: "" 
       });
       setTimeout(() => {
         router.push("/auth/login");
@@ -217,16 +262,72 @@ export default function RegisterPage() {
                     icon={Image}
                   />
 
-                  <FormInput
-                    label="Resume PDF URL"
-                    id="resume_url"
-                    name="resume_url"
-                    type="url"
-                    placeholder="https://example.com/my-resume.pdf"
-                    value={fields.resume_url}
-                    onChange={handleChange}
-                    icon={FileText}
-                  />
+                  <div>
+                    <label className="block text-on-surface mb-sm text-sm font-semibold">Resume File</label>
+                    {fields.resume_path ? (
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center justify-between">
+                        <div className="flex items-center gap-3 overflow-hidden mr-2">
+                          <div className="bg-red-100 text-red-600 p-2 rounded-lg flex-shrink-0">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div className="truncate">
+                            <p className="text-xs font-bold text-slate-800 truncate">
+                              {fields.resume_path.split("/").pop()}
+                            </p>
+                            <p className="text-[10px] text-slate-400 truncate">
+                              {fields.resume_path}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={fields.resume_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            View
+                          </a>
+                          <button
+                            type="button"
+                            onClick={handleDeleteResume}
+                            className="text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 text-xs font-bold p-1.5 rounded-lg transition-colors"
+                            title="Delete Resume"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={handleResumeUploadClick}
+                        className="border-2 border-dashed border-slate-200 hover:border-blue-400 bg-slate-50 hover:bg-blue-50/20 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all text-center group"
+                      >
+                        {isUploadingResume ? (
+                          <div className="flex flex-col items-center gap-2">
+                            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                            <p className="text-xs font-bold text-slate-500">Uploading...</p>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="bg-slate-100 group-hover:bg-blue-100 text-slate-400 group-hover:text-blue-600 p-2.5 rounded-full transition-colors mb-2">
+                              <Upload className="w-5 h-5" />
+                            </div>
+                            <p className="text-xs font-bold text-slate-700">Click to upload resume</p>
+                            <p className="text-[10px] text-slate-400 mt-1">PDF, Word, or images</p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      ref={resumeInputRef}
+                      onChange={handleResumeFileChange}
+                      accept=".pdf,.doc,.docx,image/*"
+                      className="hidden"
+                    />
+                  </div>
                 </div>
               </div>
 
