@@ -25,7 +25,7 @@ export interface UserRegisterFormData {
   major?: string;
   study_year?: string | number;
   profile_image?: string;
-  resume_url?: string;
+  resume_path?: string;
 
   // Company-specific
   company_name?: string;
@@ -97,7 +97,7 @@ export async function registerUser(formData: UserRegisterFormData, role: "studen
           major: formData.major || null,
           study_year: formData.study_year ? parseInt(formData.study_year.toString()) : null,
           profile_image: formData.profile_image || null,
-          resume_url: formData.resume_url || null,
+          resume_path: formData.resume_path || null,
         },
       ]);
 
@@ -177,6 +177,19 @@ export async function getStudentProfile() {
       return { success: false, error: "Student profile not found" };
     }
     
+    if (student && student.resume_path) {
+      try {
+        const { data: signData, error: signError } = await supabase.storage
+          .from("resumes")
+          .createSignedUrl(student.resume_path, 60 * 60);
+        if (!signError && signData) {
+          student.resume_url = signData.signedUrl;
+        }
+      } catch (err) {
+        console.error("Error creating signed URL for resume:", err);
+      }
+    }
+    
     return { success: true, profile: student };
   } catch (err) {
     console.error("Error in getStudentProfile:", err);
@@ -192,7 +205,7 @@ export async function updateStudentProfile(profileData: {
   major: string | null;
   study_year: number | null;
   profile_image: string | null;
-  resume_url: string | null;
+  resume_path: string | null;
 }) {
   try {
     const cookieStore = await cookies();
@@ -218,7 +231,7 @@ export async function updateStudentProfile(profileData: {
         major: profileData.major,
         study_year: profileData.study_year,
         profile_image: profileData.profile_image,
-        resume_url: profileData.resume_url,
+        resume_path: profileData.resume_path,
       })
       .eq("user_id", decoded.userId);
       
@@ -431,12 +444,17 @@ export async function uploadResume(formData: FormData) {
       return { success: false, error: "Failed to upload file to storage" };
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
+    // Get signed URL (valid for 1 hour)
+    const { data: signData, error: signError } = await supabase.storage
       .from("resumes")
-      .getPublicUrl(filePath);
+      .createSignedUrl(filePath, 60 * 60);
 
-    return { success: true, url: publicUrl };
+    if (signError) {
+      console.error("Storage sign URL error:", signError);
+      return { success: false, error: "Failed to generate signed URL" };
+    }
+
+    return { success: true, path: filePath, url: signData.signedUrl };
   } catch (err) {
     console.error("Error in uploadResume server action:", err);
     return { 

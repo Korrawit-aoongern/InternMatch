@@ -40,6 +40,7 @@ interface StudentProfile {
   major: string;
   study_year: number;
   profile_image: string;
+  resume_path: string;
   resume_url: string;
   email: string;
 
@@ -107,11 +108,12 @@ export default function ProfilePage() {
     setIsUploadingResume(true);
     try {
       const res = await uploadResume(formData);
-      if (res.success && res.url) {
-        setProfile((prev) => ({
-          ...prev,
-          resume_url: res.url || "",
-        }));
+    if (res.success && res.url) {
+      setProfile((prev) => ({
+        ...prev,
+        resume_path: res.path || "",
+        resume_url: res.url || "",
+      }));
       } else {
         alert("Upload failed: " + res.error);
       }
@@ -127,6 +129,7 @@ export default function ProfilePage() {
     if (confirm("Are you sure you want to delete your resume?")) {
       setProfile((prev) => ({
         ...prev,
+        resume_path: "",
         resume_url: "",
       }));
     }
@@ -141,6 +144,7 @@ export default function ProfilePage() {
     major: "",
     study_year: 1,
     profile_image: "",
+    resume_path: "",
     resume_url: "",
     email: "",
 
@@ -210,6 +214,7 @@ export default function ProfilePage() {
           major: p.major || "",
           study_year: p.study_year || 1,
           profile_image: p.profile_image || "",
+          resume_path: p.resume_path || "",
           resume_url: p.resume_url || "",
           linkedin: linkedinUrl,
           github: githubUrl,
@@ -293,7 +298,7 @@ export default function ProfilePage() {
         major: profile.major || null,
         study_year: Number(profile.study_year) || null,
         profile_image: profile.profile_image || null,
-        resume_url: profile.resume_url || null,
+        resume_path: profile.resume_path || null,
       });
 
       if (res.success) {
