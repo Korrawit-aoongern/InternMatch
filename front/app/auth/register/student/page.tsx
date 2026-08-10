@@ -2,9 +2,9 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import { Briefcase, Mail, User, Lock, Image, FileText, Upload, Trash2, Loader2, Eye } from "lucide-react";
+import { Briefcase, Mail, User, Lock, Image, FileText, Upload, Trash2, Loader2, Eye, Camera } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { registerUser, uploadResume } from "@/lib/actions/auth";
+import { registerUser, uploadResume, uploadProfileImage } from "@/lib/actions/auth";
 import FormInput from "@/components/ui/FormInput";
 
 export default function RegisterPage() {
@@ -30,9 +30,48 @@ export default function RegisterPage() {
 
   const resumeInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingResume, setIsUploadingResume] = useState(false);
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingProfileImage, setIsUploadingProfileImage] = useState(false);
 
   const handleResumeUploadClick = () => {
     resumeInputRef.current?.click();
+  };
+
+  const handleProfileImageUploadClick = () => {
+    profileImageInputRef.current?.click();
+  };
+
+  const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setIsUploadingProfileImage(true);
+    try {
+      const res = await uploadProfileImage(formData);
+      if (res.success && res.url) {
+        setFields((prev) => ({
+          ...prev,
+          profile_image: res.url || "",
+        }));
+      } else {
+        alert("Upload failed: " + res.error);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("An error occurred during file upload.");
+    } finally {
+      setIsUploadingProfileImage(false);
+    }
+  };
+
+  const handleDeleteProfileImage = () => {
+    setFields((prev) => ({
+      ...prev,
+      profile_image: "",
+    }));
   };
 
   const handleResumeFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -251,16 +290,67 @@ export default function RegisterPage() {
                 <span className="text-xs font-bold text-primary uppercase tracking-wider block mb-4">Media & Documents</span>
                 
                 <div className="space-y-4">
-                  <FormInput
-                    label="Profile Image URL"
-                    id="profile_image"
-                    name="profile_image"
-                    type="url"
-                    placeholder="https://example.com/avatar.jpg"
-                    value={fields.profile_image}
-                    onChange={handleChange}
-                    icon={Image}
-                  />
+                  <div>
+                    <label className="block text-on-surface mb-sm text-sm font-semibold">Profile Image</label>
+                    {fields.profile_image ? (
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center justify-between">
+                        <div className="flex items-center gap-3 overflow-hidden mr-2">
+                          <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-200 bg-slate-100 flex-shrink-0">
+                            <img
+                              src={fields.profile_image}
+                              alt="Profile Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="truncate">
+                            <p className="text-xs font-bold text-slate-800 truncate">
+                              Image Uploaded
+                            </p>
+                            <p className="text-[10px] text-slate-400 truncate">
+                              {fields.profile_image}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleDeleteProfileImage}
+                            className="text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 text-xs font-bold p-1.5 rounded-lg transition-colors"
+                            title="Delete Image"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={handleProfileImageUploadClick}
+                        className="border-2 border-dashed border-slate-200 hover:border-blue-400 bg-slate-50 hover:bg-blue-50/20 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all text-center group animate-fade-in"
+                      >
+                        {isUploadingProfileImage ? (
+                          <div className="flex flex-col items-center gap-2">
+                            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                            <p className="text-xs font-bold text-slate-500">Uploading...</p>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="bg-slate-100 group-hover:bg-blue-100 text-slate-400 group-hover:text-blue-600 p-2.5 rounded-full transition-colors mb-2">
+                              <Camera className="w-5 h-5" />
+                            </div>
+                            <p className="text-xs font-bold text-slate-700">Click to upload image</p>
+                            <p className="text-[10px] text-slate-400 mt-1">PNG, JPG, or GIF</p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      ref={profileImageInputRef}
+                      onChange={handleProfileImageChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </div>
 
                   <div>
                     <label className="block text-on-surface mb-sm text-sm font-semibold">Resume File</label>
