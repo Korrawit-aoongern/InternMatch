@@ -264,7 +264,7 @@ export async function getCompanyProfile() {
     const supabase = getSupabaseAdmin();
     const { data: company, error } = await supabase
       .from("companies")
-      .select("*")
+      .select("*, users (email)")
       .eq("user_id", decoded.userId)
       .maybeSingle();
       

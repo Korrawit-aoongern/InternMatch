@@ -16,6 +16,7 @@ import {
   Trash2,
   Upload,
   Loader2,
+  Plus,
 } from "lucide-react";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
@@ -162,6 +163,29 @@ export default function ProfilePage() {
 
   const [skills, setSkills] = useState<Skill[]>([]);
 
+  const [companyLinks, setCompanyLinks] = useState<string[]>([""]);
+
+  const handleCompanyLinkChange = (index: number, val: string) => {
+    setCompanyLinks((prev) => {
+      const updated = [...prev];
+      updated[index] = val;
+      return updated;
+    });
+  };
+
+  const handleAddCompanyLink = () => {
+    if (companyLinks.length < 3) {
+      setCompanyLinks((prev) => [...prev, ""]);
+    }
+  };
+
+  const handleRemoveCompanyLink = (index: number) => {
+    setCompanyLinks((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      return updated.length > 0 ? updated : [""];
+    });
+  };
+
   const [isSaving, setIsSaving] = useState(false);
 
   // State สำหรับฟอร์มเปลี่ยนรหัสผ่าน
@@ -182,67 +206,91 @@ export default function ProfilePage() {
     setProfile((prev) => ({ ...prev, [name]: name === "study_year" ? Number(value) : value }));
   };
 
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
   useEffect(() => {
     const fetchProfile = async () => {
-      const studentRes = await getStudentProfile();
-      if (studentRes.success && studentRes.profile) {
-        setRole("student");
-        const p = studentRes.profile;
+      try {
+        const studentRes = await getStudentProfile();
+        if (studentRes.success && studentRes.profile) {
+          setRole("student");
+          const p = studentRes.profile;
 
-        // โหลด Portfolio/External Links ของนักศึกษาจริงๆ จากฐานข้อมูล
-        const portfoliosRes = await getStudentPortfolios();
-        let linkedinUrl = "";
-        let githubUrl = "";
-        let portfolioUrl = "";
-        if (portfoliosRes.success && portfoliosRes.portfolios) {
-          portfoliosRes.portfolios.forEach((port: any) => {
-            if (port.title === "LinkedIn") linkedinUrl = port.url || "";
-            else if (port.title === "GitHub") githubUrl = port.url || "";
-            else if (port.title === "Portfolio") portfolioUrl = port.url || "";
-          });
+          // โหลด Portfolio/External Links ของนักศึกษาจริงๆ จากฐานข้อมูล
+          const portfoliosRes = await getStudentPortfolios();
+          let linkedinUrl = "";
+          let githubUrl = "";
+          let portfolioUrl = "";
+          if (portfoliosRes.success && portfoliosRes.portfolios) {
+            portfoliosRes.portfolios.forEach((port: any) => {
+              if (port.title === "LinkedIn") linkedinUrl = port.url || "";
+              else if (port.title === "GitHub") githubUrl = port.url || "";
+              else if (port.title === "Portfolio") portfolioUrl = port.url || "";
+            });
+          }
+
+          // โหลดข้อมูลอีเมล
+          const userEmail = p.users ? (Array.isArray(p.users) ? p.users[0]?.email : (p.users as any).email) : "";
+
+          setProfile((prev) => ({
+            ...prev,
+            fullname: p.fullname || "",
+            phone: p.phone || "",
+            university: p.university || "",
+            faculty: p.faculty || "",
+            major: p.major || "",
+            study_year: p.study_year || 1,
+            profile_image: p.profile_image || "",
+            resume_path: p.resume_path || "",
+            resume_url: p.resume_url || "",
+            linkedin: linkedinUrl,
+            github: githubUrl,
+            portfolio: portfolioUrl,
+            email: userEmail || "",
+          }));
+
+          // โหลดทักษะของนักศึกษาจริงๆ จากฐานข้อมูล
+          const skillsRes = await getStudentSkills();
+          if (skillsRes.success && skillsRes.skills) {
+            setSkills(skillsRes.skills as Skill[]);
+          }
+          return;
         }
 
-        // โหลดข้อมูลอีเมล
-        const userEmail = p.users ? (Array.isArray(p.users) ? p.users[0]?.email : (p.users as any).email) : "";
+        const companyRes = await getCompanyProfile();
+        if (companyRes.success && companyRes.profile) {
+          setRole("company");
+          const c = companyRes.profile;
+          const userEmail = c.users ? (Array.isArray(c.users) ? c.users[0]?.email : (c.users as any).email) : "";
 
-        setProfile((prev) => ({
-          ...prev,
-          fullname: p.fullname || "",
-          phone: p.phone || "",
-          university: p.university || "",
-          faculty: p.faculty || "",
-          major: p.major || "",
-          study_year: p.study_year || 1,
-          profile_image: p.profile_image || "",
-          resume_path: p.resume_path || "",
-          resume_url: p.resume_url || "",
-          linkedin: linkedinUrl,
-          github: githubUrl,
-          portfolio: portfolioUrl,
-          email: userEmail || "",
-        }));
+          let parsedLinks: string[] = [];
+          if (c.website) {
+            try {
+              if (c.website.startsWith("[")) {
+                parsedLinks = JSON.parse(c.website);
+              } else {
+                parsedLinks = c.website.split(",").map((s: string) => s.trim()).filter(Boolean);
+              }
+            } catch {
+              parsedLinks = [c.website];
+            }
+          }
+          if (parsedLinks.length === 0) parsedLinks = [""];
+          setCompanyLinks(parsedLinks.slice(0, 3));
 
-        // โหลดทักษะของนักศึกษาจริงๆ จากฐานข้อมูล
-        const skillsRes = await getStudentSkills();
-        if (skillsRes.success && skillsRes.skills) {
-          setSkills(skillsRes.skills as Skill[]);
+          setProfile((prev) => ({
+            ...prev,
+            company_name: c.company_name || "",
+            description: c.description || "",
+            website: c.website || "",
+            address: c.address || "",
+            province: c.province || "",
+            logo: c.logo || "",
+            email: userEmail || "",
+          }));
         }
-        return;
-      }
-
-      const companyRes = await getCompanyProfile();
-      if (companyRes.success && companyRes.profile) {
-        setRole("company");
-        const c = companyRes.profile;
-        setProfile((prev) => ({
-          ...prev,
-          company_name: c.company_name || "",
-          description: c.description || "",
-          website: c.website || "",
-          address: c.address || "",
-          province: c.province || "",
-          logo: c.logo || "",
-        }));
+      } finally {
+        setIsLoadingProfile(false);
       }
     };
     fetchProfile();
@@ -324,10 +372,11 @@ export default function ProfilePage() {
         }
       }
     } else {
+      const joinedWebsite = companyLinks.map((l) => l.trim()).filter(Boolean).join(", ");
       res = await updateCompanyProfile({
         company_name: profile.company_name,
         description: profile.description || null,
-        website: profile.website || null,
+        website: joinedWebsite || null,
         address: profile.address || null,
         province: profile.province || null,
         logo: profile.logo || null,
@@ -340,6 +389,21 @@ export default function ProfilePage() {
       alert("เกิดข้อผิดพลาด: " + res.error);
     }
   };
+
+  if (isLoadingProfile) {
+    return (
+      <div className="bg-slate-50 text-slate-900 min-h-screen flex antialiased w-full">
+        <DashboardSidebar />
+        <main className="flex-1 flex flex-col min-w-0 md:ml-[260px] relative">
+          <DashboardHeader title="Profile Settings" />
+          <div className="p-12 flex flex-col items-center justify-center min-h-[60vh]">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
+            <p className="text-sm font-semibold text-slate-500">Loading Profile...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen flex antialiased w-full">
@@ -568,17 +632,17 @@ export default function ProfilePage() {
 
                       <div>
                         <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                          Website URL
+                          Email Address
                         </label>
-                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-100 opacity-70 transition-all">
                           <input
-                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
-                            type="text"
-                            name="website"
-                            value={profile.website}
-                            onChange={handleInputChange}
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-500 cursor-not-allowed"
+                            type="email"
+                            name="email"
+                            value={profile.email}
+                            disabled
                           />
-                          <Edit2 className="w-4 h-4 text-slate-400" />
+                          <Lock className="w-4 h-4 text-slate-400" />
                         </div>
                       </div>
 
@@ -889,68 +953,61 @@ export default function ProfilePage() {
                   </div>
                 </div>
               ) : (
-                /* Company: showing only External Links Card (adjusting labels for corporate links if necessary) */
+                /* Company: dynamic up-to-3 website links panel */
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/80 w-full">
-                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
-                    <Link2 className="w-5 h-5 text-blue-600" />
-                    Corporate Links
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-blue-600" />
+                      Company Websites & Links
+                    </h3>
+                    <span className="text-xs font-semibold text-slate-400">
+                      {companyLinks.length}/3 links
+                    </span>
+                  </div>
 
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Company LinkedIn
-                      </label>
-                      <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                        <div className="bg-slate-100 p-2.5 border-r border-slate-200 text-slate-500">
-                          <Globe className="w-4 h-4" />
+                    {companyLinks.map((link, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          Website / Link #{idx + 1}
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                            <div className="bg-slate-100 p-2.5 border-r border-slate-200 text-slate-500">
+                              <Globe className="w-4 h-4" />
+                            </div>
+                            <input
+                              className="bg-transparent border-none outline-none w-full text-xs font-semibold text-slate-800 px-3 py-2"
+                              type="url"
+                              placeholder="https://companywebsite.com"
+                              value={link}
+                              onChange={(e) => handleCompanyLinkChange(idx, e.target.value)}
+                            />
+                          </div>
+                          {companyLinks.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCompanyLink(idx)}
+                              className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                              title="Remove Link"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
-                        <input
-                          className="bg-transparent border-none outline-none w-full text-xs font-semibold text-slate-800 px-3 py-2"
-                          type="text"
-                          name="linkedin"
-                          value={profile.linkedin}
-                          onChange={handleInputChange}
-                        />
                       </div>
-                    </div>
+                    ))}
 
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Company GitHub / GitLab
-                      </label>
-                      <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                        <div className="bg-slate-100 p-2.5 border-r border-slate-200 text-slate-500">
-                          <Code className="w-4 h-4" />
-                        </div>
-                        <input
-                          className="bg-transparent border-none outline-none w-full text-xs font-semibold text-slate-800 px-3 py-2"
-                          type="text"
-                          name="github"
-                          value={profile.github}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Corporate Website
-                      </label>
-                      <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 overflow-hidden focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                        <div className="bg-slate-100 p-2.5 border-r border-slate-200 text-slate-500">
-                          <Globe className="w-4 h-4" />
-                        </div>
-                        <input
-                          className="bg-transparent border-none outline-none w-full text-xs font-semibold text-slate-800 px-3 py-2"
-                          type="text"
-                          name="portfolio"
-                          placeholder="https://companywebsite.com"
-                          value={profile.portfolio}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    </div>
+                    {companyLinks.length < 3 && (
+                      <button
+                        type="button"
+                        onClick={handleAddCompanyLink}
+                        className="w-full mt-2 py-2.5 border border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50/50 text-blue-600 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Website Link
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
