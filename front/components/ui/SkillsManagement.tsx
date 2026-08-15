@@ -179,26 +179,10 @@ export default function SkillsManagement({ skills, setSkills }: SkillsManagement
     return groups;
   }, [masterSkills, searchQuery]);
 
-  // Derive split categories (opened vs closed)
-  const splitCategories = useMemo(() => {
-    const expanded: [string, typeof masterSkills][] = [];
-    const collapsed: [string, typeof masterSkills][] = [];
-
-    Object.entries(filteredGroupedSkills).forEach(([catName, catSkills]) => {
-      // Use direct object state lookup here to avoid hook dependencies linting warnings
-      if (expandedCategories[catName] === true) {
-        expanded.push([catName, catSkills]);
-      } else {
-        collapsed.push([catName, catSkills]);
-      }
-    });
-
-    return {
-      expanded,
-      collapsed,
-      anyExpanded: expanded.length > 0
-    };
-  }, [filteredGroupedSkills, expandedCategories]);
+  // Check if any category is expanded
+  const anyExpanded = useMemo(() => {
+    return Object.values(expandedCategories).some(Boolean);
+  }, [expandedCategories]);
 
   // Compute stats for AI matching gauge
   const skillProgress = useMemo(() => {
@@ -451,13 +435,13 @@ export default function SkillsManagement({ skills, setSkills }: SkillsManagement
           >
             เปิดทุกช่อง (Expand All)
           </button>
-          {splitCategories.anyExpanded && (
+          {anyExpanded && (
             <button
               type="button"
               onClick={handleCollapseAll}
               className="px-3 py-2 text-[11px] font-bold bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl border border-slate-200 transition-colors cursor-pointer"
             >
-              ปิดหมดเป็นเหมือนเดิม
+              ปิดหมดเป็นเหมือนเดิม (Collapse All)
             </button>
           )}
         </div>
@@ -477,54 +461,12 @@ export default function SkillsManagement({ skills, setSkills }: SkillsManagement
         <div className="text-center py-10 text-slate-400 text-xs border border-dashed border-slate-200 rounded-xl">
           ไม่พบทักษะที่ตรงกับการค้นหา
         </div>
-      ) : !splitCategories.anyExpanded ? (
-        /* เมื่อไม่มีหมวดหมู่ใดถูกเปิด: แสดงเป็น Grid 3 คอลัมน์แบบปิดทั้งหมด */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {splitCategories.collapsed.map(([catName, catSkills]) => 
-            renderCategoryCard(catName, catSkills, false)
-          )}
-        </div>
       ) : (
-        /* เมื่อเปิดแล้วอย่างน้อย 1 ช่อง: แบ่งครึ่งซ้าย (ปิด) - ขวา (เปิด) */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* ฝั่งซ้าย: หมวดหมู่ที่ปิดอยู่ (Collapsed) */}
-          <div className="lg:col-span-4 flex flex-col gap-3">
-            <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1 px-1">
-              หมวดหมู่ที่ยังไม่ได้เปิด ({splitCategories.collapsed.length})
-            </div>
-            {splitCategories.collapsed.length === 0 ? (
-              <div className="text-center py-8 text-slate-400 text-xs border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                เปิดทุกหมวดหมู่แล้ว
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
-                {splitCategories.collapsed.map(([catName, catSkills]) => 
-                  renderCategoryCard(catName, catSkills, false)
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* ฝั่งขวา: หมวดหมู่ที่เปิดจัดการอยู่ (Expanded) */}
-          <div className="lg:col-span-8 flex flex-col gap-4">
-            <div className="text-[10px] font-extrabold text-blue-600 uppercase tracking-wider mb-1 px-1 flex justify-between items-center">
-              <span>หมวดหมู่ที่กำลังเปิดจัดการทักษะ ({splitCategories.expanded.length})</span>
-              <button 
-                type="button" 
-                onClick={handleCollapseAll}
-                className="text-[10px] font-bold text-slate-400 hover:text-slate-600 normal-case cursor-pointer"
-              >
-                ปิดทั้งหมดเพื่อกลับหน้าเดิม
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {splitCategories.expanded.map(([catName, catSkills]) => 
-                renderCategoryCard(catName, catSkills, true)
-              )}
-            </div>
-          </div>
-
+        /* แสดงเป็น Grid 3 คอลัมน์ประจำที่ เปิด/ปิด ตรงตำแหน่งเดิม */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+          {Object.entries(filteredGroupedSkills).map(([catName, catSkills]) =>
+            renderCategoryCard(catName, catSkills, isExpanded(catName))
+          )}
         </div>
       )}
 
