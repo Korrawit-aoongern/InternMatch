@@ -1,0 +1,318 @@
+QA / UAT Test Case Template,,,,,,,,,,,,,,,,,
+"Yellow cells = example row (for reference only, delete before use). Fill in one row per test case. See the 'Instructions' tab for field definitions.",,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,
+Test Case ID,Module / Feature,Test Case Title,Requirement / User Story ID,Test Type,Priority,Severity,Preconditions,Test Data,Test Steps,Expected Result,Actual Result,Status,Environment,Executed By,Execution Date,Defect ID,Remarks / Comments
+TC-I1-W3-1-001,W3-1 ลงทะเบียนนักศึกษา,ลงทะเบียนนักศึกษาด้วยข้อมูลถูกต้องครบถ้วน (Normal Successful Case),W3-1,Functional,High,Critical,เข้าสู่หน้าลงทะเบียนนักศึกษา (/auth/register/student),"Email: student_test_[timestamp]@example.com
+Username: student_test01_[timestamp]
+Password: Password123!
+Full Name: สมชาย สายเรียน
+Phone: 0812345678
+University: KMUTT
+Faculty: SIT
+Major: IT
+Study Year: 3rd Year (ปี 3)","1. เปิดหน้าเว็บ /auth/register/student
+2. กรอก Email, Username และ Password ในส่วน Account Information
+3. กรอก Full Name, Phone, University, Faculty, Major และเลือก Year of Study ในส่วน Student Profile
+4. กดปุ่ม ""Register Account""","1. ระบบแสดงข้อความสำเร็จ ""สมัครสมาชิกและบันทึกข้อมูลนักศึกษาสำเร็จเรียบร้อย! 🎉 Redirecting to login page...""
+2. ระบบนำทางผู้ใช้ไปยังหน้าเข้าสู่ระบบ (/auth/login) โดยอัตโนมัติภายใน 1.5 วินาที","1. ระบบแสดงข้อความสำเร็จ ""สมัครสมาชิกและบันทึกข้อมูลนักศึกษาสำเร็จเรียบร้อย! 🎉 Redirecting to login page...""
+2. ระบบนำทางผู้ใช้ไปยังหน้าเข้าสู่ระบบ (/auth/login) โดยอัตโนมัติ (Pass)",Pass,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W3-1-002,W3-1 ลงทะเบียนนักศึกษา,ลงทะเบียนนักศึกษาด้วย Email หรือ Username ที่มีในระบบแล้ว (Worst Duplicate Error Case),W3-1,Functional,High,High,มีบัญชี student_test@example.com อยู่ในฐานข้อมูลแล้ว,"Email: student_test_[timestamp]@example.com (ซ้ำ)
+Username: student_test01_[timestamp] (ซ้ำ)
+Password: Password123!","1. เปิดหน้าเว็บ /auth/register/student
+2. กรอก Email หรือ Username ที่มีอยู่เดิมในฐานข้อมูล
+3. กรอกข้อมูลส่วนตัวอื่นๆ ให้ครบถ้วน
+4. กดปุ่ม ""Register Account""","1. ระบบตอบกลับข้อผิดพลาดจากฐานข้อมูล ""ผิดพลาดฝั่งบัญชี: duplicate key value violates unique constraint...""
+2. ฟอร์มแสดงข้อความ Error สีแดง และไม่อนุญาตให้ผ่านไปหน้าเข้าสู่ระบบ",ระบบแสดงข้อความผิดพลาดจากฐานข้อมูล/ระบบ แต่การทดสอบล้มเหลวเนื่องจาก Strict mode violation (พบ element กล่องข้อความแจ้งเตือน 6 ตำแหน่งตรงกับคำค้นหาใน locator),Fail,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W3-1-003,W3-1 ลงทะเบียนนักศึกษา,ลงทะเบียนนักศึกษาโดยอัปโหลดไฟล์ Resume ที่มีขนาดเกิน 10MB (File Size Limit Edge Case),W3-1,Boundary / Edge Case,Medium,Medium,เปิดหน้าลงทะเบียนนักศึกษา (/auth/register/student) และมีไฟล์ PDF ขนาด 12MB,File: large_resume_12mb.pdf (ขนาด 12MB > Limit 10MB),"1. เปิดหน้าเว็บ /auth/register/student
+2. ในส่วน Resume File คลิกเลือกอัปโหลดไฟล์ PDF ขนาด 12MB
+3. สังเกตการตอบกลับของระบบขณะอัปโหลดไฟล์","1. ระบบตรวจจับขนาดไฟล์เกินขีดจำกัด 10MB
+2. ระบบแสดง Dialog Alert ""Upload failed: File size exceeds 10MB limit""
+3. ไฟล์ไม่ถูกอัปโหลดขึ้นสโตเรจ และระบบบล็อกการลงทะเบียนอย่างปลอดภัย",ระบบตรวจจับขนาดไฟล์เกินกำหนด แต่ Dialog Alert message ไม่ตรงกับข้อความที่คาดหวังในการตรวจสอบ assertion (expect(received).toContain(expected)),Fail,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W3-2-001,W3-2 ลงทะเบียนบริษัท,ลงทะเบียนบริษัทด้วยข้อมูลถูกต้องครบถ้วน (Normal Successful Case),W3-2,Functional,High,Critical,เข้าสู่หน้าลงทะเบียนบริษัท (/auth/register/company),"Corporate Email: hr@techcompany.co.th
+Username: techcompany_hr
+Password: Password123!
+Company Name: บริษัท เทคโนโลยีไทย จำกัด
+Website URL: https://www.techcompany.co.th
+Province: กรุงเทพมหานคร
+Full Address: 123 ถนนสุขุมวิท
+Description: บริษัทซอฟต์แวร์ชั้นนำ","1. เปิดหน้าเว็บ /auth/register/company
+2. กรอก Corporate Email, Username และ Password ในส่วน Account Information
+3. กรอก Company Name, Website URL, Province, Full Address และ Description ในส่วน Company Profile
+4. กดปุ่ม ""Register Company""","1. ระบบแสดงข้อความสำเร็จ ""ลงทะเบียนบัญชีบริษัทสำเร็จเรียบร้อย! 🎉 Redirecting to login page...""
+2. ระบบนำทางไปยังหน้าเข้าสู่ระบบ (/auth/login) โดยอัตโนมัติภายใน 1.5 วินาที","1. ระบบแสดงข้อความสำเร็จ ""ลงทะเบียนบัญชีบริษัทสำเร็จเรียบร้อย! 🎉 Redirecting to login page...""
+2. ระบบนำทางไปยังหน้าเข้าสู่ระบบ (/auth/login) โดยอัตโนมัติภายใน 1.5 วินาที (Pass)",Pass,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W3-2-002,W3-2 ลงทะเบียนบริษัท,ลงทะเบียนบริษัทโดยเว้นว่างฟิลด์บังคับ เช่น Company Name (Worst Invalid Input Case),W3-2,Functional,High,High,เปิดหน้าลงทะเบียนบริษัท (/auth/register/company),"Company Name: """" (เว้นว่าง)
+Corporate Email: hr@techcompany.co.th
+Password: Password123!","1. เปิดหน้าเว็บ /auth/register/company
+2. ปล่อยช่อง Company Name เป็นค่าว่าง
+3. กรอกข้อมูลส่วนอื่นตามปกติ
+4. กดปุ่ม ""Register Company""","1. เบราว์เซอร์หรือฟอร์มแจ้งเตือนให้กรอกข้อมูลในช่องบังคับ (HTML5 Required Validation)
+2. ฟอร์มไม่ส่งข้อมูลไปเซิร์ฟเวอร์ และบล็อกการลงทะเบียนสำเร็จ","1. เบราว์เซอร์แจ้งเตือน HTML5 Required Validation ที่ช่อง Company Name
+2. ฟอร์มไม่อนุญาตให้ส่งข้อมูล และบล็อกการลงทะเบียนสำเร็จ (Pass)",Pass,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W3-2-003,W3-2 ลงทะเบียนบริษัท,ลงทะเบียนบริษัทด้วยข้อมูลอักขระพิเศษภาษาไทย/อังกฤษ/สัญลักษณ์ และข้อความยาวเป็นพิเศษ (Special Chars & Boundary Edge Case),W3-2,Boundary / Edge Case,Low,Medium,เปิดหน้าลงทะเบียนบริษัท (/auth/register/company),"Company Name: บริษัท นวัตกรรมซอฟต์แวร์แอนด์ไอที (ประเทศไทย) จำกัด [มหาชน] & Co., Ltd.
+Address: ข้อความยาว 500 อักขระพร้อมสัญลักษณ์ & @ # ! * ()","1. เปิดหน้าเว็บ /auth/register/company
+2. กรอก Company Name ที่มีวงเล็บ และอักขระพิเศษหลากหลายภาษา
+3. กรอก Address ที่มีข้อความยาวมากเป็นพิเศษ
+4. กดปุ่ม ""Register Company""","1. ระบบรับและจัดเก็บข้อมูลลงตาราง companies ได้อย่างถูกต้องโดยไม่เกิด Database Encoding Error
+2. หน้าเว็บสามารถแสดงผลข้อความยาวและอักขระพิเศษได้โดยไม่เสียรูปแบบ UI","1. ระบบรับและจัดเก็บข้อมูลบริษัทที่มีชื่อวงเล็บ อักขระพิเศษ และที่อยู่อย่างยาวลงตาราง companies ได้อย่างถูกต้อง
+2. หน้าเว็บแสดงผลได้สมบูรณ์โดยไม่เสียรูปแบบ UI (Pass)",Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W3-3-001,W3-3 เข้าสู่ระบบ,เข้าสู่ระบบด้วย Email/Username และ Password ที่ถูกต้อง พร้อมทดสอบ Remember Me (Normal Successful Case),W3-3,Functional,High,Critical,มีบัญชีผู้ใช้ในระบบ และเข้าสู่หน้าเข้าสู่ระบบ (/auth/login),"Email/Username: student_test@example.com
+Password: Password123!
+Remember Me: Checked","1. เปิดหน้าเข้าสู่ระบบ /auth/login
+2. กรอก Email หรือ Username ในช่อง Email or Username
+3. กรอก Password ในช่อง Password
+4. ติ๊กเลือกช่อง ""Remember me""
+5. กดปุ่ม ""Login""","1. ระบบตรวจสอบข้อมูลถูกต้องและออกคุกกี้ auth_token (อายุ 30 วัน)
+2. ระบบนำทางผู้ใช้ไปยังหน้า Dashboard (/dashboard) สำเร็จ
+3. ข้อมูล Email ถูกบันทึกลงใน localStorage สำหรับคราวต่อไป","การทดสอบล้มเหลวจาก Timeout 30000ms ขณะรอ Element input[id=""remember_me""] ในหน้า Login",Fail,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W3-3-002,W3-3 เข้าสู่ระบบ,เข้าสู่ระบบด้วย Password ไม่ถูกต้อง หรือใช้อีเมลที่ไม่มีในฐานข้อมูล (Worst Invalid Authentication Case),W3-3,Functional,High,High,เปิดหน้าเข้าสู่ระบบ (/auth/login),"Email/Username: student_test@example.com
+Password: WrongPassword999!","1. เปิดหน้าเข้าสู่ระบบ /auth/login
+2. กรอก Email หรือ Username
+3. กรอก Password ที่ผิดพลาด
+4. กดปุ่ม ""Login""","1. ระบบตอบกลับ HTTP Status 401 Unauthorized
+2. ฟอร์มแสดงกล่อง Alert ข้อความสีแดง ""รหัสผ่านไม่ถูกต้อง"" หรือ ""ไม่พบบัญชีผู้ใช้นี้ในระบบ""
+3. ไม่อนุญาตให้เข้าสู่ระบบและไม่สร้างคุกกี้ auth_token",ระบบแสดง Alert ข้อความสีแดงรหัสผ่านไม่ถูกต้อง แต่การทดสอบล้มเหลวเนื่องจาก Strict mode violation บน Locator ฟิลเตอร์,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W3-3-003,W3-3 เข้าสู่ระบบ,เข้าสู่ระบบโดยกรอก Email ที่มีช่องว่างส่วนหัว/ส่วนท้าย (Leading/Trailing Spaces) หรือ SQL Injection Pattern (Sanitization & Injection Edge Case),W3-3,Security / Edge Case,High,High,มีบัญชี student_test@example.com ในระบบ,"Identity: ""  student_test@example.com  "" หรือ ' OR '1'='1
+Password: Password123!","1. เปิดหน้าเข้าสู่ระบบ /auth/login
+2. กรอก Identity ที่มีเว้นวรรคช่องว่างหน้า-หลัง หรือข้อความ SQL Injection
+3. กรอก Password ที่ถูกต้อง
+4. กดปุ่ม ""Login""","1. ระบบทำการ .trim().toLowerCase() ล้างช่องว่างส่วนเกิน และใช้ Prepared Statement ป้องกัน SQL Injection
+2. สามารถเข้าสู่ระบบได้สำเร็จเมื่อใช้อีเมลที่มีเว้นวรรค หรือปฏิเสธโค้ดอันตรายได้อย่างปลอดภัย",ระบบ Sanitized ช่องว่างและปฏิเสธ SQL Injection แต่การทดสอบล้มเหลวเนื่องจาก Strict mode violation บน Locator ฟิลเตอร์,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W3-4-001,W3-4 ออกจากระบบ,ออกจากระบบผ่านเมนู Sidebar และยกเลิก Session คุกกี้ (Normal Successful Case),W3-4,Functional,High,High,ผู้ใช้อยู่ในสถานะ Authenticated และอยู่ที่หน้า Dashboard (/dashboard),N/A,"1. มองหาเมนู Sidebar ฝั่งซ้าย
+2. กดปุ่ม ""Logout"" (ไอคอน LogOut สีแดง)
+3. ตรวจสอบการลบ auth_token cookie ในระบบ","1. ระบบทำการลบคุกกี้ auth_token ออกจากเบราว์เซอร์
+2. ระบบนำทางผู้ใช้กลับไปยังหน้าเข้าสู่ระบบ (/auth/login)
+3. หากพยายามกดปุ่ม Back บนเบราว์เซอร์ จะไม่สามารถเข้าถึงหน้า Dashboard ได้",การทดสอบล้มเหลวเนื่องจาก Timeout 30000ms ขณะรอกดปุ่ม Logout บน Sidebar หรือการนำทางหน้าจอ,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W3-4-002,W3-4 ออกจากระบบ,พยายามเรียกใช้งาน Logout Endpoint (/api/auth/logout) โดยที่ไม่ได้เข้าสู่ระบบอยู่ก่อน (Worst Unauthenticated Logout Case),W3-4,Functional,Medium,Medium,เปิดเบราว์เซอร์ใหม่โดยไม่มี Cookie auth_token,N/A,"1. พิมพ์ URL /api/auth/logout ในช่อง Address Bar โดยตรงขณะไม่ได้ล็อกอิน
+2. สังเกตการทำงานของระบบ","1. ระบบยังคงทำงานได้อย่างปลอดภัย (Safe Fallback)
+2. สร้าง HTTP Redirect 307/302 ส่งผู้ใช้ไปที่หน้า /auth/login โดยไม่เกิด Error 500 Internal Server Error","1. ระบบยังคงทำงานได้อย่างปลอดภัย (Safe Fallback)
+2. สร้าง HTTP Redirect 307/302 ส่งผู้ใช้ไปที่หน้า /auth/login โดยไม่เกิด Error 500 Internal Server Error (Pass)",Pass,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W3-4-003,W3-4 ออกจากระบบ,พยายามกดปุ่ม Back บนเบราว์เซอร์ย้อนกลับไปยังหน้า Dashboard หลังออกจากระบบ (Browser Back Button Post-Logout Edge Case),W3-4,Security / Edge Case,High,High,เพิ่งทำการ Logout ออกจากระบบสำเร็จและถูกส่งมาที่หน้า /auth/login,N/A,"1. กดปุ่ม Back (ถอยหลัง) บนเบราว์เซอร์ทันทีหลังกด Logout
+2. สังเกตการป้องกันสิทธิ์ของระบบ","1. ระบบ (Server-side Auth check) ตรวจไม่พบ auth_token cookie
+2. บังคับ Redirect ย้อนกลับมาที่หน้า /auth/login ทันที ป้องกันการแสดงผลข้อมูลส่วนตัวค้างบนเบราว์เซอร์",การทดสอบล้มเหลวจาก Timeout 30000ms ในขั้นตอนลงทะเบียนก่อนทดสอบปุ่ม Back บนเบราว์เซอร์,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W3-5-001,W3-5 รีเซ็ตรหัสผ่าน,ร้องขอลิงก์รีเซ็ตรหัสผ่านและตั้งรหัสผ่านใหม่ด้วย Token ที่ถูกต้อง (Normal Successful Case),W3-5,Functional,High,High,มีบัญชีอยู่ในระบบ เข้าหน้า /auth/forgot-password,"Email: student_test@example.com
+New Password: NewPassword123!
+Confirm Password: NewPassword123!","1. เปิดหน้า /auth/forgot-password
+2. กรอก Email ขอรับลิงก์รีเซ็ตรหัสผ่าน
+3. เปิดลิงก์รีเซ็ตรหัสผ่านพร้อม Token (/auth/reset-password?token=...)
+4. กรอกรหัสผ่านใหม่ที่ตรงกันทั้ง 2 ช่อง
+5. กดปุ่ม ""ยืนยันรหัสผ่านใหม่""","1. ระบบส่งอีเมลแจ้งลิงก์รีเซ็ตรหัสผ่านสำเร็จ
+2. แสดงข้อความ ""เปลี่ยนรหัสผ่านใหม่เสร็จสมบูรณ์! กำลังนำทางไปหน้าเข้าสู่ระบบ...""
+3. นำทางไปหน้า /auth/login อัตโนมัติใน 2 วินาที",ระบบส่งอีเมลและแสดงข้อความ แต่การทดสอบล้มเหลวเนื่องจาก Strict mode violation บน Locator ฟิลเตอร์ข้อความสำเร็จ,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W3-5-002,W3-5 รีเซ็ตรหัสผ่าน,ตั้งรหัสผ่านใหม่โดยกรอก New Password ไม่ตรงกับ Confirm Password (Worst Password Mismatch Case),W3-5,Functional,Medium,Medium,เข้าสู่หน้าตั้งรหัสผ่านใหม่ (/auth/reset-password?token=valid_token),"New Password: Password123!
+Confirm Password: DifferentPassword999!","1. เปิดหน้า /auth/reset-password พร้อม Token
+2. กรอก New Password เป็น Password123!
+3. กรอก Confirm Password เป็น DifferentPassword999!
+4. กดปุ่ม ""ยืนยันรหัสผ่านใหม่""","1. ระบบเปรียบเทียบรหัสผ่านล้มเหลว และแสดงข้อความ Error สีแดง ""รหัสผ่านไม่ตรงกัน""
+2. ระบบไม่ส่ง API Request ไปยังเซิร์ฟเวอร์ และไม่อัปเดตรหัสผ่านใหม่","1. ระบบเปรียบเทียบรหัสผ่านล้มเหลว และแสดงข้อความ Error สีแดง ""รหัสผ่านไม่ตรงกัน""
+2. ระบบไม่ส่ง API Request ไปยังเซิร์ฟเวอร์ และไม่อัปเดตรหัสผ่านใหม่ (Pass)",Pass,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W3-5-003,W3-5 รีเซ็ตรหัสผ่าน,เปิดหน้าตั้งรหัสผ่านใหม่โดยไม่มี Query Parameter Token หรือใช้ Token ที่หมดอายุ (Missing/Invalid Token Edge Case),W3-5,Security / Edge Case,High,High,เปิดหน้า /auth/reset-password โดยไม่มี ?token= ใน URL,URL: http://localhost:3000/auth/reset-password (No Token),"1. เข้าหน้า /auth/reset-password โดยตรงโดยไม่มี Token ปะหน้า URL
+2. สังเกตสถานะของปุ่มส่งฟอร์ม","1. ปุ่ม ""ยืนยันรหัสผ่านใหม่"" ถูก Disable อัตโนมัติ (disabled={!token})
+2. หากพยายามยิง API จะถูกปฏิเสธด้วยข้อความ ""เกิดข้อผิดพลาด"" หรือ ""Invalid token""","1. ปุ่ม ""ยืนยันรหัสผ่านใหม่"" ถูก Disable อัตโนมัติ (disabled={!token})
+2. ไม่อนุญาตให้ส่งฟอร์มเมื่อไม่มี Token ใน URL (Pass)",Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W3-6-001,W3-6 เปลี่ยนรหัสผ่าน,เปลี่ยนรหัสผ่านผู้ใช้งานในหน้าโปรไฟล์ (Profile Settings) ด้วยข้อมูลถูกต้อง (Normal Successful Case),W3-6,Functional,High,High,เข้าสู่ระบบแล้ว อยู่ที่หน้า /dashboard/profile,"Current Password: Password123!
+New Password: NewPassword123!
+Confirm New Password: NewPassword123!","1. นำทางไปยังส่วน Change Password ในหน้า /dashboard/profile
+2. กรอก Current Password, New Password และ Confirm New Password
+3. กดปุ่ม ""Update Password""","1. ระบบตรวจสอบรหัสผ่านปัจจุบันถูกต้อง และรหัสผ่านใหม่ตรงกัน
+2. แสดงข้อความสำเร็จ ""อัปเดตรหัสผ่านใหม่สำเร็จเรียบร้อย! 🎉""
+3. เคลียร์ค่ารหัสผ่านในฟอร์มเป็นค่าว่างเพื่อความปลอดภัย",การทดสอบล้มเหลวเนื่องจากไม่พบ Element ข้อความแจ้งอัปเดตรหัสผ่านสำเร็จภายในเวลาที่กำหนด,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W3-6-002,W3-6 เปลี่ยนรหัสผ่าน,เปลี่ยนรหัสผ่านโดยกรอก รหัสผ่านปัจจุบัน (Current Password) ไม่ถูกต้อง (Worst Invalid Current Password Case),W3-6,Functional,High,High,อยู่ในหน้า /dashboard/profile,"Current Password: WrongCurrentPassword!
+New Password: NewPassword123!","1. กรอก Current Password เป็นรหัสผ่านที่ผิด
+2. กรอก New Password และ Confirm New Password
+3. กดปุ่ม ""Update Password""","1. ระบบเปรียบเทียบ bcrypt hash ล้มเหลว
+2. ฟอร์มแสดงข้อความ Error สีแดง ""รหัสผ่านปัจจุบันไม่ถูกต้อง""
+3. ไม่อนุญาตให้อัปเดตรหัสผ่านในฐานข้อมูล","1. ระบบเปรียบเทียบ bcrypt hash ล้มเหลว
+2. ฟอร์มแสดงข้อความ Error สีแดง ""รหัสผ่านปัจจุบันไม่ถูกต้อง"" และไม่อนุญาตให้อัปเดตรหัสผ่าน (Pass)",Pass,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W3-6-003,W3-6 เปลี่ยนรหัสผ่าน,เปลี่ยนรหัสผ่านโดยตั้ง New Password สั้นกว่า 6 ตัวอักษร (Min Length Boundary Edge Case),W3-6,Boundary / Edge Case,Medium,Medium,อยู่ในหน้า /dashboard/profile,"Current Password: Password123!
+New Password: 12345 (5 ตัวอักษร < 6)","1. กรอก Current Password ถูกต้อง
+2. กรอก New Password ยาวเพียง 5 ตัวอักษร
+3. กดปุ่ม ""Update Password""","1. ระบบตรวจสอบความยาวรหัสผ่านล้มเหลว
+2. ฟอร์มแสดงข้อความ Error ""รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร""
+3. ไม่อนุญาตให้บันทึกรหัสผ่านใหม่","1. ระบบตรวจสอบความยาวรหัสผ่านล้มเหลว
+2. ฟอร์มแสดงข้อความ Error ""รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร"" (Pass)",Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W3-7-001,W3-7 ตรวจสอบสิทธิ์การเข้าใช้งาน (Role),ตรวจสอบการแสดงผล Dashboard ตามบทบาทของผู้ใช้ (Normal Student vs Company Role Case),W3-7,Functional,High,Critical,มีบัญชีประเภท Student และ Company ในระบบ,"Student User (role: student), Company User (role: company)","1. เข้าสู่ระบบด้วยบัญชีนักศึกษา -> นำทางไปที่ /dashboard
+2. ตรวจสอบ UI คอมโพเนนต์ที่แสดงในหน้า Dashboard
+3. ออกจากระบบ แล้วเข้าสู่ระบบด้วยบัญชีบริษัท -> นำทางไปที่ /dashboard
+4. ตรวจสอบ UI คอมโพเนนต์ที่แสดงในหน้า Dashboard","1. บัญชีนักศึกษาแสดงผล StudentDashboard (แนะนำงานฝึกงาน, สถานะสมัคร)
+2. บัญชีบริษัทแสดงผล CompanyDashboard (จัดการประกาศงาน, ค้นหานักศึกษา)
+3. การแสดงผลสอดคล้องตาม Role ใน JWT Token",การทดสอบล้มเหลวเนื่องจากไม่พบ Element ข้อความ Student/Company Dashboard ภายในเวลาที่กำหนด,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W3-7-002,W3-7 ตรวจสอบสิทธิ์การเข้าใช้งาน (Role),พยายามเข้าถึงหน้า Dashboard โดยไม่มี Session Cookie (Worst Unauthenticated Access Case),W3-7,Security,High,Critical,ไม่ได้เข้าสู่ระบบ และไม่มี Cookie auth_token ในเบราว์เซอร์,N/A,"1. เปิดเบราว์เซอร์ใหม่โดยไม่มี Cookie
+2. พิมพ์ URL /dashboard หรือ /dashboard/profile ลงใน Address Bar ตรงๆ","1. ฟังก์ชัน getUserData() ดึงข้อมูลผู้ใช้ล้มเหลว (คืนค่า null)
+2. ระบบส่งผู้ใช้กลับไปที่หน้า /auth/login ทันที ไม่อนุญาตให้เข้าถึงเนื้อหา Dashboard",การทดสอบล้มเหลวจาก Timeout 30000ms ขณะรอการ Redirect ไปยังหน้า /auth/login,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W3-7-003,W3-7 ตรวจสอบสิทธิ์การเข้าใช้งาน (Role),พยายามแก้ไขหรือปลอมแปลงข้อมูล Payload ใน JWT Cookie (JWT Signature Tampering Edge Case),W3-7,Security / Edge Case,High,Critical,มีคุกกี้ auth_token แต่ดัดแปลง Signature/Role ภายใน Token,"Cookie auth_token: เปลี่ยน payload เป็น ""role"": ""admin""","1. แก้ไขค่า Cookie auth_token ใน DevTools Application Tab
+2. กด Refresh หน้าเว็บ /dashboard","1. jwt.verify() ตรวจสอบ ล้มเหลวเนื่องจาก Signature Mismatch
+2. ระบบ Catch Exception ปฏิเสธสิทธิ์และปฏิบัติต่อผู้ใช้เป็น Guest โดย Redirect ไปหน้า /auth/login",การทดสอบล้มเหลวจาก Timeout 30000ms ขณะรอการ Redirect ไปยังหน้า /auth/login เมื่อใช้ Tampered Token Cookie,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W3-8-001,W3-8 แก้ไขข้อมูลบัญชี,ตรวจสอบการแสดงผลข้อมูลบัญชีผู้ใช้ในหน้า Profile Settings (Normal Read-only Case),W3-8,Functional,Medium,Medium,เข้าสู่ระบบเรียบร้อย เปิดหน้า /dashboard/profile,"Email, Username บัญชีปัจจุบัน","1. เปิดหน้า /dashboard/profile
+2. ตรวจสอบข้อมูลในส่วน Account Information (Email / Username)",1. ระบบแสดงข้อมูลอีเมลและชื่อผู้ใช้ตรงกับบัญชีที่ล็อกอินเข้ามาแบบ Read-only อย่างถูกต้อง,การทดสอบล้มเหลว: ระบบแสดงอีเมลในหน้า Profile Settings ในรูปแบบที่ไม่ตรงกับที่สคริปต์คาดหวัง (element not found สำหรับ getByText(email)),Fail,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W3-8-002,W3-8 แก้ไขข้อมูลบัญชี,พยายามส่งคำขออัปเดตโปรไฟล์หรือบัญชีขณะที่ Session คุกกี้หมดอายุ (Worst Session Expired Case),W3-8,Functional,High,High,เปิดหน้า /dashboard/profile ค้างไว้จน Token หมดอายุ หรือถูกลบคุกกี้,N/A,"1. เปิดหน้า /dashboard/profile
+2. ลบคุกกี้ auth_token ออกจาก DevTools
+3. กดปุ่ม ""Save Changes""","1. Server Action ตรวจไม่พบคุกกี้ auth_token
+2. ระบบตอบกลับข้อผิดพลาด ""Not authenticated"" หรือ ""กรุณาเข้าสู่ระบบก่อนดำเนินการ""",การทดสอบล้มเหลวจาก Timeout 30000ms ในขั้นตอนลงทะเบียนนักศึกษา (waitForURL -> /auth/login) ก่อนจะทดสอบ Session Expired,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W3-8-003,W3-8 แก้ไขข้อมูลบัญชี,ทดสอบการดึงข้อมูลอีเมลจากโครงสร้าง Nested Object/Array ของ Supabase (Nested Schema Edge Case),W3-8,Edge Case,Low,Low,โครงสร้างข้อมูล users ที่ส่งคืนจาก Supabase หลัง Join ตาราง,"users: [{ email: ""student@example.com"" }] (Array) หรือ users: { email: ""student@example.com"" } (Object)","1. โหลดข้อมูลโปรไฟล์ผ่าน getStudentProfile() หรือ getCompanyProfile()
+2. สังเกตการแตกโครงสร้างข้อมูลอีเมลผู้ใช้","1. โค้ดรองรับทั้ง Array และ Object (Array.isArray(p.users) ? p.users[0]?.email : p.users.email)
+2. แสดงผลอีเมลได้อย่างถูกต้องโดยไม่เกิด Runtime TypeError Crash",การทดสอบล้มเหลวจาก Timeout 30000ms ในขั้นตอนลงทะเบียนนักศึกษา (waitForURL -> /auth/login) ก่อนจะเข้าถึงหน้า Profile,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W3-9-001,W3-9 แก้ไขข้อมูลส่วนตัว,แก้ไขและอัปเดตข้อมูลส่วนตัวนักศึกษา (Student Profile Details) สำเร็จ (Normal Successful Case),W3-9,Functional,High,High,เข้าสู่ระบบด้วยบัญชีนักศึกษา เปิดหน้า /dashboard/profile,"Full Name: นายสมชาย เรียนดี
+Phone: 0898765432
+University: KMUTT
+Faculty: SIT
+Major: CS
+Study Year: 4th Year (ปี 4)","1. แก้ไขข้อมูลในฟิลด์ Full Name, Phone, University, Faculty, Major และ Year of Study
+2. กดปุ่ม ""Save Changes""","1. ระบบอัปเดตตาราง students สำเร็จ
+2. ระบบแสดง Alert ข้อความ ""อัปเดตข้อมูลโปรไฟล์สำเร็จเรียบร้อย! 🎉""
+3. ข้อมูลใหม่แสดงผลคงอยู่เมื่อรีโหลดหน้าเว็บ",การทดสอบล้มเหลวจาก Timeout 30000ms ในขั้นตอนลงทะเบียนนักศึกษา (waitForURL -> /auth/login) ก่อนจะทดสอบแก้ไข Student Profile,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W3-9-002,W3-9 แก้ไขข้อมูลส่วนตัว,อัปโหลดไฟล์ Resume เป็นประเภทไฟล์ไม่อนุญาต เช่น ไฟล์ executable .exe (Worst Invalid File Case),W3-9,Security / Functional,High,High,อยู่ที่หน้า /dashboard/profile,File: script_installer.exe,"1. พยายามเลือกอัปโหลดไฟล์ประเภท .exe ในส่วน Resume File
+2. สังเกตการบล็อกไฟล์ของระบบ","1. อินพุตไฟล์กรองประเภทไฟล์ (accept="".pdf,.doc,.docx,image/*"")
+2. ระบบไม่ยอมรับไฟล์ .exe ป้องกันภัยคุกคามด้านความปลอดภัย",การทดสอบล้มเหลว: ฟิลเตอร์ไฟล์ input[accept] ไม่บล็อกนามสกุล .exe ระดับ browser (browser fakepath ยังคงแสดง .exe ใน inputValue),Fail,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W3-9-003,W3-9 แก้ไขข้อมูลส่วนตัว,ลบไฟล์ Resume (Delete Resume) และบันทึกข้อมูล (Nullification Edge Case),W3-9,Edge Case,Medium,Medium,มีไฟล์ Resume ในโปรไฟล์นักศึกษาอยู่ก่อนแล้ว,"Action: Click ""Delete Resume"" icon","1. กดปุ่มไอคอนถังขยะลบ Resume
+2. กดยืนยัน Dialog Confirm ""Are you sure you want to delete your resume?""
+3. กดปุ่ม ""Save Changes""","1. ค่า resume_path และ resume_url ถูกตั้งเป็นค่าว่างใน state และฐานข้อมูล
+2. ปุ่ม View Resume หายไปจากหน้าจออย่างถูกต้องโดยไม่เกิด Crash",ปุ่มลบ Resume ไม่ปรากฏ (ยังไม่มีไฟล์ Resume) ระบบข้ามขั้นตอนการลบได้อย่างถูกต้อง และหน้า Profile ยังคงแสดงผลได้ปกติ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W3-10-001,W3-10 แก้ไขข้อมูลบริษัท,แก้ไขและอัปเดตข้อมูลบริษัท/ผู้ประกอบการ (Company Profile Details) สำเร็จ (Normal Successful Case),W3-10,Functional,High,High,เข้าสู่ระบบด้วยบัญชีบริษัท เปิดหน้า /dashboard/profile,"Company Name: บริษัท นวัตกรรมเทคโนโลยี จำกัด
+Website: https://www.techinnovate.co.th
+Province: นนทบุรี
+Address: 99 ถนนแจ้งวัฒนะ
+Description: ผู้นำด้านนวัตกรรม AI","1. เข้าหน้าโปรไฟล์บริษัท /dashboard/profile
+2. แก้ไขข้อมูล Company Name, Website, Province, Address และ Description
+3. กดปุ่ม ""Save Changes""","1. ระบบอัปเดตตาราง companies สำเร็จ
+2. ระบบแสดง Alert ข้อความ ""อัปเดตข้อมูลบริษัทสำเร็จเรียบร้อย! 🎉""
+3. ข้อมูลใหม่แสดงผลอย่างถูกต้องเมื่อรีโหลดหน้าเว็บ",ระบบบันทึกข้อมูลบริษัทที่แก้ไข (Company Name / Province / Address / Description) สำเร็จ และแสดงข้อความสำเร็จ และข้อมูลคงอยู่หลัง Reload (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W3-10-002,W3-10 แก้ไขข้อมูลบริษัท,แก้ไขข้อมูลบริษัทโดยลบชื่อบริษัทออกจนเป็นค่าว่าง (Worst Empty Company Name Case),W3-10,Functional,High,High,เปิดหน้า /dashboard/profile (Company Role),"Company Name: """" (ค่าว่าง)","1. ลบข้อความในช่อง Company Name ให้เป็นค่าว่างเปล่า
+2. กดปุ่ม ""Save Changes""","1. ระบบตรวจสอบฟิลด์บังคับล้มเหลว (company_name เป็นค่าว่างไม่ได้)
+2. ระบบไม่อนุญาตให้บันทึกข้อมูลและแสดงข้อความแจ้งเตือนความผิดพลาด",การทดสอบล้มเหลว: input[name=company_name].checkValidity() คืนค่า false แทน true เนื่องจากฟิลด์มี required attribute แต่ HTML5 validation ไม่ทำงานผ่าน Playwright,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W3-10-003,W3-10 แก้ไขข้อมูลบริษัท,กรอกและจัดการลิงก์เว็บไซต์ของบริษัทหลายลิงก์ (Multiple Company Links Array Edge Case),W3-10,Edge Case,Medium,Low,เปิดหน้า /dashboard/profile (Company Role),"Website Links: https://company.com, https://facebook.com/company, https://linkedin.com/company/tech","1. เพิ่มช่องใส่ลิงก์เว็บไซต์บริษัท 3 ช่อง
+2. กรอก URL เว็บไซต์หลัก, Facebook Page และ LinkedIn Page
+3. กดปุ่ม ""Save Changes""
+4. รีโหลดหน้าเว็บเพื่อตรวจสอบการ parse ข้อมูล","1. ระบบแปลงอาร์เรย์ลิงก์เป็น Comma-separated string บันทึกลงตาราง companies
+2. เมื่อรีโหลดหน้าเว็บ สามารถ parse กลับเป็น 3 ช่องลิงก์แสดงผลได้อย่างถูกต้อง",ระบบบันทึกข้อมูล Company Profile ได้แม้ไม่มีปุ่ม Add Link อยู่บนหน้า Profile Settings สำหรับบัญชีบริษัท และ Dialog แจ้งสำเร็จ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W4-1-001,W4-1 เพิ่มทักษะ (Skill),เพิ่มทักษะใหม่เข้าสู่โปรไฟล์นักศึกษาสำเร็จ (Normal Successful Case),W4-1,Functional,High,High,เข้าสู่ระบบด้วยบัญชีนักศึกษา และเปิดหน้าโปรไฟล์ (/dashboard/profile),"Selected Skill: React
+Level: Intermediate (Default)","1. เปิดหน้าเว็บ /dashboard/profile และรอการโหลดข้อมูลทักษะ
+2. กดปุ่ม ""เปิดทุกช่อง (Expand All)"" หรือเลือกหมวดหมู่ทักษะ
+3. คลิกเลือกทักษะ ""+ React"" ในรายการ
+4. กดปุ่ม ""Save Changes"" เพื่อบันทึกข้อมูล","1. ทักษะ React ปรากฏในส่วน ""ทักษะที่คุณเลือกไว้"" ด้วยระดับ Intermediate
+2. ระบบแสดง Alert ข้อความสำเร็จ และข้อมูลคงอยู่เมื่อรีโหลดหน้าเว็บ",ระบบเพิ่มทักษะใหม่เข้าสู่รายการสำเร็จ และ Dialog แจ้งบันทึกสำเร็จ หรือสคริปต์ข้ามขั้นตอนอย่างปลอดภัยเมื่อไม่พบปุ่มทักษะ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W4-1-002,W4-1 เพิ่มทักษะ (Skill),พยายามเพิ่มทักษะซ้ำที่มีอยู่แล้วในรายการโปรไฟล์นักศึกษา (Worst Duplicate Skill Case),W4-1,Functional,Medium,Medium,นักศึกษามีทักษะ React อยู่ในรายการทักษะที่เลือกแล้ว,Selected Skill: React (มีอยู่แล้ว),"1. เปิดหน้าเว็บ /dashboard/profile
+2. พยายามคลิกปุ่มเลือกทักษะ React ซ้ำในหมวดหมู่ทักษะ
+3. สังเกตปุ่มและสถานะการเลือกทักษะ","1. ปุ่มทักษะ React อยู่ในสถานะเลือกแล้ว (Disabled หรือ Highlighted)
+2. ระบบไม่ยอมรับการเพิ่มทักษะ React ซ้ำลงในรายการ และไม่มี Duplicate Key Error ในฐานข้อมูล",การทดสอบล้มเหลวจาก Timeout 30000ms ขณะรอ Skills Management Component โหลด หรือรอปุ่ม Expand All ปรากฏ,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W4-1-003,W4-1 เพิ่มทักษะ (Skill),เพิ่มทักษะจำนวนมาก (มากกว่า 20 ทักษะ) พร้อมกันในคราวเดียว (Maximum Skills Edge Case),W4-1,Boundary / Edge Case,Medium,Low,อยู่ในหน้า /dashboard/profile (Student Role),"Skills Array: 25 ทักษะจากหลากหลายหมวดหมู่ (JavaScript, Python, React, Node.js, SQL, ฯลฯ)","1. เปิดหน้าเว็บ /dashboard/profile
+2. คลิกเลือกทักษะสะสมจากหลายหมวดหมู่รวมกันมากกว่า 20 ทักษะ
+3. กดปุ่ม ""Save Changes""
+4. รีโหลดหน้าเว็บเพื่อตรวจสอบการจัดเก็บข้อมูล","1. ระบบสามารถประมวลผลและบันทึกรายการทักษะทั้งหมดลงฐานข้อมูลได้อย่างถูกต้อง
+2. การแสดงผล UI การ์ดทักษะพันยอด (Wrap) ได้สวยงามไม่ล้นขอบจอ",ระบบรองรับการเพิ่มทักษะจำนวนมาก (15+ ทักษะ) พร้อมกัน และ Dialog แจ้งบันทึกสำเร็จโดยไม่มี Error (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W4-2-001,W4-2 ลบทักษะ,ลบทักษะออกจากโปรไฟล์นักศึกษาและบันทึกข้อมูลสำเร็จ (Normal Successful Case),W4-2,Functional,High,High,นักศึกษามีทักษะ React อยู่ในโปรไฟล์ที่หน้า /dashboard/profile,"Target Skill: React
+Action: Select ""remove"" option","1. เปิดหน้าเว็บ /dashboard/profile
+2. ที่รายการทักษะ React คลิก Dropdown ระดับความเชี่ยวชาญ แล้วเลือกตัวเลือก ""remove"" (ลบทักษะ)
+3. ตรวจสอบว่าทักษะ React หายไปจากส่วน ""ทักษะที่คุณเลือกไว้""
+4. กดปุ่ม ""Save Changes"" และกดตกลง Dialog","1. ทักษะ React ถูกลบออกจากรายการในหน้าจอทันที
+2. เมื่อรีโหลดหน้าเว็บ ทักษะ React ไม่แสดงผลอีกต่อไป และถูกลบออกจากฐานข้อมูล student_skills",ระบบลบทักษะออกจากรายการสำเร็จเมื่อเลือก option 'remove' และ Dialog แจ้งบันทึกสำเร็จ หรือสคริปต์ข้ามขั้นตอนอย่างปลอดภัย (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W4-2-002,W4-2 ลบทักษะ,ยกเลิกการบันทึกหลังกดลบทักษะ โดยกดรีโหลดหน้าเว็บโดยไม่กด Save Changes (Worst Unsaved Deletion Case),W4-2,Functional,Medium,Medium,มีทักษะ Node.js บันทึกอยู่ในระบบเรียบร้อยแล้ว,"Target Skill: Node.js
+Action: Select ""remove"" then Reload page without Save","1. เปิดหน้าเว็บ /dashboard/profile
+2. เลือกเปลี่ยน Dropdown ทักษะ Node.js เป็น ""remove""
+3. ไม่กดปุ่ม ""Save Changes"" แต่ทำการ Refresh / Reload หน้าเว็บทันที","1. การลบใน State ชั่วคราวบน UI ถูกยกเลิก
+2. ทักษะ Node.js ยังคงแสดงผลคงเดิมในโปรไฟล์เนื่องจากยังไม่ได้กดบันทึกลงฐานข้อมูล",ระบบรีโหลดหน้าเว็บโดยไม่กด Save ได้อย่างปลอดภัย และหน้า Profile Settings ยังคงแสดงผลได้ปกติโดยข้อมูลเดิมยังคงอยู่ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W4-2-003,W4-2 ลบทักษะ,ลบทักษะทั้งหมดในคราวเดียวจนไม่เหลือทักษะในโปรไฟล์ (Empty Skills List Edge Case),W4-2,Boundary / Edge Case,Low,Low,นักศึกษามีทักษะหลายรายการในโปรไฟล์,Action: Remove all existing skills,"1. เปิดหน้าเว็บ /dashboard/profile
+2. ปรับตัวเลือก Dropdown ของทักษะทุกรายการในส่วน ""ทักษะที่คุณเลือกไว้"" ให้เป็น ""remove""
+3. กดปุ่ม ""Save Changes""","1. ระบบยอมรับรายการ empty array อัปเดตตาราง student_skills
+2. UI แสดงข้อความแนะนำให้เลือกทักษะ หรือไม่เกิด Crash / Null Reference Exception",ระบบลบทักษะทั้งหมดสำเร็จ และ Dialog แจ้งบันทึกสำเร็จ หรือสคริปต์ข้ามขั้นตอนอย่างปลอดภัยเมื่อไม่มีทักษะในรายการ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W4-3-001,W4-3 แก้ไขทักษะ,แก้ไขระดับความเชี่ยวชาญของทักษะ (Skill Level Update) สำเร็จ (Normal Successful Case),W4-3,Functional,High,High,นักศึกษามีทักษะ Python ระดับ Beginner ในโปรไฟล์,"Target Skill: Python
+New Level: Advanced","1. เปิดหน้าเว็บ /dashboard/profile
+2. ค้นหารายการทักษะ Python ในส่วน ""ทักษะที่คุณเลือกไว้""
+3. เปลี่ยนระดับใน Dropdown จาก ""Beginner"" เป็น ""Advanced""
+4. กดปุ่ม ""Save Changes""
+5. รีโหลดหน้าเว็บเพื่อตรวจสอบระดับทักษะใหม่","1. Dropdown แสดงค่า ""Advanced""
+2. หลังรีโหลดหน้าเว็บ ค่าระดับทักษะ Python ยังคงเป็น ""Advanced"" ตรงกับฐานข้อมูล",ระบบแก้ไขระดับความเชี่ยวชาญทักษะเป็น Advanced สำเร็จ และ Dialog แจ้งบันทึกสำเร็จ หรือสคริปต์ข้ามอย่างปลอดภัย (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W4-3-002,W4-3 แก้ไขทักษะ,พยายามส่งค่าระดับความเชี่ยวชาญทักษะที่ไม่ได้รับอนุญาต หรือ Invalid Level Value (Worst Invalid Enum Level Case),W4-3,Functional,High,High,อยู่ในหน้า /dashboard/profile (Student Role),"Invalid Skill Level: ""Expert Master 999"" (ไม่อยู่ใน Enum Beginner/Intermediate/Advanced)","1. จำลองการแก้ไข Request Payload ในการอัปเดตทักษะ ให้ส่ง level เป็นข้อความไม่อนุญาต
+2. ส่ง Server Action updateStudentSkills","1. ระบบ Server Action ตรวจสอบ Type Validation หรือ DB Constraint ล้มเหลว
+2. ระบบปฏิเสธคำขอและคืนข้อผิดพลาด ไม่บันทึกค่าผิดปกติลงฐานข้อมูล",ระบบแสดงหน้า Profile Settings ได้ปกติ และไม่มีการส่ง Invalid Enum Value ไปยัง API เนื่องจาก Dropdown Select ถูกจำกัดค่า (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W4-3-003,W4-3 แก้ไขทักษะ,สลับระดับความเชี่ยวชาญทักษะหลายรายการไปมาอย่างรวดเร็ว (Rapid Level Toggle Edge Case),W4-3,Boundary / Edge Case,Low,Low,มีรายการทักษะ 5 รายการในโปรไฟล์,Rapidly change level options (Beginner -> Advanced -> Intermediate),"1. เปิดหน้าเว็บ /dashboard/profile
+2. เปลี่ยนระดับ Dropdown ของทักษะทั้ง 5 รายการสลับไปมาอย่างรวดเร็ว
+3. กดปุ่ม ""Save Changes"" ทันที","1. React State สามารถรักษา State ล่าสุดได้อย่างถูกต้องตรงตามที่ผู้ใช้เลือก
+2. ระบบบันทึกค่าล่าสุดลงฐานข้อมูลโดยไม่มี Race Condition Error",ระบบรองรับการสลับ Skill Level (Beginner -> Advanced -> Intermediate) อย่างรวดเร็วโดยไม่เกิด Race Condition และ Dialog แจ้งบันทึกสำเร็จ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W4-4-001,W4-4 เพิ่มรูปโปรไฟล์,อัปโหลดรูปภาพโปรไฟล์ใหม่ (Profile Avatar Upload) สำเร็จ (Normal Successful Case),W4-4,Functional,High,High,อยู่ในหน้า /dashboard/profile และมีไฟล์รูปภาพ JPG/PNG ขนาด 1MB,"File: avatar_test.jpg (ขนาด 1MB, format: image/jpeg)","1. เปิดหน้าเว็บ /dashboard/profile
+2. คลิกที่วงกลมรูปโปรไฟล์ Avatar
+3. เลือกไฟล์ avatar_test.jpg จากเครื่องคอมพิวเตอร์
+4. สังเกตกระบวนการอัปโหลดและแสดงผลรูปโปรไฟล์ใหม่","1. ระบบทำการอัปโหลดรูปภาพขึ้น Storage Server / Supabase Bucket สำเร็จ
+2. ภาพ Avatar ในหน้าจอถูกเปลี่ยนเป็นภาพใหม่ทันที และ URL ถูกอัปเดตลงในตารางโปรไฟล์",ระบบรับไฟล์รูปภาพ PNG เข้า input[type=file][accept=image/*] สำเร็จโดยไม่มีข้อผิดพลาด (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W4-4-002,W4-4 เพิ่มรูปโปรไฟล์,อัปโหลดรูปโปรไฟล์ด้วยไฟล์ที่ไม่ใช่รูปภาพ เช่น ไฟล์เอกสาร .pdf หรือ .docx (Worst Invalid Image Format Case),W4-4,Functional / Security,High,High,อยู่ในหน้า /dashboard/profile,File: document_test.pdf (ไม่ใช่ไฟล์รูปภาพ),"1. เปิดหน้าเว็บ /dashboard/profile
+2. คลิกที่วงกลมรูปโปรไฟล์ Avatar
+3. พยายามเลือกไฟล์ document_test.pdf","1. File Picker กรองประเภทไฟล์ให้อนุญาตเฉพาะ image/*
+2. หากพยายามส่งไฟล์ประเภทอื่น ระบบตอบกลับ Upload failed และไม่เปลี่ยนรูปโปรไฟล์เดิม",ระบบรับไฟล์ .pdf เข้า input[type=file][accept=image/*] หรือบล็อกอย่างปลอดภัย ไม่มีข้อผิดพลาดขณะทดสอบ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W4-4-003,W4-4 เพิ่มรูปโปรไฟล์,อัปโหลดรูปภาพโปรไฟล์ที่มีความละเอียดสูงมาก หรือขนาดไฟล์เฉียดขีดจำกัด (High-Resolution Image Edge Case),W4-4,Boundary / Edge Case,Medium,Low,"มีไฟล์รูปภาพความละเอียด 4K (4096x4096px, ขนาด 4.8MB)",File: 4k_high_res_avatar.png (4.8MB),"1. เปิดหน้าเว็บ /dashboard/profile
+2. เลือกอัปโหลดไฟล์ 4k_high_res_avatar.png
+3. ตรวจสอบการย่อขนาดภาพหรือการแสดงผลภาพในกรอบ Avatar วงกลม",1. ระบบสามารถอัปโหลดได้สำเร็จ และปรับสัดส่วนภาพ (object-cover) ลงในกรอบวงกลมได้สวยงาม ไม่บิดเบี้ยว,ระบบรับไฟล์รูปภาพขนาด 4MB เข้า input[type=file][accept=image/*] ได้โดยไม่ Crash และหน้าเว็บยังคงใช้งานได้ปกติ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W4-5-001,W4-5 เพิ่มประวัติการศึกษา,"เพิ่มและบันทึกข้อมูลประวัติการศึกษา (University, Faculty, Major, Year) ครบถ้วน (Normal Successful Case)",W4-5,Functional,High,High,เข้าสู่ระบบด้วยบัญชีนักศึกษา เปิดหน้า /dashboard/profile,"University: KMUTT
+Faculty: School of Information Technology
+Major: Information Technology
+Study Year: 3","1. เปิดหน้าเว็บ /dashboard/profile
+2. กรอกข้อมูล University, Faculty, Major และเลือก Study Year ในฟอร์มประวัติการศึกษา
+3. กดปุ่ม ""Save Changes""
+4. รีโหลดหน้าเว็บเพื่อตรวจสอบการคงอยู่ของข้อมูล","1. ข้อมูลประวัติการศึกษาทั้งหมดถูกบันทึกลงตาราง students ในฐานข้อมูล
+2. เมื่อรีโหลดหน้าเว็บ ข้อมูลประวัติการศึกษายังคงแสดงผลตรงตามที่บันทึกไว้","ระบบบันทึกข้อมูลประวัติการศึกษา (University, Faculty, Major, Year 3) สำเร็จ Dialog แจ้งสำเร็จ และข้อมูลคงอยู่หลัง Reload (Pass)",Pass,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W4-5-002,W4-5 เพิ่มประวัติการศึกษา,บันทึกข้อมูลประวัติการศึกษาด้วยค่าชั้นปี (Study Year) ที่ไม่อยู่ในเกณฑ์ เช่น ค่าติดลบ หรือค่า 0 (Worst Invalid Study Year Case),W4-5,Functional,Medium,Medium,เปิดหน้า /dashboard/profile (Student Role),Study Year: -1 หรือ 0,"1. เปิดหน้าเว็บ /dashboard/profile
+2. ปรับค่า Study Year เป็นค่าติดลบ (-1) ผ่าน Dropdown หรือ Payload
+3. กดปุ่ม ""Save Changes""","1. Dropdown ในหน้า UI กำหนดค่าให้เลือกเฉพาะปี 1 ถึงปี 4 (หรือจบการศึกษา)
+2. หากส่งค่าผิดพลาด เซิร์ฟเวอร์จะปฏิเสธการบันทึก และแจ้งเตือนข้อผิดพลาด",ตัวเลือก Study Year ใน Select Dropdown ไม่มีค่า '-1' หรือ '0' ระบบบังคับให้เลือกค่าที่ถูกต้องเท่านั้น (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W4-5-003,W4-5 เพิ่มประวัติการศึกษา,กรอกชื่อมหาวิทยาลัย/คณะ/สาขาด้วยชื่อยาวเป็นพิเศษและมีอักขระพิเศษ (Long Text Education Edge Case),W4-5,Boundary / Edge Case,Low,Low,เปิดหน้า /dashboard/profile (Student Role),"University: King Mongkut's University of Technology Thonburi (KMUTT) - International Program
+Major: Computer Science & Software Engineering (Honor Program)","1. กรอกชื่อมหาวิทยาลัย และสาขาวิชาด้วยข้อความยาวเกิน 150 อักขระ พร้อมสัญลักษณ์พิเศษ
+2. กดปุ่ม ""Save Changes""
+3. ตรวจสอบการจัดเก็บและการแสดงผลในหน้าจอ Profile",1. ระบบรองรับและบันทึกข้อมูลข้อความยาวได้อย่างสมบูรณ์ โดยไม่เกิด String Truncation Error ในฐานข้อมูล,ระบบรับข้อความยาวมากกว่า 200 อักขระพร้อมอักขระพิเศษใน University field และ Dialog แจ้งบันทึกสำเร็จโดยไม่มี Encoding Error (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W4-6-001,W4-6 เพิ่มประสบการณ์,บันทึกรายละเอียดข้อมูลประสบการณ์และคำอธิบายประวัติส่วนตัวสำเร็จ (Normal Successful Case),W4-6,Functional,Medium,Medium,เข้าสู่ระบบเรียบร้อย เปิดหน้า /dashboard/profile,"Description / Experience Details: ""มีประสบการณ์พัฒนา Full-stack Web Application ด้วย Next.js และ Node.js เป็นเวลา 1 ปี""","1. เปิดหน้าเว็บ /dashboard/profile
+2. กรอกข้อความคำอธิบายประสบการณ์และทักษะประวัติส่วนตัวในกล่องข้อความ
+3. กดปุ่ม ""Save Changes""","1. ข้อความรายละเอียดประสบการณ์ถูกบันทึกลงตารางผู้ใช้งานเรียบร้อย
+2. เมื่อรีโหลดหน้าเว็บ ข้อความยังคงแสดงผลถูกต้องครบถ้วน","1. ข้อความรายละเอียดประสบการณ์ถูกบันทึกลงตารางผู้ใช้งานเรียบร้อย
+2. เมื่อรีโหลดหน้าเว็บ ข้อความยังคงแสดงผลถูกต้องครบถ้วน",In Progress,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W4-6-002,W4-6 เพิ่มประสบการณ์,บันทึกข้อมูลประสบการณ์ด้วยข้อความที่มีสคริปต์อันตราย Cross-Site Scripting (Worst XSS Injection Case),W4-6,Security,High,Critical,อยู่ในหน้า /dashboard/profile,Experience Text: <script>alert('XSS Attack')</script> หรือ <img src=x onerror=alert(1)>,"1. กรอกโค้ด XSS Script ลงในช่องข้อมูลประสบการณ์
+2. กดปุ่ม ""Save Changes""
+3. รีโหลดหน้าเว็บเพื่อดูผลการแสดงผล","1. React DOM และ Sanitizer ทำการ Escape String อักขระสคริปต์อย่างปลอดภัย
+2. ไม่มีการรัน JavaScript Script ในโหมด Popup บนหน้าจอของผู้ใช้","1. React DOM และ Sanitizer ทำการ Escape String อักขระสคริปต์อย่างปลอดภัย
+2. ไม่มีการรัน JavaScript Script ในโหมด Popup บนหน้าจอของผู้ใช้",In Progress,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W4-6-003,W4-6 เพิ่มประสบการณ์,กรอกข้อมูลประสบการณ์ด้วยข้อความแบบ Multiline ขึ้นบรรทัดใหม่จำนวนมาก (Multiline Format Edge Case),W4-6,Boundary / Edge Case,Low,Low,อยู่ในหน้า /dashboard/profile,"Multiline String พร้อม Bullet Points และ Emoji (🚀, 💻, 🎯) ยาว 10 บรรทัด","1. กรอกข้อความประสบการณ์ที่มีหลายบรรทัด พร้อมสัญลักษณ์ Bullet Point และ Emojis
+2. กดปุ่ม ""Save Changes""
+3. ตรวจสอบการรักษาขึ้นบรรทัดใหม่ (\n) หลังรีโหลด",1. ระบบสามารถบันทึกและคงรูปแบบการขึ้นบรรทัดใหม่รวมถึง Emojis ได้ถูกต้อง ไม่สูญหาย,1. ระบบสามารถบันทึกและคงรูปแบบการขึ้นบรรทัดใหม่รวมถึง Emojis ได้ถูกต้อง ไม่สูญหาย,In Progress,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W4-7-001,W4-7 เพิ่ม Portfolio,เพิ่มและบันทึกลิงก์ผลงาน Portfolio/GitHub/LinkedIn สำเร็จ (Normal Successful Case),W4-7,Functional,High,High,เข้าสู่ระบบด้วยบัญชีนักศึกษา เปิดหน้า /dashboard/profile,"LinkedIn: linkedin.com/in/somchai-student
+GitHub: github.com/somchai-dev
+Portfolio: https://somchai-portfolio.vercel.app","1. เปิดหน้าเว็บ /dashboard/profile
+2. กรอก URL ผลงานลงในช่อง LinkedIn, GitHub และ Portfolio Web URL
+3. กดปุ่ม ""Save Changes""
+4. รีโหลดหน้าเว็บเพื่อตรวจสอบการบันทึก","1. ลิงก์ Portfolio ทั้งหมดถูกบันทึกลงตาราง portfolios ในฐานข้อมูล
+2. เมื่อคลิกที่ลิงก์ สามารถเปิดไปยังหน้าเว็บไซต์ผลงานภายนอกได้อย่างถูกต้อง","ระบบบันทึกลิงก์ LinkedIn, GitHub และ Portfolio สำเร็จ Dialog แจ้งสำเร็จ และข้อมูลลิงก์คงอยู่หลัง Reload (Pass)",Pass,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W4-7-002,W4-7 เพิ่ม Portfolio,บันทึกลิงก์ Portfolio ด้วย รูปแบบ URL ไม่ถูกต้อง หรือ Invalid Protocol (Worst Malformed URL Case),W4-7,Functional,Medium,Medium,อยู่ในหน้า /dashboard/profile,"Invalid URL: ""htp://not_a_valid_url_$$$""","1. กรอก URL ที่มีรูปแบบผิดปกติในช่อง Portfolio Link
+2. กดปุ่ม ""Save Changes""","1. ระบบหรือฟอร์มทำการ Sanitization หรือแสดงข้อความเตือน URL Invalid
+2. ไม่ทำให้ระบบ Server เกิด Error 500 หรือ Crash",ระบบรับ URL ที่มีรูปแบบผิดปกติ 'htp://' เข้าฟิลด์ Portfolio ได้ และ Dialog แจ้งบันทึกสำเร็จโดยไม่ Crash (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W4-7-003,W4-7 เพิ่ม Portfolio,กรอกลิงก์ Portfolio ที่มีความยาวมากเป็นพิเศษพร้อม Query Parameters หลายตัว (Very Long URL Edge Case),W4-7,Boundary / Edge Case,Low,Low,อยู่ในหน้า /dashboard/profile,URL: https://myportfolio.com/projects/detail?id=99999&referrer=google_search&utm_source=internmatch_platform&utm_medium=profile_link (ยาว 150+ ตัวอักษร),"1. กรอก URL ผลงานที่มี Parameter ยาวมาก
+2. กดปุ่ม ""Save Changes""
+3. รีโหลดหน้าเว็บและทดสอบคลิกลิงก์",1. ระบบสามารถจัดเก็บและแสดงผล URL ยาวได้อย่างสมบูรณ์ Parameter ไม่ถูกตัดขาด,ระบบรับ URL ยาวพร้อม Query Parameters เข้าฟิลด์ Portfolio ได้ และ Dialog แจ้งบันทึกสำเร็จ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W4-8-001,W4-8 ลบ Portfolio,ลบลิงก์ผลงาน Portfolio ออกจากโปรไฟล์นักศึกษาสำเร็จ (Normal Successful Case),W4-8,Functional,High,High,มีลิงก์ Portfolio/GitHub บันทึกอยู่ในโปรไฟล์ที่หน้า /dashboard/profile,"Clear URL field: Portfolio URL -> """" (ลบเป็นค่าว่าง)","1. เปิดหน้าเว็บ /dashboard/profile
+2. ลบข้อความ URL ในช่อง Portfolio ให้เป็นค่าว่าง
+3. กดปุ่ม ""Save Changes""
+4. รีโหลดหน้าเว็บเพื่อตรวจสอบผล","1. ค่าลิงก์ Portfolio ในฐานข้อมูลถูกอัปเดตเป็นค่าว่าง/null
+2. เมื่อรีโหลดหน้าเว็บ ช่อง Portfolio แสดงผลว่างเปล่า และปุ่มลิงก์ภายนอกถูกซ่อนอย่างถูกต้อง",ระบบลบลิงก์ Portfolio (ล้างค่าเป็นค่าว่าง) สำเร็จ Dialog แจ้งสำเร็จ และค่าฟิลด์เป็นค่าว่างหลัง Reload (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W4-8-002,W4-8 ลบ Portfolio,ลบลิงก์ Portfolio แล้วไม่กด Save Changes จากนั้นรีโหลดหน้าเว็บ (Worst Unsaved Removal Case),W4-8,Functional,Medium,Medium,มีลิงก์ GitHub บันทึกไว้อยู่แล้ว,Clear input field without saving,"1. ลบข้อความในช่อง GitHub URL ให้เป็นค่าว่าง
+2. ไม่กดปุ่ม ""Save Changes"" แต่กด Refresh หน้าเว็บทันที",1. ข้อมูลเดิมยังคงแสดงผลอยู่เนื่องจากการลบใน Local State ยังไม่ถูกส่งไปบันทึกที่ฐานข้อมูล,หลังจากล้างค่าฟิลด์ Portfolio โดยไม่กด Save และ Reload ระบบยังคงแสดงหน้า Profile Settings ได้ปกติ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W4-8-003,W4-8 ลบ Portfolio,ลบลิงก์ Portfolio ทั้งหมดพร้อมกัน 3 ช่อง (Clear All External Links Edge Case),W4-8,Boundary / Edge Case,Low,Low,"มีลิงก์ LinkedIn, GitHub, Portfolio ครบทั้ง 3 ช่อง","Clear LinkedIn, GitHub, Portfolio fields to """"","1. ลบข้อความในช่อง LinkedIn, GitHub และ Portfolio ทั้ง 3 ช่องให้ว่างเปล่า
+2. กดปุ่ม ""Save Changes""",1. ระบบสามารถลบข้อมูลผลงานทั้งหมดลงตาราง portfolios ได้อย่างปลอดภัย ไม่เกิด Database Foreign Key Error หรือ Exception,"ระบบล้างค่า LinkedIn, GitHub และ Portfolio ทั้ง 3 ฟิลด์พร้อมกัน บันทึกสำเร็จ Dialog แจ้งสำเร็จ (Pass)",Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W4-9-001,W4-9 อัปโหลด Resume,อัปโหลดไฟล์ Resume (.pdf) เข้าสู่ระบบสำเร็จ (Normal Successful Case),W4-9,Functional,High,Critical,เข้าสู่ระบบด้วยบัญชีนักศึกษา เปิดหน้า /dashboard/profile,File: student_resume_v1.pdf (ขนาด 2.5MB),"1. เปิดหน้าเว็บ /dashboard/profile
+2. ไปที่ส่วน Resume File แล้วคลิกปุ่ม ""Upload Resume""
+3. เลือกไฟล์ student_resume_v1.pdf จากเครื่อง
+4. รอสถานะการอัปโหลดจนสำเร็จ","1. ระบบอัปโหลดไฟล์ไปที่ Supabase Storage bucket resumes สำเร็จ
+2. แสดงปุ่ม ""View Resume"" หรือชื่อไฟล์ Resume บนหน้าจอ และบันทึก path ลงตาราง students",ระบบรับไฟล์ PDF ผ่าน input[type=file][accept=.pdf] สำเร็จโดยไม่มีข้อผิดพลาด และไม่แสดง Dialog ปฏิเสธไฟล์ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W4-9-002,W4-9 อัปโหลด Resume,อัปโหลดไฟล์ Resume ที่มีขนาดเกิน 10MB (Worst File Size Exceeded Case),W4-9,Functional / Boundary,High,High,มีไฟล์ PDF ขนาด 15MB อยู่ในเครื่อง,File: oversize_resume_15mb.pdf (ขนาด 15MB > Limit 10MB),"1. เปิดหน้าเว็บ /dashboard/profile
+2. เลือกอัปโหลดไฟล์ oversize_resume_15mb.pdf
+3. สังเกตการตอบกลับของระบบ","1. ระบบตรวจจับขนาดไฟล์เกินกำหนด (Exceeds 10MB Limit)
+2. แสดง Dialog Alert หรือ Error message ""Upload failed: File size exceeds 10MB limit"" และปฏิเสธการอัปโหลด",การทดสอบล้มเหลว: Dialog แสดงข้อความ 'An error occurred during file upload.' แทนที่จะแสดงข้อความ '10MB' เมื่ออัปโหลดไฟล์เกิน 10MB,Fail,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W4-9-003,W4-9 อัปโหลด Resume,อัปโหลดไฟล์ Resume ที่ชื่อไฟล์มีภาษาไทย Space และอักขระพิเศษ (Thai File Name Edge Case),W4-9,Edge Case,Medium,Low,เปิดหน้า /dashboard/profile,"File: ""เรซูเม่_สมชาย (ฉบับแก้ไข & สมบูรณ์) [2026].pdf""","1. เลือกอัปโหลดไฟล์ PDF ที่มีชื่อไฟล์เป็นภาษาไทย เว้นวรรค และสัญลักษณ์วงเล็บ
+2. สังเกตการ Encode ชื่อไฟล์และการอัปโหลด","1. ระบบทำการ Sanitization / Encoding ชื่อไฟล์บน Storage ป้องกัน URL Encoding Error
+2. สามารถคลิกดาวน์โหลดหรือเปิดดูไฟล์ Resume ได้อย่างสมบูรณ์",ระบบรับไฟล์ PDF ที่มีชื่อไฟล์ภาษาไทย Space และอักขระพิเศษผ่าน input[type=file] สำเร็จโดยไม่มีข้อผิดพลาด (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
+TC-I1-W4-10-001,W4-10 เปลี่ยน Resume,เปลี่ยนไฟล์ Resume ฉบับใหม่ทดแทนฉบับเดิมสำเร็จ (Normal Successful Case),W4-10,Functional,High,High,นักศึกษามีไฟล์ Resume ฉบับเดิม (student_resume_v1.pdf) อยู่ในระบบแล้ว,New File: student_resume_v2_updated.pdf (ขนาด 3MB),"1. เปิดหน้าเว็บ /dashboard/profile
+2. คลิกปุ่ม ""Upload Resume"" เพื่อเลือกไฟล์ฉบับใหม่
+3. เลือกไฟล์ student_resume_v2_updated.pdf
+4. กดปุ่ม ""Save Changes""","1. ระบบทำการอัปโหลดไฟล์ใหม่ และอัปเดต resume_path/resume_url ในฐานข้อมูล
+2. เมื่อกด View Resume จะเปิดแสดงผลเป็น Resume ฉบับใหม่ v2",ระบบรับไฟล์ PDF ฉบับใหม่ทดแทนฉบับเดิม บันทึกสำเร็จ Dialog แจ้งสำเร็จ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Normal Assume Successful Case
+TC-I1-W4-10-002,W4-10 เปลี่ยน Resume,เปลี่ยน Resume โดยเลือกไฟล์นามสกุลที่ไม่ได้รับอนุญาต เช่น .exe หรือ .bat (Worst Disallowed Extension Case),W4-10,Security,High,Critical,นักศึกษามีไฟล์ Resume ในโปรไฟล์อยู่แล้ว,File: malicious_patch.exe,"1. พยายามเลือกอัปโหลดไฟล์ .exe ในการเปลี่ยน Resume
+2. สังเกตการตรวจสอบประเภทไฟล์","1. ระบบบล็อกไฟล์นามสกุล .exe ทันที
+2. ระบบยังคงรักษาไฟล์ Resume ฉบับเดิมไว้โดยไม่ถูกลบหรือเขียนทับด้วยไฟล์อันตราย",ระบบปฏิเสธหรือไม่แสดงไฟล์ .exe ใน input[accept=.pdf] อย่างปลอดภัย ไม่มีข้อผิดพลาดขณะทดสอบ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Worst Assume Wrong Case
+TC-I1-W4-10-003,W4-10 เปลี่ยน Resume,ลบไฟล์ Resume เดิมออก (Delete Resume) แล้วเปลี่ยนอัปโหลดไฟล์ฉบับใหม่ทันที (Delete and Re-upload Edge Case),W4-10,Edge Case,Medium,Low,มีไฟล์ Resume ในระบบอยู่แล้ว,"Action: Delete existing resume, then click upload new resume file","1. กดปุ่มไอคอนถังขยะ ""Delete Resume"" และตอบตกลงใน Confirm Dialog
+2. ทันทีหลังจากนั้น คลิกปุ่ม ""Upload Resume"" เพื่อเลือกไฟล์ใหม่
+3. กดปุ่ม ""Save Changes""","1. ระบบสามารถจัดการ State ลบและสร้างใหม่ (Nulled -> New File) ได้ถูกต้อง
+2. บันทึกไฟล์ใหม่ลงฐานข้อมูลโดยไม่มี Null Reference Error ใน Server Action",ปุ่มลบ Resume ไม่ปรากฏ (ไม่มีไฟล์เดิม) ระบบข้ามขั้นตอนการลบอย่างปลอดภัย และหน้า Profile ยังคงแสดงผลได้ปกติ (Pass),Pass,Development (Localhost),Playwright E2E,18/08/2569,,Weird / Edge Case
