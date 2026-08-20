@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -11,15 +11,36 @@ import {
   HelpCircle, 
   LogOut
 } from "lucide-react";
+import { getUserRole } from "@/lib/actions/auth";
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadRole() {
+      try {
+        const res = await getUserRole();
+        if (res.success && res.role) {
+          setRole(res.role);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user role in sidebar:", err);
+      }
+    }
+    loadRole();
+  }, []);
 
   const menuItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "My Internships", href: "/dashboard/Internships", icon: Briefcase },
-    { name: "Applications", href: "/applications", icon: Briefcase },
-    { name: "Matches", href: "/matches", icon: Brain },
+    ...(role === "company" ? [{ name: "My Internships", href: "/dashboard/Internships", icon: Briefcase }] : []),
+    ...(role === "student" || role === "company"
+      ? [
+          { name: "Applications", href: "/applications", icon: Briefcase },
+          { name: "Matches", href: "/matches", icon: Brain },
+        ]
+      : []
+    ),
     { name: "Settings", href: "/dashboard/profile", icon: Settings },
   ];
 

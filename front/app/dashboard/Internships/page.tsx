@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
+import { getUserRole } from "@/lib/actions/auth";
 import {
     PlusCircle,
     Search,
@@ -93,6 +95,26 @@ export default function MyInternshipsPage() {
     const [isLoaded, setIsLoaded] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState<string>("All");
+    const [isCheckingRole, setIsCheckingRole] = useState(true);
+    const router = useRouter();
+
+    // Check user role before rendering the page content
+    useEffect(() => {
+        async function checkRole() {
+            try {
+                const res = await getUserRole();
+                if (!res.success || res.role !== "company") {
+                    router.push("/dashboard");
+                    return;
+                }
+                setIsCheckingRole(false);
+            } catch (err) {
+                console.error("Error checking role in Internships page:", err);
+                router.push("/dashboard");
+            }
+        }
+        checkRole();
+    }, [router]);
 
     // Load initial data from localStorage after mounting
     useEffect(() => {
@@ -260,6 +282,17 @@ export default function MyInternshipsPage() {
         }
         setIsModalOpen(false);
     };
+
+    if (isCheckingRole) {
+        return (
+            <div className="bg-slate-50 text-slate-900 min-h-screen flex items-center justify-center antialiased w-full">
+                <div className="flex flex-col items-center justify-center">
+                    <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></span>
+                    <p className="text-sm font-semibold text-slate-500 mt-2">Checking access permissions...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">

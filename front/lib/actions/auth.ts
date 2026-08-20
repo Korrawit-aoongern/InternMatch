@@ -10,6 +10,7 @@ interface DecodedToken {
   email: string;
   username: string;
   fullname?: string;
+  role?: string;
 }
 
 export interface UserRegisterFormData {
@@ -517,5 +518,26 @@ export async function changeUserPassword(currentPassword: string, newPassword: s
   } catch (err) {
     console.error("Error in changeUserPassword action:", err);
     return { success: false, error: "เกิดข้อผิดพลาดในการตรวจสอบหรืออัปเดตรหัสผ่าน" };
+  }
+}
+
+export async function getUserRole() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
+    
+    if (!token) {
+      return { success: false, error: "Not authenticated" };
+    }
+    
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+    ) as unknown as DecodedToken;
+    
+    return { success: true, role: decoded.role || "student" };
+  } catch (err) {
+    console.error("Error in getUserRole:", err);
+    return { success: false, error: "Failed to verify token" };
   }
 }
