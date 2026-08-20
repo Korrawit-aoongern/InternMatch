@@ -42,7 +42,6 @@ export interface InternshipSkill {
     skill_id: number;
     name: string;
     category: string;
-    required: boolean;
     level: string;
 }
 
@@ -80,7 +79,6 @@ export default function MyInternshipsPage() {
         skill_id: number;
         name: string;
         category: string;
-        required: boolean;
         level: string;
     }[]>([]);
 
@@ -240,7 +238,6 @@ export default function MyInternshipsPage() {
             skill_id: s.skill_id,
             name: s.name,
             category: s.category,
-            required: s.required,
             level: s.level || "Intermediate"
         })));
         setCurrentStep(1);
@@ -257,16 +254,9 @@ export default function MyInternshipsPage() {
                 skill_id: skill.id,
                 name: skill.name || "",
                 category: skill.category || "",
-                required: true, // defaults to necessary/required
                 level: "Intermediate"
             }]);
         }
-    };
-
-    const handleToggleSkillRequired = (skillId: number, required: boolean) => {
-        setSelectedSkills(selectedSkills.map(s =>
-            s.skill_id === skillId ? { ...s, required } : s
-        ));
     };
 
     const handleToggleSkillLevel = (skillId: number, level: string) => {
@@ -306,7 +296,6 @@ export default function MyInternshipsPage() {
 
         const skillsPayload = selectedSkills.map(s => ({
             skill_id: s.skill_id,
-            required: s.required,
             level: s.level || "Intermediate"
         }));
 
@@ -590,7 +579,7 @@ export default function MyInternshipsPage() {
                                                 </div>
                                             </div>
 
-                                            {/* Selected skills summary list with Required / Optional dropdown */}
+                                            {/* Selected skills summary list */}
                                             {selectedSkills.length > 0 && (
                                                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
                                                     <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
@@ -609,14 +598,6 @@ export default function MyInternshipsPage() {
                                                                         <option value="Advanced">Advanced (เชี่ยวชาญ)</option>
                                                                         <option value="Intermediate">Intermediate (พอใช้-ปานกลาง)</option>
                                                                         <option value="Beginner">Beginner (ขั้นต้น)</option>
-                                                                    </select>
-                                                                    <select
-                                                                        value={s.required ? "true" : "false"}
-                                                                        onChange={(e) => handleToggleSkillRequired(s.skill_id, e.target.value === "true")}
-                                                                        className="px-2 py-1 text-xs border border-slate-200 rounded-lg focus:outline-none bg-slate-50 font-medium"
-                                                                    >
-                                                                        <option value="true">จำเป็น (Required)</option>
-                                                                        <option value="false">แนะนำ/เสริม (Optional)</option>
                                                                     </select>
                                                                     <button
                                                                         type="button"
@@ -929,13 +910,9 @@ function InternshipCardItem({
                         {skills.map((skill) => (
                             <span
                                 key={skill.skill_id}
-                                className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
-                                    skill.required
-                                        ? "bg-blue-50 text-blue-600 border-blue-200"
-                                        : "bg-slate-50 text-slate-600 border-slate-200"
-                                }`}
+                                className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-blue-50 text-blue-600 border-blue-200"
                             >
-                                {skill.name} ({skill.level}) {skill.required ? "• จำเป็น" : ""}
+                                {skill.name} ({skill.level})
                             </span>
                         ))}
                     </div>
