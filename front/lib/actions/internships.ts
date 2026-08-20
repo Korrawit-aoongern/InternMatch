@@ -13,12 +13,27 @@ interface DecodedToken {
   role?: string;
 }
 
+export interface InternshipSkill {
+  id: string;
+  skill_id: number;
+  name: string;
+  category: string;
+  required: boolean;
+}
+
+export interface InternshipSkillInput {
+  skill_id: number;
+  required: boolean;
+}
+
 export interface InternshipInput {
   title: string;
+  department: string;
   description: string;
   location: string;
   internship_type: string;
-  status: "open" | "draft" | "closed";
+  status: "open" | "closed";
+  skills?: InternshipSkillInput[];
 }
 
 async function getCurrentCompanyId(supabase: SupabaseClient): Promise<string> {
@@ -61,13 +76,22 @@ export async function getCompanyInternships() {
     const supabase = getSupabaseAdmin();
     const companyId = await getCurrentCompanyId(supabase);
 
-    // Fetch internships along with application counts using select and reference count join
     const { data: internships, error } = await supabase
       .from("internships")
       .select(`
         *,
         applications (
           id
+        ),
+        internship_skills (
+          id,
+          skill_id,
+          required,
+          skills (
+            id,
+            name,
+            category
+          )
         )
       `)
       .eq("company_id", companyId)
@@ -82,12 +106,20 @@ export async function getCompanyInternships() {
       id: item.id,
       company_id: item.company_id,
       title: item.title,
+      department: item.department || "",
       description: item.description,
       location: item.location,
       internship_type: item.internship_type,
-      status: item.status as "open" | "draft" | "closed",
+      status: item.status as "open" | "closed",
       created_at: item.created_at,
       applicant_count: item.applications ? item.applications.length : 0,
+      skills: (item.internship_skills || []).map((is: any) => ({
+        id: is.id.toString(),
+        skill_id: Number(is.skill_id),
+        name: is.skills?.name || "Unknown",
+        category: is.skills?.category || "Unknown",
+        required: is.required !== false
+      }))
     }));
 
     return { success: true, internships: mappedInternships };
@@ -111,6 +143,7 @@ export async function createInternship(input: InternshipInput) {
         {
           company_id: companyId,
           title: input.title.trim(),
+          department: input.department.trim(),
           description: input.description.trim(),
           location: input.location.trim(),
           internship_type: input.internship_type,
@@ -123,6 +156,22 @@ export async function createInternship(input: InternshipInput) {
     if (error) {
       console.error("Error creating internship:", error);
       return { success: false, error: error.message };
+    }
+
+    // Insert associated skills if provided
+    if (input.skills && input.skills.length > 0) {
+      const skillInserts = input.skills.map(s => ({
+        internship_id: data.id,
+        skill_id: s.skill_id,
+        required: s.required
+      }));
+      const { error: skillError } = await supabase
+        .from("internship_skills")
+        .insert(skillInserts);
+
+      if (skillError) {
+        console.error("Error inserting internship skills:", skillError);
+      }
     }
 
     return { success: true, internship: data, message: "สร้างประกาศรับสมัครงานสำเร็จเรียบร้อย! 🎉" };
@@ -152,15 +201,17 @@ export async function updateInternship(id: string, input: Partial<InternshipInpu
       return { success: false, error: "Internship posting not found or unauthorized access" };
     }
 
+    const updateData: any = {};
+    if (input.title !== undefined) updateData.title = input.title.trim();
+    if (input.department !== undefined) updateData.department = input.department.trim();
+    if (input.description !== undefined) updateData.description = input.description.trim();
+    if (input.location !== undefined) updateData.location = input.location.trim();
+    if (input.internship_type !== undefined) updateData.internship_type = input.internship_type;
+    if (input.status !== undefined) updateData.status = input.status;
+
     const { data, error } = await supabase
       .from("internships")
-      .update({
-        title: input.title?.trim(),
-        description: input.description?.trim(),
-        location: input.location?.trim(),
-        internship_type: input.internship_type,
-        status: input.status,
-      })
+      .update(updateData)
       .eq("id", id)
       .select()
       .single();
@@ -170,12 +221,78 @@ export async function updateInternship(id: string, input: Partial<InternshipInpu
       return { success: false, error: error.message };
     }
 
+    // Update associated skills if provided
+    if (input.skills !== undefined) {
+      // 1. Delete existing skills
+      const { error: deleteError } = await supabase
+        .from("internship_skills")
+        .delete()
+        .eq("internship_id", id);
+
+      if (deleteError) {
+        console.error("Error deleting old internship skills:", deleteError);
+      }
+
+      // 2. Insert new skills
+      if (input.skills.length > 0) {
+        const skillInserts = input.skills.map(s => ({
+          internship_id: id,
+          skill_id: s.skill_id,
+          required: s.required
+        }));
+        const { error: skillError } = await supabase
+          .from("internship_skills")
+          .insert(skillInserts);
+
+        if (skillError) {
+          console.error("Error inserting updated internship skills:", skillError);
+        }
+      }
+    }
+
     return { success: true, internship: data, message: "อัปเดตรายละเอียดประกาศสำเร็จเรียบร้อย! 🎉" };
   } catch (err: unknown) {
     console.error("Exception in updateInternship:", err);
     return {
       success: false,
       error: err instanceof Error ? err.message : "Failed to update internship",
+    };
+  }
+}
+
+export async function deleteInternship(id: string) {
+  try {
+    const supabase = getSupabaseAdmin();
+    const companyId = await getCurrentCompanyId(supabase);
+
+    // Verify ownership before deleting
+    const { data: existing, error: findError } = await supabase
+      .from("internships")
+      .select("id")
+      .eq("id", id)
+      .eq("company_id", companyId)
+      .maybeSingle();
+
+    if (findError || !existing) {
+      return { success: false, error: "Internship posting not found or unauthorized access" };
+    }
+
+    const { error } = await supabase
+      .from("internships")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error deleting internship:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, message: "ลบประกาศรับสมัครงานสำเร็จเรียบร้อย! 🎉" };
+  } catch (err: unknown) {
+    console.error("Exception in deleteInternship:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to delete internship",
     };
   }
 }
