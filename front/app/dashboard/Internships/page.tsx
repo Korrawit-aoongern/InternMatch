@@ -6,6 +6,13 @@ import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import { getUserRole } from "@/lib/actions/auth";
 import {
+    getCompanyInternships,
+    createInternship,
+    updateInternship,
+    deleteInternship
+} from "@/lib/actions/internships";
+import { getMasterSkills } from "@/lib/actions/skills";
+import {
     PlusCircle,
     Search,
     MapPin,
@@ -16,89 +23,79 @@ import {
     X,
     CheckCircle2,
     XCircle,
-    Building2,
-    Calendar,
     Briefcase,
-    Trash2
+    Trash2,
+    ChevronRight,
+    ChevronLeft
 } from "lucide-react";
 
-export type InternshipStatus = "Active" | "Draft" | "Closed";
+export type InternshipStatus = "open" | "closed";
+
+export interface MasterSkill {
+    id: number;
+    name: string;
+    category: string;
+}
+
+export interface InternshipSkill {
+    id: string;
+    skill_id: number;
+    name: string;
+    category: string;
+    required: boolean;
+}
 
 export interface Internship {
     id: string;
+    company_id: string;
     title: string;
-    department?: string;
+    department: string;
     location: string;
-    type: string; // e.g. "Hybrid", "Remote", "On-site"
+    internship_type: string;
     status: InternshipStatus;
     applicantsCount: number;
     postedDate: string;
     description?: string;
-    requirements?: string;
+    skills: InternshipSkill[];
 }
 
-const STORAGE_KEY = "internmatch_my_internships";
-
-const INITIAL_INTERNSHIPS: Internship[] = [
-    {
-        id: "1",
-        title: "Software Engineering Intern",
-        department: "Engineering",
-        location: "Bangkok, Thailand (Hybrid)",
-        type: "Hybrid",
-        status: "Active",
-        applicantsCount: 142,
-        postedDate: "2023-10-12",
-        description: "Join our core engineering team to build modern web applications using Next.js, React, and TypeScript.",
-        requirements: "Basic knowledge of React/Next.js, Git, and REST APIs."
-    },
-    {
-        id: "2",
-        title: "Data Science Intern",
-        department: "Analytics",
-        location: "Remote",
-        type: "Remote",
-        status: "Active",
-        applicantsCount: 87,
-        postedDate: "2023-10-15",
-        description: "Analyze large datasets and build baseline machine learning models to support business decisions.",
-        requirements: "Python, SQL, Pandas, Scikit-learn."
-    },
-    {
-        id: "3",
-        title: "UX Design Intern",
-        department: "Design",
-        location: "Bangkok, Thailand (On-site)",
-        type: "On-site",
-        status: "Draft",
-        applicantsCount: 0,
-        postedDate: "2023-10-18",
-        description: "Create wireframes, user flows, and interactive prototypes for our student internship portal.",
-        requirements: "Figma proficiency, strong portfolio, basic UI/UX methodology."
-    },
-    {
-        id: "4",
-        title: "Product Marketing Intern",
-        department: "Marketing",
-        location: "Chiang Mai, Thailand (On-site)",
-        type: "On-site",
-        status: "Closed",
-        applicantsCount: 215,
-        postedDate: "2023-09-30",
-        description: "Assist with digital campaign execution and social media strategy.",
-        requirements: "Content creation, digital marketing basics."
-    }
-];
-
 export default function MyInternshipsPage() {
-    const [internships, setInternships] = useState<Internship[]>(INITIAL_INTERNSHIPS);
-    const [isLoaded, setIsLoaded] = useState(false);
+    const [internships, setInternships] = useState<Internship[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState<string>("All");
     const [isCheckingRole, setIsCheckingRole] = useState(true);
     const router = useRouter();
 
-    // Check user role before rendering the page content
+    // Modal Wizard States
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingInternship, setEditingInternship] = useState<Internship | null>(null);
+    const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+
+    // Skills data lists
+    const [masterSkills, setMasterSkills] = useState<MasterSkill[]>([]);
+    const [skillSearchQuery, setSkillSearchQuery] = useState("");
+    const [selectedSkills, setSelectedSkills] = useState<{
+        skill_id: number;
+        name: string;
+        category: string;
+        required: boolean;
+    }[]>([]);
+
+    // View Applicants modal state
+    const [viewingApplicantsInternship, setViewingApplicantsInternship] = useState<Internship | null>(null);
+
+    // Form state
+    const [formData, setFormData] = useState({
+        title: "",
+        department: "",
+        location: "",
+        type: "Hybrid",
+        status: "open" as InternshipStatus,
+        description: "",
+    });
+
+    // Role authorization check
     useEffect(() => {
         async function checkRole() {
             try {
@@ -116,70 +113,90 @@ export default function MyInternshipsPage() {
         checkRole();
     }, [router]);
 
-    // Load initial data from localStorage after mounting
-    useEffect(() => {
+    const fetchInternships = async () => {
+        setIsLoading(true);
         try {
-            const savedData = localStorage.getItem(STORAGE_KEY);
-            if (savedData) {
-                const parsed = JSON.parse(savedData);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    setInternships(parsed);
+            const res = await getCompanyInternships();
+            if (res.success && res.internships) {
+                const mapped = res.internships.map((item) => ({
+                    id: item.id,
+                    company_id: item.company_id,
+                    title: item.title,
+                    department: item.department || "",
+                    location: item.location || "",
+                    internship_type: item.internship_type || "Hybrid",
+                    status: item.status as InternshipStatus,
+                    postedDate: item.created_at,
+                    applicantsCount: item.applicant_count || 0,
+                    skills: item.skills || [],
+                    description: item.description || ""
+                }));
+                setInternships(mapped);
+            }
+        } catch (err) {
+            console.error("Failed to load internships:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Load internships and master skills on mount
+    useEffect(() => {
+        let isMounted = true;
+        async function loadInitialData() {
+            try {
+                const [internshipsRes, skillsRes] = await Promise.all([
+                    getCompanyInternships(),
+                    getMasterSkills()
+                ]);
+                if (!isMounted) return;
+                if (internshipsRes.success && internshipsRes.internships) {
+                    const mapped = internshipsRes.internships.map((item) => ({
+                        id: item.id,
+                        company_id: item.company_id,
+                        title: item.title,
+                        department: item.department || "",
+                        location: item.location || "",
+                        internship_type: item.internship_type || "Hybrid",
+                        status: item.status as InternshipStatus,
+                        postedDate: item.created_at,
+                        applicantsCount: item.applicant_count || 0,
+                        skills: item.skills || [],
+                        description: item.description || ""
+                    }));
+                    setInternships(mapped);
+                }
+                if (skillsRes.success && skillsRes.skills) {
+                    setMasterSkills(skillsRes.skills);
+                }
+            } catch (err) {
+                console.error("Failed to load initial data:", err);
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
                 }
             }
-        } catch (e) {
-            console.error("Failed to load internships from localStorage:", e);
-        } finally {
-            setIsLoaded(true);
         }
+        loadInitialData();
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
-    // Save to localStorage whenever internships state changes (only after initial load)
-    useEffect(() => {
-        if (!isLoaded) return;
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(internships));
-        } catch (e) {
-            console.error("Failed to save internships to localStorage:", e);
-        }
-    }, [internships, isLoaded]);
-
-    // Modal state
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingInternship, setEditingInternship] = useState<Internship | null>(null);
-
-    // View Applicants modal state
-    const [viewingApplicantsInternship, setViewingApplicantsInternship] = useState<Internship | null>(null);
-
-    // Form fields
-    const [formData, setFormData] = useState({
-        title: "",
-        department: "",
-        location: "",
-        type: "Hybrid",
-        status: "Active" as InternshipStatus,
-        description: "",
-        requirements: ""
-    });
-
-    // Counts calculation
+    // Filtered internships calculation
     const counts = useMemo(() => {
         return {
             All: internships.length,
-            Active: internships.filter((item) => item.status === "Active").length,
-            Drafts: internships.filter((item) => item.status === "Draft").length,
-            Closed: internships.filter((item) => item.status === "Closed").length,
+            Active: internships.filter((item) => item.status === "open").length,
+            Closed: internships.filter((item) => item.status === "closed").length,
         };
     }, [internships]);
 
-    // Filtered internships search & tab filter
     const filteredInternships = useMemo(() => {
         return internships.filter((item) => {
-            // Tab filter
-            if (activeTab === "Active" && item.status !== "Active") return false;
-            if (activeTab === "Drafts" && item.status !== "Draft") return false;
-            if (activeTab === "Closed" && item.status !== "Closed") return false;
+            if (activeTab === "Active" && item.status !== "open") return false;
+            if (activeTab === "Closed" && item.status !== "closed") return false;
 
-            // Search filter
             if (searchQuery.trim() !== "") {
                 const query = searchQuery.toLowerCase();
                 const matchTitle = item.title.toLowerCase().includes(query);
@@ -191,7 +208,7 @@ export default function MyInternshipsPage() {
         });
     }, [internships, activeTab, searchQuery]);
 
-    // Open modal to create
+    // Open Modal Handlers
     const handleOpenCreateModal = () => {
         setEditingInternship(null);
         setFormData({
@@ -199,88 +216,118 @@ export default function MyInternshipsPage() {
             department: "",
             location: "",
             type: "Hybrid",
-            status: "Active",
+            status: "open",
             description: "",
-            requirements: ""
         });
+        setSelectedSkills([]);
+        setCurrentStep(1);
         setIsModalOpen(true);
     };
 
-    // Open modal to edit
     const handleOpenEditModal = (item: Internship) => {
         setEditingInternship(item);
         setFormData({
             title: item.title,
             department: item.department || "",
             location: item.location,
-            type: item.type || "Hybrid",
+            type: item.internship_type || "Hybrid",
             status: item.status,
             description: item.description || "",
-            requirements: item.requirements || ""
         });
+        setSelectedSkills(item.skills.map(s => ({
+            skill_id: s.skill_id,
+            name: s.name,
+            category: s.category,
+            required: s.required
+        })));
+        setCurrentStep(1);
         setIsModalOpen(true);
     };
 
-    // Toggle status quickly
-    const handleToggleStatus = (id: string, newStatus: InternshipStatus) => {
-        setInternships((prev) =>
-            prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
-        );
+    // Toggle skills selection in Step 2
+    const handleToggleSkill = (skill: { id: number; name?: string; category?: string }) => {
+        const index = selectedSkills.findIndex(s => s.skill_id === skill.id);
+        if (index > -1) {
+            setSelectedSkills(selectedSkills.filter(s => s.skill_id !== skill.id));
+        } else {
+            setSelectedSkills([...selectedSkills, {
+                skill_id: skill.id,
+                name: skill.name || "",
+                category: skill.category || "",
+                required: true // defaults to necessary/required
+            }]);
+        }
     };
 
-    // Delete Internship
-    const handleDeleteInternship = (id: string) => {
+    const handleToggleSkillRequired = (skillId: number, required: boolean) => {
+        setSelectedSkills(selectedSkills.map(s =>
+            s.skill_id === skillId ? { ...s, required } : s
+        ));
+    };
+
+    // Toggle status quickly
+    const handleToggleStatus = async (id: string, newStatus: InternshipStatus) => {
+        const res = await updateInternship(id, { status: newStatus });
+        if (res.success) {
+            fetchInternships();
+        } else {
+            alert("Failed to update status: " + res.error);
+        }
+    };
+
+    // Delete Internship Action
+    const handleDeleteInternship = async (id: string) => {
         if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบประกาศรับสมัครฝึกงานนี้?")) {
-            setInternships((prev) => prev.filter((item) => item.id !== id));
-            if (editingInternship?.id === id) {
+            const res = await deleteInternship(id);
+            if (res.success) {
+                fetchInternships();
                 setIsModalOpen(false);
                 setEditingInternship(null);
+            } else {
+                alert("Failed to delete internship: " + res.error);
             }
         }
     };
 
-    // Save Internship (Create / Edit)
-    const handleSaveInternship = (e: React.FormEvent) => {
+    // Unified Save Handler (inserts matching skills inside same transaction)
+    const handleSaveInternship = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.title || !formData.location) return;
+        if (!formData.title || !formData.location || !formData.description || !formData.department) return;
 
+        const skillsPayload = selectedSkills.map(s => ({
+            skill_id: s.skill_id,
+            required: s.required
+        }));
+
+        let res;
         if (editingInternship) {
-            // Edit existing
-            setInternships((prev) =>
-                prev.map((item) =>
-                    item.id === editingInternship.id
-                        ? {
-                            ...item,
-                            title: formData.title,
-                            department: formData.department,
-                            location: formData.location,
-                            type: formData.type,
-                            status: formData.status,
-                            description: formData.description,
-                            requirements: formData.requirements
-                        }
-                        : item
-                )
-            );
-        } else {
-            // Create new
-            const newId = Date.now().toString();
-            const today = new Date().toISOString().split("T")[0];
-            const newItem: Internship = {
-                id: newId,
+            res = await updateInternship(editingInternship.id, {
                 title: formData.title,
                 department: formData.department,
                 location: formData.location,
-                type: formData.type,
+                internship_type: formData.type,
                 status: formData.status,
-                applicantsCount: 0,
-                postedDate: today,
                 description: formData.description,
-                requirements: formData.requirements
-            };
-            setInternships((prev) => [newItem, ...prev]);
+                skills: skillsPayload
+            });
+        } else {
+            res = await createInternship({
+                title: formData.title,
+                department: formData.department,
+                location: formData.location,
+                internship_type: formData.type,
+                status: formData.status,
+                description: formData.description,
+                skills: skillsPayload
+            });
         }
-        setIsModalOpen(false);
+
+        if (res.success) {
+            setIsModalOpen(false);
+            fetchInternships();
+        } else {
+            alert("Error saving: " + res.error);
+        }
     };
 
     if (isCheckingRole) {
@@ -332,7 +379,7 @@ export default function MyInternshipsPage() {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="ค้นหาประกาศหานิสิตฝึกงาน..."
-                                className=" pl-10 pr-10 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+                                className="w-full pl-10 pr-10 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
                             />
                             {searchQuery && (
                                 <button
@@ -349,7 +396,6 @@ export default function MyInternshipsPage() {
                             {[
                                 { label: "All", count: counts.All },
                                 { label: "Active", count: counts.Active },
-                                { label: "Drafts", count: counts.Drafts },
                                 { label: "Closed", count: counts.Closed },
                             ].map((tab) => (
                                 <button
@@ -360,14 +406,18 @@ export default function MyInternshipsPage() {
                                             : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                                         }`}
                                 >
-                                    {tab.label} ({tab.count})
+                                    {tab.label === "Active" ? "Active (เปิดรับ)" : tab.label === "Closed" ? "Closed (ปิดรับ)" : "All"} ({tab.count})
                                 </button>
                             ))}
                         </div>
                     </div>
 
                     {/* Internship Cards Grid */}
-                    {filteredInternships.length === 0 ? (
+                    {isLoading ? (
+                        <div className="flex justify-center items-center p-12">
+                            <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></span>
+                        </div>
+                    ) : filteredInternships.length === 0 ? (
                         <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 space-y-3">
                             <Briefcase className="w-12 h-12 text-slate-300 mx-auto" />
                             <p className="text-base font-semibold text-slate-700">ไม่พบประกาศรับสมัครฝึกงาน</p>
@@ -388,17 +438,19 @@ export default function MyInternshipsPage() {
                         </div>
                     )}
 
-                    {/* Modal: Create & Edit Internship */}
+                    {/* Modal: Create & Edit Internship (Multi-step) */}
                     {isModalOpen && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-                            <div className="bg-white rounded-2xl p-6 space-y-5 shadow-xl border border-slate-100">
-                                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-2xl space-y-5 shadow-xl border border-slate-100 max-h-[90vh] flex flex-col justify-between">
+                                
+                                {/* Header */}
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
                                     <div>
                                         <h2 className="text-xl font-bold text-slate-800">
                                             {editingInternship ? "แก้ไขประกาศรับสมัครฝึกงาน" : "สร้างประกาศรับสมัครฝึกงานใหม่"}
                                         </h2>
                                         <p className="text-xs text-slate-500 mt-1">
-                                            กรอกข้อมูลตำแหน่งงาน หน้าที่ และคุณสมบัติที่ต้องการ
+                                            ขั้นตอนที่ {currentStep} จาก 2: {currentStep === 1 ? "กรอกข้อมูลทั่วไป" : "ระบุทักษะที่ต้องการ"}
                                         </p>
                                     </div>
                                     <button
@@ -409,108 +461,202 @@ export default function MyInternshipsPage() {
                                     </button>
                                 </div>
 
-                                <form onSubmit={handleSaveInternship} className="space-y-4">
+                                {/* Progress bar */}
+                                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden shrink-0">
+                                    <div 
+                                        className="bg-blue-600 h-full transition-all duration-300"
+                                        style={{ width: `${currentStep * 50}%` }}
+                                    />
+                                </div>
+
+                                {/* Form content (scrollable area) */}
+                                <div className="flex-1 overflow-y-auto py-2 pr-1 space-y-4">
+                                    {currentStep === 1 ? (
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                    ชื่อตำแหน่งงาน *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={formData.title}
+                                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                                    placeholder="เช่น Software Engineering Intern"
+                                                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                        แผนก / ฝ่าย *
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        value={formData.department}
+                                                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                                        placeholder="เช่น Engineering, Marketing"
+                                                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                        รูปแบบงาน
+                                                    </label>
+                                                    <select
+                                                        value={formData.type}
+                                                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                                                    >
+                                                        <option value="Hybrid">Hybrid</option>
+                                                        <option value="Remote">Remote</option>
+                                                        <option value="On-site">On-site</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                        สถานที่ทำงาน / จังหวัด *
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        value={formData.location}
+                                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                                        placeholder="เช่น กรุงเทพมหานคร"
+                                                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                        สถานะประกาศ
+                                                    </label>
+                                                    <select
+                                                        value={formData.status}
+                                                        onChange={(e) => setFormData({ ...formData, status: e.target.value as InternshipStatus })}
+                                                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                                                    >
+                                                        <option value="open">Active (เปิดรับสมัคร)</option>
+                                                        <option value="closed">Closed (ปิดรับสมัคร)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                    รายละเอียดงาน (Job Description) *
+                                                </label>
+                                                <textarea
+                                                    rows={5}
+                                                    required
+                                                    value={formData.description}
+                                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                    placeholder="รายละเอียดการทำงาน หน้าที่ความรับผิดชอบ..."
+                                                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {/* Skill Selection Step */}
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                                                    พิมพ์ค้นหาและเลือกทักษะที่เกี่ยวข้อง
+                                                </label>
+                                                <div className="relative mb-4">
+                                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                    <input
+                                                        type="text"
+                                                        value={skillSearchQuery}
+                                                        onChange={(e) => setSkillSearchQuery(e.target.value)}
+                                                        placeholder="ค้นหาทักษะ... เช่น Javascript, React, Figma"
+                                                        className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Selected skills summary list with Required / Optional dropdown */}
+                                            {selectedSkills.length > 0 && (
+                                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
+                                                    <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                                                        ทักษะที่เลือกแล้ว ({selectedSkills.length})
+                                                    </h3>
+                                                    <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+                                                        {selectedSkills.map((s) => (
+                                                            <div key={s.skill_id} className="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-slate-200">
+                                                                <span className="text-sm font-semibold text-slate-700">{s.name} <span className="text-[10px] text-slate-400">({s.category})</span></span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <select
+                                                                        value={s.required ? "true" : "false"}
+                                                                        onChange={(e) => handleToggleSkillRequired(s.skill_id, e.target.value === "true")}
+                                                                        className="px-2 py-1 text-xs border border-slate-200 rounded-lg focus:outline-none bg-slate-50 font-medium"
+                                                                    >
+                                                                        <option value="true">จำเป็น (Required)</option>
+                                                                        <option value="false">แนะนำ/เสริม (Optional)</option>
+                                                                    </select>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleToggleSkill({ id: s.skill_id })}
+                                                                        className="text-rose-500 hover:text-rose-700 font-bold text-sm px-1.5"
+                                                                    >
+                                                                        ✕
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Master Skills list grouped by category */}
+                                            <div className="space-y-4 max-h-60 overflow-y-auto pr-1">
+                                                {Object.entries(
+                                                    masterSkills
+                                                        .filter((s) => s.name.toLowerCase().includes(skillSearchQuery.toLowerCase()))
+                                                        .reduce<Record<string, MasterSkill[]>>((acc, skill) => {
+                                                            acc[skill.category] = acc[skill.category] || [];
+                                                            acc[skill.category].push(skill);
+                                                            return acc;
+                                                        }, {})
+                                                ).map(([category, skills]) => (
+                                                    <div key={category} className="space-y-1.5">
+                                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                                            {category}
+                                                        </h4>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {skills.map((skill) => {
+                                                                const isSelected = selectedSkills.some((s) => s.skill_id === skill.id);
+                                                                return (
+                                                                    <button
+                                                                        key={skill.id}
+                                                                        type="button"
+                                                                        onClick={() => handleToggleSkill(skill)}
+                                                                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                                                                            isSelected
+                                                                                ? "bg-blue-600 border-blue-600 text-white"
+                                                                                : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                                                                        }`}
+                                                                    >
+                                                                        {skill.name}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Footer Actions */}
+                                <div className="flex items-center justify-between border-t border-slate-100 pt-4 shrink-0">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                            ชื่อตำแหน่งงาน *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={formData.title}
-                                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                            placeholder="เช่น Software Engineering Intern"
-                                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                                แผนก / ฝ่าย
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={formData.department}
-                                                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                                                placeholder="เช่น Engineering, Marketing"
-                                                className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                                รูปแบบงาน
-                                            </label>
-                                            <select
-                                                value={formData.type}
-                                                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                                className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                                            >
-                                                <option value="Hybrid">Hybrid</option>
-                                                <option value="Remote">Remote</option>
-                                                <option value="On-site">On-site</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                                สถานที่ทำงาน / จังหวัด *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                required
-                                                value={formData.location}
-                                                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                                placeholder="เช่น กรุงเทพมหานคร (Hybrid)"
-                                                className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                                สถานะประกาศ
-                                            </label>
-                                            <select
-                                                value={formData.status}
-                                                onChange={(e) => setFormData({ ...formData, status: e.target.value as InternshipStatus })}
-                                                className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
-                                            >
-                                                <option value="Active">Active (เปิดรับสมัคร)</option>
-                                                <option value="Draft">Draft (ฉบับร่าง)</option>
-                                                <option value="Closed">Closed (ปิดรับสมัคร)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                            รายละเอียดงาน (Job Description)
-                                        </label>
-                                        <textarea
-                                            rows={3}
-                                            value={formData.description}
-                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                            placeholder="รายละเอียดการทำงาน หน้าที่ความรับผิดชอบ..."
-                                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                                            คุณสมบัติผู้สมัคร (Requirements)
-                                        </label>
-                                        <textarea
-                                            rows={2}
-                                            value={formData.requirements}
-                                            onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                                            placeholder="ทักษะ เกรดเฉลี่ย สาขาที่เปิดรับ..."
-                                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                                        />
-                                    </div>
-
-                                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                                        {editingInternship ? (
+                                        {editingInternship && currentStep === 1 ? (
                                             <button
                                                 type="button"
                                                 onClick={() => handleDeleteInternship(editingInternship.id)}
@@ -520,23 +666,54 @@ export default function MyInternshipsPage() {
                                                 ลบประกาศนี้
                                             </button>
                                         ) : <div />}
-                                        <div className="flex items-center gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsModalOpen(false)}
-                                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
-                                            >
-                                                ยกเลิก
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm"
-                                            >
-                                                {editingInternship ? "บันทึกการแก้ไข" : "สร้างประกาศ"}
-                                            </button>
-                                        </div>
                                     </div>
-                                </form>
+
+                                    <div className="flex items-center gap-3">
+                                        {currentStep === 1 ? (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsModalOpen(false)}
+                                                    className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                                                >
+                                                    ยกเลิก
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (formData.title && formData.location && formData.description && formData.department) {
+                                                            setCurrentStep(2);
+                                                        } else {
+                                                            alert("กรุณากรอกข้อมูลจำเป็นให้ครบถ้วนก่อนไปขั้นตอนถัดไป (*)");
+                                                        }
+                                                    }}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center gap-1.5"
+                                                >
+                                                    ถัดไป
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCurrentStep(1)}
+                                                    className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors flex items-center gap-1.5"
+                                                >
+                                                    <ChevronLeft className="w-4 h-4" />
+                                                    ย้อนกลับ
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSaveInternship}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                                                >
+                                                    {editingInternship ? "บันทึกการแก้ไข" : "สร้างประกาศ"}
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -590,7 +767,7 @@ export default function MyInternshipsPage() {
     );
 }
 
-{/* Card Component */ }
+{/* Card Component */}
 function InternshipCardItem({
     item,
     onEdit,
@@ -605,23 +782,17 @@ function InternshipCardItem({
     onViewApplicants: () => void;
 }) {
     const [showDropdown, setShowDropdown] = useState(false);
-    const { status, title, location, applicantsCount, postedDate } = item;
+    const { status, title, department, location, applicantsCount, postedDate, skills } = item;
 
     const getStatusStyles = () => {
         switch (status) {
-            case "Active":
+            case "open":
                 return {
                     borderLeft: "border-l-4 border-l-blue-600",
                     badgeBg: "bg-blue-50 text-blue-600",
                     dotColor: "bg-blue-600",
                 };
-            case "Draft":
-                return {
-                    borderLeft: "border-l-4 border-l-slate-300",
-                    badgeBg: "bg-slate-100 text-slate-600",
-                    dotColor: "",
-                };
-            case "Closed":
+            case "closed":
                 return {
                     borderLeft: "border-l-4 border-l-rose-600",
                     badgeBg: "bg-rose-50 text-rose-600",
@@ -649,18 +820,19 @@ function InternshipCardItem({
             <div className="space-y-3">
                 <div className="flex items-center justify-between relative">
                     <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${styles.badgeBg}`}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${styles.badgeBg}`}
                     >
-                        {status === "Active" && (
-                            <span className={`w-1.5 h-1.5 rounded-full ${styles.dotColor}`} />
+                        {status === "open" ? (
+                            <>
+                                <span className={`w-1.5 h-1.5 rounded-full ${styles.dotColor}`} />
+                                Active
+                            </>
+                        ) : (
+                            <>
+                                <span className="w-1.5 h-1.5 rounded-full border border-rose-600" />
+                                Closed
+                            </>
                         )}
-                        {status === "Draft" && (
-                            <span className="text-[10px]">📄</span>
-                        )}
-                        {status === "Closed" && (
-                            <span className="w-1.5 h-1.5 rounded-full border border-rose-600" />
-                        )}
-                        {status}
                     </span>
 
                     {/* Action menu dropdown */}
@@ -683,40 +855,27 @@ function InternshipCardItem({
                                     <Pencil className="w-3.5 h-3.5 text-slate-500" />
                                     แก้ไขประกาศ
                                 </button>
-                                {status !== "Active" && (
+                                {status !== "open" ? (
                                     <button
                                         onClick={() => {
                                             setShowDropdown(false);
-                                            onToggleStatus(item.id, "Active");
+                                            onToggleStatus(item.id, "open");
                                         }}
                                         className="w-full text-left px-3 py-1.5 text-blue-600 hover:bg-blue-50 flex items-center gap-2"
                                     >
                                         <CheckCircle2 className="w-3.5 h-3.5" />
                                         เปลี่ยนเป็น Active
                                     </button>
-                                )}
-                                {status !== "Closed" && (
+                                ) : (
                                     <button
                                         onClick={() => {
                                             setShowDropdown(false);
-                                            onToggleStatus(item.id, "Closed");
+                                            onToggleStatus(item.id, "closed");
                                         }}
                                         className="w-full text-left px-3 py-1.5 text-rose-600 hover:bg-rose-50 flex items-center gap-2"
                                     >
                                         <XCircle className="w-3.5 h-3.5" />
                                         เปลี่ยนเป็น Closed
-                                    </button>
-                                )}
-                                {status !== "Draft" && (
-                                    <button
-                                        onClick={() => {
-                                            setShowDropdown(false);
-                                            onToggleStatus(item.id, "Draft");
-                                        }}
-                                        className="w-full text-left px-3 py-1.5 text-slate-600 hover:bg-slate-50 flex items-center gap-2"
-                                    >
-                                        <Briefcase className="w-3.5 h-3.5" />
-                                        เปลี่ยนเป็น Draft
                                     </button>
                                 )}
                                 <div className="border-t border-slate-100 my-1" />
@@ -737,16 +896,35 @@ function InternshipCardItem({
 
                 <div>
                     <h3 className="text-base font-bold text-slate-800 line-clamp-1">{title}</h3>
+                    <p className="text-xs text-slate-400 font-semibold">{department || "General Department"}</p>
                     <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
                         <MapPin className="w-3.5 h-3.5 text-slate-400" />
                         {location}
                     </p>
                 </div>
+
+                {/* Skills Section */}
+                {skills && skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-2">
+                        {skills.map((skill) => (
+                            <span
+                                key={skill.skill_id}
+                                className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                                    skill.required
+                                        ? "bg-blue-50 text-blue-600 border-blue-200"
+                                        : "bg-slate-50 text-slate-600 border-slate-200"
+                                }`}
+                            >
+                                {skill.name} {skill.required ? "• จำเป็น" : ""}
+                            </span>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Middle Applicants Info */}
             <div className="flex items-baseline gap-6 pt-2 border-t border-slate-100">
-                {status === "Closed" ? (
+                {status === "closed" ? (
                     <div>
                         <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                             TOTAL APPLICANTS
@@ -759,14 +937,14 @@ function InternshipCardItem({
                             APPLICANTS
                         </p>
                         <p className="text-xl font-bold text-slate-800 mt-0.5">
-                            {applicantsCount !== undefined ? applicantsCount : "--"}
+                            {applicantsCount !== undefined ? applicantsCount : "0"}
                         </p>
                     </div>
                 )}
 
                 <div>
                     <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
-                        {status === "Draft" ? "LAST EDITED" : status === "Closed" ? "CLOSED ON" : "POSTED"}
+                        {status === "closed" ? "CLOSED ON" : "POSTED"}
                     </p>
                     <p className="text-xs font-semibold text-slate-500 mt-1">{formatDate(postedDate)}</p>
                 </div>
@@ -774,7 +952,7 @@ function InternshipCardItem({
 
             {/* Action Buttons */}
             <div className="pt-2">
-                {status === "Active" && (
+                {status === "open" ? (
                     <div className="grid grid-cols-2 gap-2">
                         <button
                             onClick={onEdit}
@@ -791,19 +969,7 @@ function InternshipCardItem({
                             View ({applicantsCount})
                         </button>
                     </div>
-                )}
-
-                {status === "Draft" && (
-                    <button
-                        onClick={onEdit}
-                        className="w-full flex items-center justify-center gap-1.5 border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold py-2 px-3 rounded-xl transition-colors"
-                    >
-                        <Pencil className="w-3.5 h-3.5" />
-                        Continue Editing
-                    </button>
-                )}
-
-                {status === "Closed" && (
+                ) : (
                     <button
                         onClick={onViewApplicants}
                         className="w-full flex items-center justify-center gap-1.5 text-blue-600 hover:text-blue-700 text-xs font-bold py-2 px-3 rounded-xl hover:bg-blue-50 transition-colors"
