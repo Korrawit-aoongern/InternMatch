@@ -43,6 +43,7 @@ export interface InternshipSkill {
     name: string;
     category: string;
     required: boolean;
+    level: string;
 }
 
 export interface Internship {
@@ -80,6 +81,7 @@ export default function MyInternshipsPage() {
         name: string;
         category: string;
         required: boolean;
+        level: string;
     }[]>([]);
 
     // View Applicants modal state
@@ -238,7 +240,8 @@ export default function MyInternshipsPage() {
             skill_id: s.skill_id,
             name: s.name,
             category: s.category,
-            required: s.required
+            required: s.required,
+            level: s.level || "Intermediate"
         })));
         setCurrentStep(1);
         setIsModalOpen(true);
@@ -254,7 +257,8 @@ export default function MyInternshipsPage() {
                 skill_id: skill.id,
                 name: skill.name || "",
                 category: skill.category || "",
-                required: true // defaults to necessary/required
+                required: true, // defaults to necessary/required
+                level: "Intermediate"
             }]);
         }
     };
@@ -262,6 +266,12 @@ export default function MyInternshipsPage() {
     const handleToggleSkillRequired = (skillId: number, required: boolean) => {
         setSelectedSkills(selectedSkills.map(s =>
             s.skill_id === skillId ? { ...s, required } : s
+        ));
+    };
+
+    const handleToggleSkillLevel = (skillId: number, level: string) => {
+        setSelectedSkills(selectedSkills.map(s =>
+            s.skill_id === skillId ? { ...s, level } : s
         ));
     };
 
@@ -296,7 +306,8 @@ export default function MyInternshipsPage() {
 
         const skillsPayload = selectedSkills.map(s => ({
             skill_id: s.skill_id,
-            required: s.required
+            required: s.required,
+            level: s.level || "Intermediate"
         }));
 
         let res;
@@ -441,7 +452,7 @@ export default function MyInternshipsPage() {
                     {/* Modal: Create & Edit Internship (Multi-step) */}
                     {isModalOpen && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-                            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-3xl space-y-4 md:space-y-5 shadow-xl border border-slate-100 max-h-[calc(100vh-2rem)] md:max-h-[90vh] flex flex-col justify-between overflow-hidden">
+                            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-4xl space-y-4 md:space-y-5 shadow-xl border border-slate-100 max-h-[calc(100vh-2rem)] md:max-h-[90vh] flex flex-col justify-between overflow-hidden">
                                 
                                 {/* Header */}
                                 <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
@@ -590,6 +601,15 @@ export default function MyInternshipsPage() {
                                                             <div key={s.skill_id} className="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-slate-200">
                                                                 <span className="text-sm font-semibold text-slate-700">{s.name} <span className="text-[10px] text-slate-400">({s.category})</span></span>
                                                                 <div className="flex items-center gap-2">
+                                                                    <select
+                                                                        value={s.level || "Intermediate"}
+                                                                        onChange={(e) => handleToggleSkillLevel(s.skill_id, e.target.value)}
+                                                                        className="px-2 py-1 text-xs border border-slate-200 rounded-lg focus:outline-none bg-slate-50 font-medium"
+                                                                    >
+                                                                        <option value="Advanced">Advanced (เชี่ยวชาญ)</option>
+                                                                        <option value="Intermediate">Intermediate (พอใช้-ปานกลาง)</option>
+                                                                        <option value="Beginner">Beginner (ขั้นต้น)</option>
+                                                                    </select>
                                                                     <select
                                                                         value={s.required ? "true" : "false"}
                                                                         onChange={(e) => handleToggleSkillRequired(s.skill_id, e.target.value === "true")}
@@ -915,7 +935,7 @@ function InternshipCardItem({
                                         : "bg-slate-50 text-slate-600 border-slate-200"
                                 }`}
                             >
-                                {skill.name} {skill.required ? "• จำเป็น" : ""}
+                                {skill.name} ({skill.level}) {skill.required ? "• จำเป็น" : ""}
                             </span>
                         ))}
                     </div>

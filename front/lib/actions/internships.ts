@@ -19,11 +19,13 @@ export interface InternshipSkill {
   name: string;
   category: string;
   required: boolean;
+  level: string;
 }
 
 export interface InternshipSkillInput {
   skill_id: number;
   required: boolean;
+  level: string;
 }
 
 export interface InternshipInput {
@@ -87,6 +89,7 @@ export async function getCompanyInternships() {
           id,
           skill_id,
           required,
+          level,
           skills (
             id,
             name,
@@ -118,7 +121,8 @@ export async function getCompanyInternships() {
         skill_id: Number(is.skill_id),
         name: is.skills?.name || "Unknown",
         category: is.skills?.category || "Unknown",
-        required: is.required !== false
+        required: is.required !== false,
+        level: is.level || "Intermediate"
       }))
     }));
 
@@ -163,7 +167,8 @@ export async function createInternship(input: InternshipInput) {
       const skillInserts = input.skills.map(s => ({
         internship_id: data.id,
         skill_id: s.skill_id,
-        required: s.required
+        required: s.required,
+        level: s.level
       }));
       const { error: skillError } = await supabase
         .from("internship_skills")
@@ -238,7 +243,8 @@ export async function updateInternship(id: string, input: Partial<InternshipInpu
         const skillInserts = input.skills.map(s => ({
           internship_id: id,
           skill_id: s.skill_id,
-          required: s.required
+          required: s.required,
+          level: s.level
         }));
         const { error: skillError } = await supabase
           .from("internship_skills")
