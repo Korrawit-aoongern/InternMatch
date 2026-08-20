@@ -242,6 +242,7 @@ export async function getInternshipApplicants(internshipId: string) {
         study_year: student?.study_year || 1,
         profile_image: student?.profile_image || "",
         resume_path: student?.resume_path || "",
+        resume_url: "",
         email: email || "",
         match_score: item.match_score ? Number(item.match_score) : 0,
         status: item.status,
