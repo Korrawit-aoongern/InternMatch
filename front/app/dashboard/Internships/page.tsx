@@ -722,7 +722,7 @@ export default function MyInternshipsPage() {
                     {/* Modal: View Applicants Info */}
                     {viewingApplicantsInternship && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-                            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-md space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
+                            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-150 space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
                                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                                     <h3 className="text-lg font-bold text-slate-800">
                                         นิสิตที่สมัครตำแหน่งนี้
