@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 import StatsCard from "@/components/ui/StatsCard";
 import { Send, Users, Sparkles, Megaphone, ChevronRight, Brain } from "lucide-react";
@@ -25,7 +26,9 @@ export default function CompanyDashboard({ displayName }: CompanyDashboardProps)
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard label="Match Rate" value="High" progressPercent={92} />
         <StatsCard label="Total Applicants" value="24 Applicants" icon={Users} variant="blue" />
-        <StatsCard label="Active Job Posts" value="8 Openings" icon={Send} variant="green" />
+        <Link href="/dashboard/Internships" className="block transition-transform hover:-translate-y-0.5">
+          <StatsCard label="Active Job Posts" value="8 Openings" icon={Send} variant="green" />
+        </Link>
         <StatsCard label="Alerts" value="5 Action Needed" icon={Megaphone} variant="red" />
       </div>
 

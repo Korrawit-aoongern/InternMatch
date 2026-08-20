@@ -17,6 +17,7 @@ export default function DashboardSidebar() {
 
   const menuItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "My Internships", href: "/dashboard/Internships", icon: Briefcase },
     { name: "Applications", href: "/applications", icon: Briefcase },
     { name: "Matches", href: "/matches", icon: Brain },
     { name: "Settings", href: "/dashboard/profile", icon: Settings },
