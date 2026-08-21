@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import { getUserRole } from "@/lib/actions/auth";
+import { getCachedRole, setCachedRole } from "@/lib/utils/roleCache";
 import {
     getCompanyInternships,
     createInternship,
@@ -84,9 +85,6 @@ function CompanyInternshipsView() {
         category: string;
         level: string;
     }[]>([]);
-
-    // View Applicants modal state
-    const [viewingApplicantsInternship, setViewingApplicantsInternship] = useState<Internship | null>(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -408,7 +406,7 @@ function CompanyInternshipsView() {
                                     onEdit={() => handleOpenEditModal(item)}
                                     onToggleStatus={handleToggleStatus}
                                     onDelete={() => handleDeleteInternship(item.id)}
-                                    onViewApplicants={() => setViewingApplicantsInternship(item)}
+                                    onViewApplicants={() => router.push(`/dashboard/applications?position=${item.id}`)}
                                 />
                             ))}
                         </div>
@@ -708,49 +706,6 @@ function CompanyInternshipsView() {
                         </div>
                     )}
 
-                    {/* Modal: View Applicants Info */}
-                    {viewingApplicantsInternship && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-                            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-150 space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
-                                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                    <h3 className="text-lg font-bold text-slate-800">
-                                        นิสิตที่สมัครตำแหน่งนี้
-                                    </h3>
-                                    <button
-                                        onClick={() => setViewingApplicantsInternship(null)}
-                                        className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                                        <h4 className="text-sm font-bold text-blue-900">{viewingApplicantsInternship.title}</h4>
-                                        <p className="text-xs text-blue-700 mt-0.5">{viewingApplicantsInternship.location}</p>
-                                        <div className="mt-3 flex items-center justify-between">
-                                            <span className="text-xs font-semibold text-slate-600">จำนวนผู้สมัครทั้งหมด:</span>
-                                            <span className="text-xl font-extrabold text-blue-600">
-                                                {viewingApplicantsInternship.applicantsCount} คน
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <p className="text-xs text-slate-500">
-                                        คุณสามารถดูรายละเอียดรายชื่อนิสิตที่สมัครเข้ามาและจัดการสถานะใบสมัครได้ที่เมนู ผู้สมัคร (Applicants)
-                                    </p>
-                                </div>
-
-                                <div className="pt-2 flex justify-end">
-                                    <button
-                                        onClick={() => setViewingApplicantsInternship(null)}
-                                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition-colors"
-                                    >
-                                        ปิดหน้าต่าง
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </main>
             </div>
         </div>
@@ -970,18 +925,22 @@ function InternshipCardItem({
 }
 
 export default function MyInternshipsPage() {
-    const [role, setRole] = useState<string | null>(null);
-    const [isCheckingRole, setIsCheckingRole] = useState(true);
+    const [role, setRole] = useState<string | null>(getCachedRole());
+    const [isCheckingRole, setIsCheckingRole] = useState(getCachedRole() === null);
     const router = useRouter();
 
     useEffect(() => {
+        let isMounted = true;
         async function checkRole() {
             try {
                 const res = await getUserRole();
+                if (!isMounted) return;
                 if (!res.success || (res.role !== "company" && res.role !== "student")) {
+                    setCachedRole(null);
                     router.push("/dashboard");
                     return;
                 }
+                setCachedRole(res.role);
                 setRole(res.role);
                 setIsCheckingRole(false);
             } catch (err) {
@@ -990,6 +949,9 @@ export default function MyInternshipsPage() {
             }
         }
         checkRole();
+        return () => {
+            isMounted = false;
+        };
     }, [router]);
 
     if (isCheckingRole) {

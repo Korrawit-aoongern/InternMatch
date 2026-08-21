@@ -418,6 +418,148 @@ export async function getInternshipApplicants(internshipId: string) {
   }
 }
 
+export async function getCompanyApplications() {
+  try {
+    const supabase = getSupabaseAdmin();
+    const companyId = await getCurrentCompanyId(supabase);
+
+    const { data, error } = await supabase
+      .from("applications")
+      .select(`
+        id,
+        match_score,
+        status,
+        applied_at,
+        student_id,
+        internship_id,
+        internships!inner (
+          title,
+          company_id,
+          internship_skills ( skill_id, level )
+        ),
+        students (
+          fullname,
+          university,
+          faculty,
+          major,
+          profile_image,
+          resume_path,
+          student_skills ( skill_id, level ),
+          users ( email )
+        )
+      `)
+      .eq("internships.company_id", companyId)
+      .order("applied_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching company applications:", error);
+      return { success: false, error: error.message };
+    }
+
+    const applicants = (data || []).map((item: any) => {
+      const student = item.students;
+      const user = student?.users;
+      const email = Array.isArray(user) ? user[0]?.email : user?.email;
+      const recalculatedScore = calculateMatchScoreHelper(
+        student?.student_skills || [],
+        item.internships?.internship_skills || []
+      );
+      return {
+        application_id: item.id,
+        student_id: item.student_id,
+        internship_id: item.internship_id,
+        internship_title: item.internships?.title || "Unknown Position",
+        fullname: student?.fullname || "Unknown Student",
+        university: student?.university || "",
+        faculty: student?.faculty || "",
+        major: student?.major || "",
+        profile_image: student?.profile_image || "",
+        resume_path: student?.resume_path || "",
+        resume_url: "",
+        email: email || "",
+        match_score: recalculatedScore,
+        status: item.status,
+        applied_at: item.applied_at,
+      };
+    });
+
+    // Generate signed resume URLs
+    for (const applicant of applicants) {
+      if (applicant.resume_path) {
+        try {
+          const { data: signData, error: signError } = await supabase.storage
+            .from("resumes")
+            .createSignedUrl(applicant.resume_path, 60 * 60);
+          if (!signError && signData) applicant.resume_url = signData.signedUrl;
+        } catch (err) {
+          console.error("Error signing resume URL:", err);
+        }
+      }
+    }
+
+    return { success: true, applicants };
+  } catch (err: unknown) {
+    console.error("Exception in getCompanyApplications:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to fetch company applicants",
+    };
+  }
+}
+
+export async function updateApplicationStatus(applicationId: string, newStatus: string) {
+  try {
+    const supabase = getSupabaseAdmin();
+    const companyId = await getCurrentCompanyId(supabase);
+
+    const allowedStatuses = ["pending", "reviewing", "accepted", "rejected"];
+    if (!allowedStatuses.includes(newStatus)) {
+      return { success: false, error: "Invalid application status" };
+    }
+
+    const { data: appRow, error: findError } = await supabase
+      .from("applications")
+      .select("id, internship_id")
+      .eq("id", applicationId)
+      .maybeSingle();
+
+    if (findError || !appRow) {
+      return { success: false, error: "Application not found" };
+    }
+
+    const { data: ownedInternship, error: ownError } = await supabase
+      .from("internships")
+      .select("id")
+      .eq("id", appRow.internship_id)
+      .eq("company_id", companyId)
+      .maybeSingle();
+
+    if (ownError || !ownedInternship) {
+      return { success: false, error: "Unauthorized access to this application" };
+    }
+
+    const { data, error } = await supabase
+      .from("applications")
+      .update({ status: newStatus })
+      .eq("id", applicationId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating application status:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, application: data, message: "อัปเดตสถานะใบสมัครสำเร็จเรียบร้อย! 🎉" };
+  } catch (err: unknown) {
+    console.error("Exception in updateApplicationStatus:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to update application status",
+    };
+  }
+}
+
 export async function getStudentInternships() {
   try {
     const supabase = getSupabaseAdmin();

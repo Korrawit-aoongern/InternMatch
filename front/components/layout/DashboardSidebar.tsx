@@ -12,16 +12,20 @@ import {
   LogOut
 } from "lucide-react";
 import { getUserRole } from "@/lib/actions/auth";
+import { getCachedRole, setCachedRole } from "@/lib/utils/roleCache";
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(getCachedRole());
 
   useEffect(() => {
+    let isMounted = true;
     async function loadRole() {
       try {
         const res = await getUserRole();
+        if (!isMounted) return;
         if (res.success && res.role) {
+          setCachedRole(res.role);
           setRole(res.role);
         }
       } catch (err) {
@@ -29,6 +33,9 @@ export default function DashboardSidebar() {
       }
     }
     loadRole();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const menuItems = [
@@ -36,7 +43,7 @@ export default function DashboardSidebar() {
     ...(role === "student" || role === "company" ? [{ name: "My Internships", href: "/dashboard/Internships", icon: Briefcase }] : []),
     ...(role === "student" || role === "company"
       ? [
-          { name: "Applications", href: "/applications", icon: Briefcase },
+          { name: "Applications", href: "/dashboard/applications", icon: Briefcase },
           { name: "Matches", href: "/matches", icon: Brain },
         ]
       : []
