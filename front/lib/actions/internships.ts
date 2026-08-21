@@ -715,6 +715,12 @@ export async function getStudentApplications() {
       return { success: false, error: "Student profile not found" };
     }
 
+    // Fetch student skills for dynamic recalculation
+    const { data: studentSkills } = await supabase
+      .from("student_skills")
+      .select("skill_id, level")
+      .eq("student_id", student.id);
+
     const { data, error } = await supabase
       .from("applications")
       .select(`
@@ -734,6 +740,10 @@ export async function getStudentApplications() {
             company_name,
             logo,
             province
+          ),
+          internship_skills (
+            skill_id,
+            level
           )
         )
       `)
@@ -745,21 +755,28 @@ export async function getStudentApplications() {
       return { success: false, error: error.message };
     }
 
-    const mapped = (data || []).map((app: any) => ({
-      id: app.id,
-      match_score: app.match_score || 0,
-      status: app.status || "pending",
-      applied_at: app.applied_at || "",
-      internship_id: app.internship_id,
-      title: app.internships?.title || "Unknown Position",
-      company_name: app.internships?.companies?.company_name || "Unknown Company",
-      company_logo: app.internships?.companies?.logo || "",
-      company_province: app.internships?.companies?.province || "",
-      description: app.internships?.description || "",
-      responsibilities: app.internships?.responsibilities || "",
-      location: app.internships?.location || "",
-      internship_type: app.internships?.internship_type || ""
-    }));
+    const mapped = (data || []).map((app: any) => {
+      const recalculatedScore = calculateMatchScoreHelper(
+        studentSkills || [],
+        app.internships?.internship_skills || []
+      );
+
+      return {
+        id: app.id,
+        match_score: recalculatedScore,
+        status: app.status || "pending",
+        applied_at: app.applied_at || "",
+        internship_id: app.internship_id,
+        title: app.internships?.title || "Unknown Position",
+        company_name: app.internships?.companies?.company_name || "Unknown Company",
+        company_logo: app.internships?.companies?.logo || "",
+        company_province: app.internships?.companies?.province || "",
+        description: app.internships?.description || "",
+        responsibilities: app.internships?.responsibilities || "",
+        location: app.internships?.location || "",
+        internship_type: app.internships?.internship_type || ""
+      };
+    });
 
     return { success: true, applications: mapped };
   } catch (err: unknown) {
