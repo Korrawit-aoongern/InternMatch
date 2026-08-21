@@ -48,7 +48,7 @@ const LEVEL_MAP: Record<string, number> = {
   "advanced": 3
 };
 
-function calculateMatchScoreHelper(
+export function calculateMatchScoreHelper(
   studentSkills: SkillInfo[] | null | undefined,
   internshipSkills: SkillInfo[] | null | undefined
 ): number {
