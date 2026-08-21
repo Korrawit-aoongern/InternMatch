@@ -672,3 +672,86 @@ export async function cancelApplication(internshipId: string) {
     };
   }
 }
+
+export async function getStudentApplications() {
+  try {
+    const supabase = getSupabaseAdmin();
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
+    if (!token) {
+      return { success: false, error: "Unauthorized: No token found" };
+    }
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+    ) as any;
+
+    if (decoded.role !== "student") {
+      return { success: false, error: "Unauthorized: Only students can view their applications" };
+    }
+
+    const { data: student, error: studentError } = await supabase
+      .from("students")
+      .select("id")
+      .eq("user_id", decoded.userId)
+      .maybeSingle();
+
+    if (studentError || !student) {
+      return { success: false, error: "Student profile not found" };
+    }
+
+    const { data, error } = await supabase
+      .from("applications")
+      .select(`
+        id,
+        match_score,
+        status,
+        applied_at,
+        internship_id,
+        internships (
+          title,
+          company_id,
+          description,
+          responsibilities,
+          location,
+          internship_type,
+          companies (
+            company_name,
+            logo,
+            province
+          )
+        )
+      `)
+      .eq("student_id", student.id)
+      .order("applied_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching student applications:", error);
+      return { success: false, error: error.message };
+    }
+
+    const mapped = (data || []).map((app: any) => ({
+      id: app.id,
+      match_score: app.match_score || 0,
+      status: app.status || "pending",
+      applied_at: app.applied_at || "",
+      internship_id: app.internship_id,
+      title: app.internships?.title || "Unknown Position",
+      company_name: app.internships?.companies?.company_name || "Unknown Company",
+      company_logo: app.internships?.companies?.logo || "",
+      company_province: app.internships?.companies?.province || "",
+      description: app.internships?.description || "",
+      responsibilities: app.internships?.responsibilities || "",
+      location: app.internships?.location || "",
+      internship_type: app.internships?.internship_type || ""
+    }));
+
+    return { success: true, applications: mapped };
+  } catch (err: unknown) {
+    console.error("Exception in getStudentApplications:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to fetch student applications",
+    };
+  }
+}
