@@ -37,6 +37,43 @@ export interface InternshipInput {
   skills?: InternshipSkillInput[];
 }
 
+function calculateMatchScoreHelper(studentSkills: any[], internshipSkills: any[]): number {
+  const levelMap: Record<string, number> = {
+    "beginner": 1,
+    "intermediate": 2,
+    "advanced": 3
+  };
+
+  const reqSkills = internshipSkills || [];
+  const requiredSkillsCount = reqSkills.length;
+  if (requiredSkillsCount === 0) return 100;
+
+  let matchScoreSum = 0;
+
+  reqSkills.forEach((is: any) => {
+    const skillId = Number(is.skill_id);
+    const requiredLevelStr = (is.level || "Intermediate").toLowerCase();
+    const requiredLevel = levelMap[requiredLevelStr] || 2; // Default to Intermediate
+
+    // Find if student has this skill
+    const studentSkill = studentSkills.find((s: any) => Number(s.skill_id) === skillId);
+
+    if (studentSkill) {
+      const studentLevelStr = (studentSkill.level || "Intermediate").toLowerCase();
+      const studentLevel = levelMap[studentLevelStr] || 2;
+
+      if (studentLevel >= requiredLevel) {
+        matchScoreSum += 1.0;
+      } else {
+        // Scale down the score contribution
+        matchScoreSum += studentLevel / requiredLevel;
+      }
+    }
+  });
+
+  return Math.round((matchScoreSum / requiredSkillsCount) * 100);
+}
+
 async function getCurrentCompanyId(supabase: SupabaseClient): Promise<string> {
   const cookieStore = await cookies();
   const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
@@ -472,12 +509,6 @@ export async function getStudentInternships() {
       return { success: false, error: error.message };
     }
 
-    const levelMap: Record<string, number> = {
-      "beginner": 1,
-      "intermediate": 2,
-      "advanced": 3
-    };
-
     const mappedInternships = (internships || []).map((item: any) => {
       const hasApplied = studentId 
         ? (item.applications || []).some((app: any) => app.student_id === studentId) 
@@ -487,35 +518,7 @@ export async function getStudentInternships() {
         ? (item.applications || []).find((app: any) => app.student_id === studentId)?.status || null 
         : null;
 
-      // Calculate Match Score with Level Scaling
-      const reqSkills = item.internship_skills || [];
-      const requiredSkillsCount = reqSkills.length;
-      let matchScoreSum = 0;
-
-      reqSkills.forEach((is: any) => {
-        const skillId = Number(is.skill_id);
-        const requiredLevelStr = (is.level || "Intermediate").toLowerCase();
-        const requiredLevel = levelMap[requiredLevelStr] || 2; // Default to Intermediate
-
-        // Find if student has this skill
-        const studentSkill = studentSkillsData.find((s: any) => Number(s.skill_id) === skillId);
-
-        if (studentSkill) {
-          const studentLevelStr = (studentSkill.level || "Intermediate").toLowerCase();
-          const studentLevel = levelMap[studentLevelStr] || 2;
-
-          if (studentLevel >= requiredLevel) {
-            matchScoreSum += 1.0;
-          } else {
-            // Scale down the score contribution
-            matchScoreSum += studentLevel / requiredLevel;
-          }
-        }
-      });
-
-      const matchScore = requiredSkillsCount > 0 
-        ? Math.round((matchScoreSum / requiredSkillsCount) * 100) 
-        : 100; // 100% if no skills are required
+      const matchScore = calculateMatchScoreHelper(studentSkillsData, item.internship_skills);
 
       return {
         id: item.id,
@@ -533,7 +536,7 @@ export async function getStudentInternships() {
         has_applied: hasApplied,
         application_status: applicationStatus,
         match_score: matchScore,
-        skills: reqSkills.map((is: any) => ({
+        skills: (item.internship_skills || []).map((is: any) => ({
           id: is.id.toString(),
           skill_id: Number(is.skill_id),
           name: is.skills?.name || "Unknown",
