@@ -404,6 +404,8 @@ export async function getStudentInternships() {
     const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
     
     let studentId: string | null = null;
+    let studentSkillIds: Set<number> = new Set();
+    
     if (token) {
       try {
         const decoded = jwt.verify(
@@ -417,7 +419,20 @@ export async function getStudentInternships() {
             .select("id")
             .eq("user_id", decoded.userId)
             .maybeSingle();
-          if (student) studentId = student.id;
+            
+          if (student) {
+            studentId = student.id;
+            
+            // Fetch student skills
+            const { data: skillsData } = await supabase
+              .from("student_skills")
+              .select("skill_id")
+              .eq("student_id", studentId);
+              
+            if (skillsData) {
+              studentSkillIds = new Set(skillsData.map((s: any) => Number(s.skill_id)));
+            }
+          }
         }
       } catch (e) {
         console.error("Token verification failed in getStudentInternships:", e);
@@ -466,6 +481,21 @@ export async function getStudentInternships() {
         ? (item.applications || []).find((app: any) => app.student_id === studentId)?.status || null 
         : null;
 
+      // Calculate Match Score
+      const reqSkills = item.internship_skills || [];
+      const requiredSkillsCount = reqSkills.length;
+      let matchedCount = 0;
+      
+      reqSkills.forEach((is: any) => {
+        if (studentSkillIds.has(Number(is.skill_id))) {
+          matchedCount++;
+        }
+      });
+
+      const matchScore = requiredSkillsCount > 0 
+        ? Math.round((matchedCount / requiredSkillsCount) * 100) 
+        : 100; // 100% if no skills are required
+
       return {
         id: item.id,
         company_name: item.companies?.company_name || "Unknown Company",
@@ -481,7 +511,8 @@ export async function getStudentInternships() {
         created_at: item.created_at,
         has_applied: hasApplied,
         application_status: applicationStatus,
-        skills: (item.internship_skills || []).map((is: any) => ({
+        match_score: matchScore,
+        skills: reqSkills.map((is: any) => ({
           id: is.id.toString(),
           skill_id: Number(is.skill_id),
           name: is.skills?.name || "Unknown",
@@ -490,6 +521,9 @@ export async function getStudentInternships() {
         }))
       };
     });
+
+    // Sort by Match Score Descending
+    mappedInternships.sort((a, b) => b.match_score - a.match_score);
 
     return { success: true, internships: mappedInternships };
   } catch (err: unknown) {
