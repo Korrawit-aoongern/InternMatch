@@ -597,7 +597,19 @@ export async function applyToInternship(internshipId: string) {
       return { success: false, error: "You have already applied to this internship" };
     }
 
-    const mockMatchScore = Math.floor(Math.random() * (95 - 50 + 1)) + 50;
+    // Fetch student skills
+    const { data: studentSkills } = await supabase
+      .from("student_skills")
+      .select("skill_id, level")
+      .eq("student_id", student.id);
+
+    // Fetch internship required skills
+    const { data: internshipSkills } = await supabase
+      .from("internship_skills")
+      .select("skill_id, level")
+      .eq("internship_id", internshipId);
+
+    const computedMatchScore = calculateMatchScoreHelper(studentSkills || [], internshipSkills || []);
 
     const { data, error } = await supabase
       .from("applications")
@@ -605,7 +617,7 @@ export async function applyToInternship(internshipId: string) {
         {
           student_id: student.id,
           internship_id: internshipId,
-          match_score: mockMatchScore,
+          match_score: computedMatchScore,
           status: "pending",
           applied_at: new Date().toISOString()
         }
