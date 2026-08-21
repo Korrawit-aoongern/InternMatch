@@ -1261,7 +1261,7 @@ function StudentInternshipCardItem({
                                         }`}
                                     >
                                         {isMatched && <span className="mr-1 text-[8px]">✓</span>}
-                                        {skill.name}
+                                        {skill.name} ({skill.level})
                                     </span>
                                 );
                             })}
@@ -1396,7 +1396,7 @@ function StudentInternshipDetailsModal({
                                             }`}
                                         >
                                             {isMatched && <span className="mr-1">✓</span>}
-                                            {skill.name}
+                                            {skill.name} ({skill.level})
                                         </span>
                                     );
                                 })}
