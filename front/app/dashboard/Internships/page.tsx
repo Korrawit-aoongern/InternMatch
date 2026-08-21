@@ -1093,7 +1093,7 @@ function StudentInternshipsView() {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="ค้นหาตามตำแหน่ง, ฝ่าย หรือบริษัท..."
-                                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm w-full"
+                                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm "
                             />
                         </div>
                     </div>
@@ -1153,7 +1153,13 @@ function StudentInternshipCardItem({
     onApply: () => void;
     isApplying: boolean;
 }) {
-    const { title, company_name, location, internship_type, has_applied, skills } = item;
+    const { title, company_name, location, internship_type, has_applied, skills, match_score } = item;
+
+    const getMatchScoreColor = (score: number) => {
+        if (score >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+        if (score >= 50) return "bg-amber-50 text-amber-700 border-amber-200";
+        return "bg-slate-50 text-slate-600 border-slate-200";
+    };
 
     return (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden border-l-4 border-l-blue-600">
@@ -1162,11 +1168,16 @@ function StudentInternshipCardItem({
                     <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full uppercase">
                         {internship_type}
                     </span>
-                    {has_applied && (
-                        <span className="text-[10px] font-bold tracking-wider text-green-600 bg-green-50 px-2 py-0.5 rounded-md uppercase">
-                            APPLIED
+                    <div className="flex items-center gap-2">
+                        {has_applied && (
+                            <span className="text-[10px] font-bold tracking-wider text-green-600 bg-green-50 px-2 py-0.5 rounded-md uppercase">
+                                APPLIED
+                            </span>
+                        )}
+                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${getMatchScoreColor(match_score)}`}>
+                            {match_score}% Match
                         </span>
-                    )}
+                    </div>
                 </div>
 
                 <div>
@@ -1231,7 +1242,13 @@ function StudentInternshipDetailsModal({
     onApply: () => void;
     isApplying: boolean;
 }) {
-    const { title, company_name, location, internship_type, description, responsibilities, skills, has_applied } = item;
+    const { title, company_name, location, internship_type, description, responsibilities, skills, has_applied, match_score } = item;
+
+    const getMatchScoreColor = (score: number) => {
+        if (score >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+        if (score >= 50) return "bg-amber-50 text-amber-700 border-amber-200";
+        return "bg-slate-50 text-slate-600 border-slate-200";
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
@@ -1253,6 +1270,9 @@ function StudentInternshipDetailsModal({
                         </span>
                         <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full">
                             สถานที่: {location}
+                        </span>
+                        <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${getMatchScoreColor(match_score)}`}>
+                            {match_score}% Match
                         </span>
                     </div>
 
