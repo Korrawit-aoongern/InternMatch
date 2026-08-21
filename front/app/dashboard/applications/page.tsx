@@ -54,6 +54,14 @@ interface CompanyPosition {
     applicantsCount: number;
 }
 
+interface StudentSkillItem {
+    id?: string;
+    skill_id: number;
+    name: string;
+    category: string;
+    level: string;
+}
+
 interface ApplicantItem {
     application_id: string;
     student_id: string;
@@ -69,6 +77,7 @@ interface ApplicantItem {
     match_score: number;
     status: string;
     applied_at: string;
+    skills: StudentSkillItem[];
 }
 
 const STATUS_OPTIONS = [
@@ -311,11 +320,10 @@ function StudentApplicationsView() {
                                                     setIsFilterDropdownOpen(false);
                                                     setCurrentPage(1);
                                                 }}
-                                                className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors ${
-                                                    statusFilter === status
-                                                        ? "text-blue-600 bg-blue-50/55 font-bold"
-                                                        : "text-slate-600 font-medium"
-                                                }`}
+                                                className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors ${statusFilter === status
+                                                    ? "text-blue-600 bg-blue-50/55 font-bold"
+                                                    : "text-slate-600 font-medium"
+                                                    }`}
                                             >
                                                 {status}
                                             </button>
@@ -460,11 +468,10 @@ function StudentApplicationsView() {
                                         <button
                                             key={page}
                                             onClick={() => setCurrentPage(page)}
-                                            className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer ${
-                                                currentPage === page
-                                                    ? "bg-blue-600 text-white"
-                                                    : "border border-slate-200 text-slate-600 hover:bg-white hover:text-slate-800"
-                                            }`}
+                                            className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer ${currentPage === page
+                                                ? "bg-blue-600 text-white"
+                                                : "border border-slate-200 text-slate-600 hover:bg-white hover:text-slate-800"
+                                                }`}
                                         >
                                             {page}
                                         </button>
@@ -544,10 +551,10 @@ function StudentApplicationsView() {
                                                 {selectedApplication.status.toLowerCase() === "accepted"
                                                     ? "ยินดีด้วย! บริษัทได้รับใบสมัครของคุณเรียบร้อยแล้วและอนุมัติการสมัคร"
                                                     : selectedApplication.status.toLowerCase() === "rejected"
-                                                    ? "น่าเสียดาย บริษัทปฏิเสธใบสมัครของคุณแล้วในรอบนี้"
-                                                    : selectedApplication.status.toLowerCase() === "reviewing"
-                                                    ? "บริษัทกำลังอยู่ระหว่างการพิจารณาตรวจสอบข้อมูลของคุณ"
-                                                    : "ใบสมัครของคุณถูกส่งแล้วและอยู่ในคิวรอการตรวจสอบ"}
+                                                        ? "น่าเสียดาย บริษัทปฏิเสธใบสมัครของคุณแล้วในรอบนี้"
+                                                        : selectedApplication.status.toLowerCase() === "reviewing"
+                                                            ? "บริษัทกำลังอยู่ระหว่างการพิจารณาตรวจสอบข้อมูลของคุณ"
+                                                            : "ใบสมัครของคุณถูกส่งแล้วและอยู่ในคิวรอการตรวจสอบ"}
                                             </span>
                                         </div>
                                     </div>
@@ -818,17 +825,15 @@ function CompanyApplicationsView() {
                                         <button
                                             key={pos.id}
                                             onClick={() => handleSelectPosition(pos.id)}
-                                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all cursor-pointer ${
-                                                isActive
-                                                    ? "bg-blue-600 border-blue-600 text-white shadow-sm"
-                                                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                                            }`}
+                                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all cursor-pointer ${isActive
+                                                ? "bg-blue-600 border-blue-600 text-white shadow-sm"
+                                                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                }`}
                                         >
                                             {pos.title}
                                             <span
-                                                className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                                    isActive ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"
-                                                }`}
+                                                className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"
+                                                    }`}
                                             >
                                                 {pos.applicantsCount}
                                             </span>
@@ -851,11 +856,10 @@ function CompanyApplicationsView() {
                                             {selectedPosition.internship_type}
                                         </span>
                                         <span
-                                            className={`text-xs font-bold px-2.5 py-0.5 rounded-full uppercase ${
-                                                selectedPosition.status === "open"
-                                                    ? "bg-blue-50 text-blue-600"
-                                                    : "bg-rose-50 text-rose-600"
-                                            }`}
+                                            className={`text-xs font-bold px-2.5 py-0.5 rounded-full uppercase ${selectedPosition.status === "open"
+                                                ? "bg-blue-50 text-blue-600"
+                                                : "bg-rose-50 text-rose-600"
+                                                }`}
                                         >
                                             {selectedPosition.status === "open" ? "Active" : "Closed"}
                                         </span>
@@ -901,11 +905,10 @@ function CompanyApplicationsView() {
                                                             setIsFilterDropdownOpen(false);
                                                             setCurrentPage(1);
                                                         }}
-                                                        className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors ${
-                                                            statusFilter === status
-                                                                ? "text-blue-600 bg-blue-50/55 font-bold"
-                                                                : "text-slate-600 font-medium"
-                                                        }`}
+                                                        className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors ${statusFilter === status
+                                                            ? "text-blue-600 bg-blue-50/55 font-bold"
+                                                            : "text-slate-600 font-medium"
+                                                            }`}
                                                     >
                                                         {status}
                                                     </button>
@@ -1055,11 +1058,10 @@ function CompanyApplicationsView() {
                                                 <button
                                                     key={page}
                                                     onClick={() => setCurrentPage(page)}
-                                                    className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer ${
-                                                        currentPage === page
-                                                            ? "bg-blue-600 text-white"
-                                                            : "border border-slate-200 text-slate-600 hover:bg-white hover:text-slate-800"
-                                                    }`}
+                                                    className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer ${currentPage === page
+                                                        ? "bg-blue-600 text-white"
+                                                        : "border border-slate-200 text-slate-600 hover:bg-white hover:text-slate-800"
+                                                        }`}
                                                 >
                                                     {page}
                                                 </button>
@@ -1179,6 +1181,33 @@ function CompanyApplicationsView() {
                                                 <FileText className="w-5 h-5 text-slate-300 shrink-0" />
                                                 <span className="text-sm font-medium text-slate-400">
                                                     ไม่มีไฟล์ Resume
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">ทักษะและความสามารถ (Skills)</h4>
+                                        {selectedApplicant.skills && selectedApplicant.skills.length > 0 ? (
+                                            <div className="flex flex-wrap gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                {selectedApplicant.skills.map((skill, index) => (
+                                                    <span
+                                                        key={skill.skill_id || index}
+                                                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs"
+                                                    >
+                                                        <span>{skill.name}</span>
+                                                        {skill.level && (
+                                                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                                                                {skill.level}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl p-3">
+                                                <span className="text-sm font-medium text-slate-400">
+                                                    ยังไม่ได้ระบุทักษะความสามารถ
                                                 </span>
                                             </div>
                                         )}

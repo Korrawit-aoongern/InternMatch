@@ -349,7 +349,11 @@ export async function getInternshipApplicants(internshipId: string) {
           resume_path,
           student_skills (
             skill_id,
-            level
+            level,
+            skills (
+              name,
+              category
+            )
           ),
           users (
             email
@@ -373,6 +377,13 @@ export async function getInternshipApplicants(internshipId: string) {
         student?.student_skills || [],
         internshipSkills || []
       );
+
+      const mappedSkills = (student?.student_skills || []).map((ss: any) => ({
+        skill_id: Number(ss.skill_id),
+        name: ss.skills?.name || "Unknown",
+        category: ss.skills?.category || "Unknown",
+        level: ss.level || "Intermediate"
+      }));
       
       return {
         application_id: item.id,
@@ -389,6 +400,7 @@ export async function getInternshipApplicants(internshipId: string) {
         match_score: recalculatedScore,
         status: item.status,
         applied_at: item.applied_at,
+        skills: mappedSkills,
       };
     });
 
@@ -444,7 +456,14 @@ export async function getCompanyApplications() {
           major,
           profile_image,
           resume_path,
-          student_skills ( skill_id, level ),
+          student_skills (
+            skill_id,
+            level,
+            skills (
+              name,
+              category
+            )
+          ),
           users ( email )
         )
       `)
@@ -464,6 +483,12 @@ export async function getCompanyApplications() {
         student?.student_skills || [],
         item.internships?.internship_skills || []
       );
+      const mappedSkills = (student?.student_skills || []).map((ss: any) => ({
+        skill_id: Number(ss.skill_id),
+        name: ss.skills?.name || "Unknown",
+        category: ss.skills?.category || "Unknown",
+        level: ss.level || "Intermediate"
+      }));
       return {
         application_id: item.id,
         student_id: item.student_id,
@@ -480,6 +505,7 @@ export async function getCompanyApplications() {
         match_score: recalculatedScore,
         status: item.status,
         applied_at: item.applied_at,
+        skills: mappedSkills,
       };
     });
 
