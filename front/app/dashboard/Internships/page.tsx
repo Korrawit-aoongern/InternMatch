@@ -56,6 +56,7 @@ export interface Internship {
     applicantsCount: number;
     postedDate: string;
     description?: string;
+    responsibilities?: string;
     skills: InternshipSkill[];
 }
 
@@ -93,6 +94,7 @@ export default function MyInternshipsPage() {
         type: "Hybrid",
         status: "open" as InternshipStatus,
         description: "",
+        responsibilities: "",
     });
 
     // Role authorization check
@@ -129,7 +131,8 @@ export default function MyInternshipsPage() {
                     postedDate: item.created_at,
                     applicantsCount: item.applicant_count || 0,
                     skills: item.skills || [],
-                    description: item.description || ""
+                    description: item.description || "",
+                    responsibilities: item.responsibilities || ""
                 }));
                 setInternships(mapped);
             }
@@ -162,7 +165,8 @@ export default function MyInternshipsPage() {
                         postedDate: item.created_at,
                         applicantsCount: item.applicant_count || 0,
                         skills: item.skills || [],
-                        description: item.description || ""
+                        description: item.description || "",
+                        responsibilities: item.responsibilities || ""
                     }));
                     setInternships(mapped);
                 }
@@ -218,6 +222,7 @@ export default function MyInternshipsPage() {
             type: "Hybrid",
             status: "open",
             description: "",
+            responsibilities: "",
         });
         setSelectedSkills([]);
         setCurrentStep(1);
@@ -233,6 +238,7 @@ export default function MyInternshipsPage() {
             type: item.internship_type || "Hybrid",
             status: item.status,
             description: item.description || "",
+            responsibilities: item.responsibilities || "",
         });
         setSelectedSkills(item.skills.map(s => ({
             skill_id: s.skill_id,
@@ -292,7 +298,7 @@ export default function MyInternshipsPage() {
     // Unified Save Handler (inserts matching skills inside same transaction)
     const handleSaveInternship = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!formData.title || !formData.location || !formData.description || !formData.department) return;
+        if (!formData.title || !formData.location || !formData.description || !formData.department || !formData.responsibilities) return;
 
         const skillsPayload = selectedSkills.map(s => ({
             skill_id: s.skill_id,
@@ -308,6 +314,7 @@ export default function MyInternshipsPage() {
                 internship_type: formData.type,
                 status: formData.status,
                 description: formData.description,
+                responsibilities: formData.responsibilities,
                 skills: skillsPayload
             });
         } else {
@@ -318,6 +325,7 @@ export default function MyInternshipsPage() {
                 internship_type: formData.type,
                 status: formData.status,
                 description: formData.description,
+                responsibilities: formData.responsibilities,
                 skills: skillsPayload
             });
         }
@@ -554,6 +562,20 @@ export default function MyInternshipsPage() {
                                                     className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                                                 />
                                             </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                    หน้าที่ความรับผิดชอบ (Responsibilities) *
+                                                </label>
+                                                <textarea
+                                                    rows={4}
+                                                    required
+                                                    value={formData.responsibilities}
+                                                    onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })}
+                                                    placeholder="ระบุหน้าที่ความรับผิดชอบสำหรับตำแหน่งงานนี้..."
+                                                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                />
+                                            </div>
                                         </div>
                                     ) : (
                                         <div className="space-y-4">
@@ -676,7 +698,7 @@ export default function MyInternshipsPage() {
                                                 <button
                                                     type="button"
                                                     onClick={() => {
-                                                        if (formData.title && formData.location && formData.description && formData.department) {
+                                                        if (formData.title && formData.location && formData.description && formData.department && formData.responsibilities) {
                                                             setCurrentStep(2);
                                                         } else {
                                                             alert("กรุณากรอกข้อมูลจำเป็นให้ครบถ้วนก่อนไปขั้นตอนถัดไป (*)");
