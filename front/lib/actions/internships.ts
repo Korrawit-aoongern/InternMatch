@@ -396,3 +396,176 @@ export async function getInternshipApplicants(internshipId: string) {
     };
   }
 }
+
+export async function getStudentInternships() {
+  try {
+    const supabase = getSupabaseAdmin();
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
+    
+    let studentId: string | null = null;
+    if (token) {
+      try {
+        const decoded = jwt.verify(
+          token,
+          process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+        ) as any;
+        
+        if (decoded.role === "student") {
+          const { data: student } = await supabase
+            .from("students")
+            .select("id")
+            .eq("user_id", decoded.userId)
+            .maybeSingle();
+          if (student) studentId = student.id;
+        }
+      } catch (e) {
+        console.error("Token verification failed in getStudentInternships:", e);
+      }
+    }
+
+    const { data: internships, error } = await supabase
+      .from("internships")
+      .select(`
+        *,
+        companies (
+          company_name,
+          logo,
+          province
+        ),
+        applications (
+          id,
+          student_id,
+          status
+        ),
+        internship_skills (
+          id,
+          skill_id,
+          level,
+          skills (
+            id,
+            name,
+            category
+          )
+        )
+      `)
+      .eq("status", "open")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching student internships:", error);
+      return { success: false, error: error.message };
+    }
+
+    const mappedInternships = (internships || []).map((item: any) => {
+      const hasApplied = studentId 
+        ? (item.applications || []).some((app: any) => app.student_id === studentId) 
+        : false;
+      
+      const applicationStatus = studentId 
+        ? (item.applications || []).find((app: any) => app.student_id === studentId)?.status || null 
+        : null;
+
+      return {
+        id: item.id,
+        company_name: item.companies?.company_name || "Unknown Company",
+        company_logo: item.companies?.logo || "",
+        company_province: item.companies?.province || "",
+        title: item.title,
+        department: item.department || "",
+        description: item.description,
+        responsibilities: item.responsibilities || "",
+        location: item.location,
+        internship_type: item.internship_type,
+        status: item.status,
+        created_at: item.created_at,
+        has_applied: hasApplied,
+        application_status: applicationStatus,
+        skills: (item.internship_skills || []).map((is: any) => ({
+          id: is.id.toString(),
+          skill_id: Number(is.skill_id),
+          name: is.skills?.name || "Unknown",
+          category: is.skills?.category || "Unknown",
+          level: is.level || "Intermediate"
+        }))
+      };
+    });
+
+    return { success: true, internships: mappedInternships };
+  } catch (err: unknown) {
+    console.error("Exception in getStudentInternships:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to fetch internships for student",
+    };
+  }
+}
+
+export async function applyToInternship(internshipId: string) {
+  try {
+    const supabase = getSupabaseAdmin();
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
+    if (!token) {
+      return { success: false, error: "Unauthorized: No token found" };
+    }
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+    ) as any;
+
+    if (decoded.role !== "student") {
+      return { success: false, error: "Unauthorized: Only students can apply to internships" };
+    }
+
+    const { data: student, error: studentError } = await supabase
+      .from("students")
+      .select("id")
+      .eq("user_id", decoded.userId)
+      .maybeSingle();
+
+    if (studentError || !student) {
+      return { success: false, error: "Student profile not found" };
+    }
+
+    const { data: existingApp, error: checkError } = await supabase
+      .from("applications")
+      .select("id")
+      .eq("student_id", student.id)
+      .eq("internship_id", internshipId)
+      .maybeSingle();
+
+    if (existingApp) {
+      return { success: false, error: "You have already applied to this internship" };
+    }
+
+    const mockMatchScore = Math.floor(Math.random() * (95 - 50 + 1)) + 50;
+
+    const { data, error } = await supabase
+      .from("applications")
+      .insert([
+        {
+          student_id: student.id,
+          internship_id: internshipId,
+          match_score: mockMatchScore,
+          status: "pending",
+          applied_at: new Date().toISOString()
+        }
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error creating application:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, application: data, message: "สมัครงานสำเร็จเรียบร้อย! 🎉" };
+  } catch (err: unknown) {
+    console.error("Exception in applyToInternship:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to apply to internship",
+    };
+  }
+}
