@@ -98,9 +98,6 @@ export default function DashboardSidebar() {
             </Link>
           </li>
         </ul>
-        <Link href="/internships" className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center shadow-sm">
-          Find Internships
-        </Link>
       </div>
     </nav>
   );
