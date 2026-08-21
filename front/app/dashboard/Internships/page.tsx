@@ -11,7 +11,8 @@ import {
     updateInternship,
     deleteInternship,
     getStudentInternships,
-    applyToInternship
+    applyToInternship,
+    cancelApplication
 } from "@/lib/actions/internships";
 import { getMasterSkills } from "@/lib/actions/skills";
 import {
@@ -1016,6 +1017,7 @@ function StudentInternshipsView() {
     const [selectedInternship, setSelectedInternship] = useState<any | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [applyingId, setApplyingId] = useState<string | null>(null);
+    const [cancelingId, setCancelingId] = useState<string | null>(null);
 
     const fetchInternships = async () => {
         setIsLoading(true);
@@ -1053,6 +1055,27 @@ function StudentInternshipsView() {
             console.error("Apply error:", err);
         } finally {
             setApplyingId(null);
+        }
+    };
+
+    const handleCancelApply = async (internshipId: string) => {
+        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการยกเลิกการสมัครสำหรับตำแหน่งงานนี้?")) return;
+        setCancelingId(internshipId);
+        try {
+            const res = await cancelApplication(internshipId);
+            if (res.success) {
+                alert("ยกเลิกการสมัครเสร็จสิ้นสำเร็จเรียบร้อย! 📥");
+                fetchInternships();
+                if (selectedInternship && selectedInternship.id === internshipId) {
+                    setSelectedInternship((prev: any) => prev ? { ...prev, has_applied: false } : null);
+                }
+            } else {
+                alert("เกิดข้อผิดพลาดในการยกเลิกสมัคร: " + res.error);
+            }
+        } catch (err) {
+            console.error("Cancel apply error:", err);
+        } finally {
+            setCancelingId(null);
         }
     };
 
@@ -1120,6 +1143,8 @@ function StudentInternshipsView() {
                                     }}
                                     onApply={() => handleApply(item.id)}
                                     isApplying={applyingId === item.id}
+                                    onCancel={() => handleCancelApply(item.id)}
+                                    isCanceling={cancelingId === item.id}
                                 />
                             ))}
                         </div>
@@ -1134,6 +1159,8 @@ function StudentInternshipsView() {
                             }}
                             onApply={() => handleApply(selectedInternship.id)}
                             isApplying={applyingId === selectedInternship.id}
+                            onCancel={() => handleCancelApply(selectedInternship.id)}
+                            isCanceling={cancelingId === selectedInternship.id}
                         />
                     )}
                 </main>
@@ -1146,12 +1173,16 @@ function StudentInternshipCardItem({
     item,
     onViewDetails,
     onApply,
-    isApplying
+    isApplying,
+    onCancel,
+    isCanceling
 }: {
     item: any;
     onViewDetails: () => void;
     onApply: () => void;
     isApplying: boolean;
+    onCancel: () => void;
+    isCanceling: boolean;
 }) {
     const { title, company_name, location, internship_type, has_applied, skills, match_score } = item;
 
@@ -1212,10 +1243,11 @@ function StudentInternshipCardItem({
                 </button>
                 {has_applied ? (
                     <button
-                        disabled
-                        className="bg-green-100 text-green-700 text-xs font-bold py-2 px-3 rounded-xl cursor-not-allowed opacity-90 text-center"
+                        onClick={onCancel}
+                        disabled={isCanceling}
+                        className="border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs font-bold py-2 px-3 rounded-xl transition-colors text-center disabled:opacity-50"
                     >
-                        Applied
+                        {isCanceling ? "Canceling..." : "Cancel Apply"}
                     </button>
                 ) : (
                     <button
@@ -1235,12 +1267,16 @@ function StudentInternshipDetailsModal({
     item,
     onClose,
     onApply,
-    isApplying
+    isApplying,
+    onCancel,
+    isCanceling
 }: {
     item: any;
     onClose: () => void;
     onApply: () => void;
     isApplying: boolean;
+    onCancel: () => void;
+    isCanceling: boolean;
 }) {
     const { title, company_name, location, internship_type, description, responsibilities, skills, has_applied, match_score } = item;
 
@@ -1252,7 +1288,7 @@ function StudentInternshipDetailsModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-2xl space-y-4 shadow-xl border border-slate-100 max-h-[90vh] flex flex-col justify-between overflow-hidden">
+            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-150 space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
                     <div>
                         <h2 className="text-lg font-bold text-slate-800">{title}</h2>
@@ -1313,10 +1349,11 @@ function StudentInternshipDetailsModal({
                     </button>
                     {has_applied ? (
                         <button
-                            disabled
-                            className="bg-green-100 text-green-700 text-sm font-semibold px-5 py-2 rounded-xl cursor-not-allowed"
+                            onClick={onCancel}
+                            disabled={isCanceling}
+                            className="border border-rose-200 hover:bg-rose-50 text-rose-600 text-sm font-semibold px-5 py-2 rounded-xl transition-colors disabled:opacity-50"
                         >
-                            Applied
+                            {isCanceling ? "Canceling..." : "Cancel Apply"}
                         </button>
                     ) : (
                         <button
