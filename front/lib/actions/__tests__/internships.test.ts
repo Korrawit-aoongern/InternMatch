@@ -1,4 +1,4 @@
-import { calculateMatchScoreHelper } from "../internships";
+import { calculateMatchScoreHelper } from "../../utils/match";
 
 describe("calculateMatchScoreHelper", () => {
   it("should return 100 if no internship skills are required", () => {
