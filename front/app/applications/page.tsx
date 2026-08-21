@@ -244,7 +244,7 @@ export default function ApplicationsPage() {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search applications..."
-                                className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm w-full"
+                                className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm "
                             />
                         </div>
 
@@ -441,7 +441,7 @@ export default function ApplicationsPage() {
                     {/* View Details Modal */}
                     {isDetailsOpen && selectedApplication && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-                            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-2xl space-y-4 shadow-xl border border-slate-100 max-h-[90vh] flex flex-col justify-between overflow-hidden">
+                            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-150 space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
                                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
                                     <div>
                                         <h2 className="text-lg font-bold text-slate-800">
