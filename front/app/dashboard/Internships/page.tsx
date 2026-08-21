@@ -1044,7 +1044,7 @@ function StudentInternshipsView() {
                 alert("สมัครตำแหน่งงานเสร็จสิ้นสำเร็จเรียบร้อย! 🎉");
                 fetchInternships();
                 if (selectedInternship && selectedInternship.id === internshipId) {
-                    setSelectedInternship(prev => prev ? { ...prev, has_applied: true } : null);
+                    setSelectedInternship((prev: any) => prev ? { ...prev, has_applied: true } : null);
                 }
             } else {
                 alert("เกิดข้อผิดพลาดในการสมัคร: " + res.error);
