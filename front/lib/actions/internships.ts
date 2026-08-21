@@ -603,3 +603,51 @@ export async function applyToInternship(internshipId: string) {
     };
   }
 }
+
+export async function cancelApplication(internshipId: string) {
+  try {
+    const supabase = getSupabaseAdmin();
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
+    if (!token) {
+      return { success: false, error: "Unauthorized: No token found" };
+    }
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+    ) as any;
+
+    if (decoded.role !== "student") {
+      return { success: false, error: "Unauthorized: Only students can cancel applications" };
+    }
+
+    const { data: student, error: studentError } = await supabase
+      .from("students")
+      .select("id")
+      .eq("user_id", decoded.userId)
+      .maybeSingle();
+
+    if (studentError || !student) {
+      return { success: false, error: "Student profile not found" };
+    }
+
+    const { error } = await supabase
+      .from("applications")
+      .delete()
+      .eq("student_id", student.id)
+      .eq("internship_id", internshipId);
+
+    if (error) {
+      console.error("Error deleting application:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, message: "ยกเลิกการสมัครฝึกงานสำเร็จเรียบร้อย! 📥" };
+  } catch (err: unknown) {
+    console.error("Exception in cancelApplication:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to cancel application",
+    };
+  }
+}
