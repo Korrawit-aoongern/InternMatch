@@ -30,6 +30,7 @@ export interface InternshipInput {
   title: string;
   department: string;
   description: string;
+  responsibilities: string;
   location: string;
   internship_type: string;
   status: "open" | "closed";
@@ -108,6 +109,7 @@ export async function getCompanyInternships() {
       title: item.title,
       department: item.department || "",
       description: item.description,
+      responsibilities: item.responsibilities || "",
       location: item.location,
       internship_type: item.internship_type,
       status: item.status as "open" | "closed",
@@ -145,6 +147,7 @@ export async function createInternship(input: InternshipInput) {
           title: input.title.trim(),
           department: input.department.trim(),
           description: input.description.trim(),
+          responsibilities: input.responsibilities.trim(),
           location: input.location.trim(),
           internship_type: input.internship_type,
           status: input.status,
@@ -205,6 +208,7 @@ export async function updateInternship(id: string, input: Partial<InternshipInpu
     if (input.title !== undefined) updateData.title = input.title.trim();
     if (input.department !== undefined) updateData.department = input.department.trim();
     if (input.description !== undefined) updateData.description = input.description.trim();
+    if (input.responsibilities !== undefined) updateData.responsibilities = input.responsibilities.trim();
     if (input.location !== undefined) updateData.location = input.location.trim();
     if (input.internship_type !== undefined) updateData.internship_type = input.internship_type;
     if (input.status !== undefined) updateData.status = input.status;
