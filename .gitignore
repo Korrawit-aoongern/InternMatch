@@ -1,12 +1,25 @@
-node_modules
 # Dependencies
 node_modules/
 
+# Next.js build output
+front/.next/
+front/out/
+
 # Production builds
-frontend/.next/
-backend/dist/
+back/dist/
 
 # Env files
 .env
 .env.local
 .env.*.local
+
+# Testing
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Logs & misc
+npm-debug.log*
+yarn-error.log*
+.DS_Store
