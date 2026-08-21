@@ -33,7 +33,7 @@ export default function DashboardSidebar() {
 
   const menuItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    ...(role === "company" ? [{ name: "My Internships", href: "/dashboard/Internships", icon: Briefcase }] : []),
+    ...(role === "student" || role === "company" ? [{ name: "My Internships", href: "/dashboard/Internships", icon: Briefcase }] : []),
     ...(role === "student" || role === "company"
       ? [
           { name: "Applications", href: "/applications", icon: Briefcase },
