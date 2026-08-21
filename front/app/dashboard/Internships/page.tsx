@@ -14,7 +14,7 @@ import {
     applyToInternship,
     cancelApplication
 } from "@/lib/actions/internships";
-import { getMasterSkills } from "@/lib/actions/skills";
+import { getMasterSkills, getStudentSkills } from "@/lib/actions/skills";
 import {
     PlusCircle,
     Search,
@@ -1012,6 +1012,7 @@ export default function MyInternshipsPage() {
 
 function StudentInternshipsView() {
     const [internships, setInternships] = useState<any[]>([]);
+    const [studentSkills, setStudentSkills] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedInternship, setSelectedInternship] = useState<any | null>(null);
@@ -1026,8 +1027,12 @@ function StudentInternshipsView() {
             if (res.success && res.internships) {
                 setInternships(res.internships);
             }
+            const skillsRes = await getStudentSkills();
+            if (skillsRes.success && skillsRes.skills) {
+                setStudentSkills(skillsRes.skills);
+            }
         } catch (err) {
-            console.error("Failed to load student internships:", err);
+            console.error("Failed to load student internships or skills:", err);
         } finally {
             setIsLoading(false);
         }
@@ -1145,6 +1150,7 @@ function StudentInternshipsView() {
                                     isApplying={applyingId === item.id}
                                     onCancel={() => handleCancelApply(item.id)}
                                     isCanceling={cancelingId === item.id}
+                                    studentSkills={studentSkills}
                                 />
                             ))}
                         </div>
@@ -1161,6 +1167,7 @@ function StudentInternshipsView() {
                             isApplying={applyingId === selectedInternship.id}
                             onCancel={() => handleCancelApply(selectedInternship.id)}
                             isCanceling={cancelingId === selectedInternship.id}
+                            studentSkills={studentSkills}
                         />
                     )}
                 </main>
@@ -1175,7 +1182,8 @@ function StudentInternshipCardItem({
     onApply,
     isApplying,
     onCancel,
-    isCanceling
+    isCanceling,
+    studentSkills
 }: {
     item: any;
     onViewDetails: () => void;
@@ -1183,6 +1191,7 @@ function StudentInternshipCardItem({
     isApplying: boolean;
     onCancel: () => void;
     isCanceling: boolean;
+    studentSkills: any[];
 }) {
     const { title, company_name, location, internship_type, has_applied, skills, match_score } = item;
 
@@ -1221,15 +1230,42 @@ function StudentInternshipCardItem({
                 </div>
 
                 {skills && skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                        {skills.map((skill: any) => (
-                            <span
-                                key={skill.skill_id}
-                                className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-slate-50 text-slate-600 border-slate-200"
-                            >
-                                {skill.name} ({skill.level})
-                            </span>
-                        ))}
+                    <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ทักษะที่ต้องการ (Required Skills)</span>
+                        <div className="flex flex-wrap gap-1.5">
+                            {skills.map((skill: any) => (
+                                <span
+                                    key={skill.skill_id}
+                                    className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-slate-50 text-slate-600 border-slate-200"
+                                >
+                                    {skill.name} ({skill.level})
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {studentSkills && studentSkills.length > 0 && (
+                    <div className="space-y-1 pt-1.5 border-t border-slate-100 mt-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ทักษะของคุณ (Your Skills)</span>
+                        <div className="flex flex-wrap gap-1.5">
+                            {studentSkills.map((skill: any) => {
+                                const isMatched = skills.some((req: any) => req.skill_id === skill.skill_id);
+                                return (
+                                    <span
+                                        key={skill.skill_id}
+                                        className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                                            isMatched
+                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                                : "bg-slate-50 text-slate-500 border-slate-200"
+                                        }`}
+                                    >
+                                        {isMatched && <span className="mr-1 text-[8px]">✓</span>}
+                                        {skill.name}
+                                    </span>
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </div>
@@ -1269,7 +1305,8 @@ function StudentInternshipDetailsModal({
     onApply,
     isApplying,
     onCancel,
-    isCanceling
+    isCanceling,
+    studentSkills
 }: {
     item: any;
     onClose: () => void;
@@ -1277,6 +1314,7 @@ function StudentInternshipDetailsModal({
     isApplying: boolean;
     onCancel: () => void;
     isCanceling: boolean;
+    studentSkills: any[];
 }) {
     const { title, company_name, location, internship_type, description, responsibilities, skills, has_applied, match_score } = item;
 
@@ -1338,6 +1376,30 @@ function StudentInternshipDetailsModal({
                                         {skill.name} ({skill.level})
                                     </span>
                                 ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {studentSkills && studentSkills.length > 0 && (
+                        <div className="space-y-1.5">
+                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">ทักษะของคุณ (Your Skills)</h4>
+                            <div className="flex flex-wrap gap-1.5">
+                                {studentSkills.map((skill: any) => {
+                                    const isMatched = skills.some((req: any) => req.skill_id === skill.skill_id);
+                                    return (
+                                        <span
+                                            key={skill.skill_id}
+                                            className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
+                                                isMatched
+                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                                    : "bg-slate-50 text-slate-500 border-slate-200"
+                                            }`}
+                                        >
+                                            {isMatched && <span className="mr-1">✓</span>}
+                                            {skill.name}
+                                        </span>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
