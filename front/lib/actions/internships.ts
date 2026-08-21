@@ -37,30 +37,39 @@ export interface InternshipInput {
   skills?: InternshipSkillInput[];
 }
 
-function calculateMatchScoreHelper(studentSkills: any[], internshipSkills: any[]): number {
-  const levelMap: Record<string, number> = {
-    "beginner": 1,
-    "intermediate": 2,
-    "advanced": 3
-  };
+interface SkillInfo {
+  skill_id: number | string;
+  level?: string;
+}
 
+const LEVEL_MAP: Record<string, number> = {
+  "beginner": 1,
+  "intermediate": 2,
+  "advanced": 3
+};
+
+function calculateMatchScoreHelper(
+  studentSkills: SkillInfo[] | null | undefined,
+  internshipSkills: SkillInfo[] | null | undefined
+): number {
+  const sSkills = studentSkills || [];
   const reqSkills = internshipSkills || [];
   const requiredSkillsCount = reqSkills.length;
   if (requiredSkillsCount === 0) return 100;
 
   let matchScoreSum = 0;
 
-  reqSkills.forEach((is: any) => {
+  reqSkills.forEach((is: SkillInfo) => {
     const skillId = Number(is.skill_id);
     const requiredLevelStr = (is.level || "Intermediate").toLowerCase();
-    const requiredLevel = levelMap[requiredLevelStr] || 2; // Default to Intermediate
+    const requiredLevel = LEVEL_MAP[requiredLevelStr] || 2; // Default to Intermediate
 
     // Find if student has this skill
-    const studentSkill = studentSkills.find((s: any) => Number(s.skill_id) === skillId);
+    const studentSkill = sSkills.find((s: SkillInfo) => Number(s.skill_id) === skillId);
 
     if (studentSkill) {
       const studentLevelStr = (studentSkill.level || "Intermediate").toLowerCase();
-      const studentLevel = levelMap[studentLevelStr] || 2;
+      const studentLevel = LEVEL_MAP[studentLevelStr] || 2;
 
       if (studentLevel >= requiredLevel) {
         matchScoreSum += 1.0;
@@ -73,6 +82,7 @@ function calculateMatchScoreHelper(studentSkills: any[], internshipSkills: any[]
 
   return Math.round((matchScoreSum / requiredSkillsCount) * 100);
 }
+
 
 async function getCurrentCompanyId(supabase: SupabaseClient): Promise<string> {
   const cookieStore = await cookies();
@@ -355,6 +365,17 @@ export async function getInternshipApplicants(internshipId: string) {
       return { success: false, error: "Internship posting not found or unauthorized access" };
     }
 
+    // Fetch internship required skills
+    const { data: internshipSkills, error: skillsError } = await supabase
+      .from("internship_skills")
+      .select("skill_id, level")
+      .eq("internship_id", internshipId);
+
+    if (skillsError) {
+      console.error("Error fetching internship skills in getInternshipApplicants:", skillsError);
+      return { success: false, error: "Failed to load internship requirements" };
+    }
+
     // Fetch applications with joined students and user emails
     const { data, error } = await supabase
       .from("applications")
@@ -372,6 +393,10 @@ export async function getInternshipApplicants(internshipId: string) {
           study_year,
           profile_image,
           resume_path,
+          student_skills (
+            skill_id,
+            level
+          ),
           users (
             email
           )
@@ -390,6 +415,11 @@ export async function getInternshipApplicants(internshipId: string) {
       const user = student?.users;
       const email = Array.isArray(user) ? user[0]?.email : user?.email;
       
+      const recalculatedScore = calculateMatchScoreHelper(
+        student?.student_skills || [],
+        internshipSkills || []
+      );
+      
       return {
         application_id: item.id,
         student_id: item.student_id,
@@ -402,7 +432,7 @@ export async function getInternshipApplicants(internshipId: string) {
         resume_path: student?.resume_path || "",
         resume_url: "",
         email: email || "",
-        match_score: item.match_score ? Number(item.match_score) : 0,
+        match_score: recalculatedScore,
         status: item.status,
         applied_at: item.applied_at,
       };
@@ -593,21 +623,36 @@ export async function applyToInternship(internshipId: string) {
       .eq("internship_id", internshipId)
       .maybeSingle();
 
+    if (checkError) {
+      console.error("Error verifying application status:", checkError);
+      return { success: false, error: "Error verifying application status" };
+    }
+
     if (existingApp) {
       return { success: false, error: "You have already applied to this internship" };
     }
 
     // Fetch student skills
-    const { data: studentSkills } = await supabase
+    const { data: studentSkills, error: studentSkillsError } = await supabase
       .from("student_skills")
       .select("skill_id, level")
       .eq("student_id", student.id);
 
+    if (studentSkillsError) {
+      console.error("Error fetching student skills in applyToInternship:", studentSkillsError);
+      return { success: false, error: "Failed to load candidate skills profile" };
+    }
+
     // Fetch internship required skills
-    const { data: internshipSkills } = await supabase
+    const { data: internshipSkills, error: internshipSkillsError } = await supabase
       .from("internship_skills")
       .select("skill_id, level")
       .eq("internship_id", internshipId);
+
+    if (internshipSkillsError) {
+      console.error("Error fetching internship skills in applyToInternship:", internshipSkillsError);
+      return { success: false, error: "Failed to load internship requirements" };
+    }
 
     const computedMatchScore = calculateMatchScoreHelper(studentSkills || [], internshipSkills || []);
 
@@ -712,14 +757,20 @@ export async function getStudentApplications() {
       .maybeSingle();
 
     if (studentError || !student) {
+      if (studentError) console.error("Error fetching student profile:", studentError);
       return { success: false, error: "Student profile not found" };
     }
 
     // Fetch student skills for dynamic recalculation
-    const { data: studentSkills } = await supabase
+    const { data: studentSkills, error: studentSkillsError } = await supabase
       .from("student_skills")
       .select("skill_id, level")
       .eq("student_id", student.id);
+
+    if (studentSkillsError) {
+      console.error("Error fetching student skills in getStudentApplications:", studentSkillsError);
+      return { success: false, error: "Failed to load candidate skills profile" };
+    }
 
     const { data, error } = await supabase
       .from("applications")
