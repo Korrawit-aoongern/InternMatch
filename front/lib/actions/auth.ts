@@ -25,6 +25,8 @@ export interface UserRegisterFormData {
   faculty?: string;
   major?: string;
   study_year?: string | number;
+  gpa?: string | number;
+  internship_period?: string;
   profile_image?: string;
   resume_path?: string;
 
@@ -205,6 +207,8 @@ export async function updateStudentProfile(profileData: {
   faculty: string | null;
   major: string | null;
   study_year: number | null;
+  gpa: number | string | null;
+  internship_period: string | null;
   profile_image: string | null;
   resume_path: string | null;
 }) {
@@ -231,6 +235,8 @@ export async function updateStudentProfile(profileData: {
         faculty: profileData.faculty,
         major: profileData.major,
         study_year: profileData.study_year,
+        gpa: profileData.gpa,
+        internship_period: profileData.internship_period,
         profile_image: profileData.profile_image,
         resume_path: profileData.resume_path,
       })

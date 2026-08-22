@@ -341,6 +341,7 @@ export async function getInternshipApplicants(internshipId: string) {
         student_id,
         students (
           fullname,
+          phone,
           university,
           faculty,
           major,
@@ -354,6 +355,11 @@ export async function getInternshipApplicants(internshipId: string) {
               name,
               category
             )
+          ),
+          portfolios (
+            id,
+            title,
+            url
           ),
           users (
             email
@@ -384,11 +390,18 @@ export async function getInternshipApplicants(internshipId: string) {
         category: ss.skills?.category || "Unknown",
         level: ss.level || "Intermediate"
       }));
+
+      const mappedPortfolios = (student?.portfolios || []).map((p: any) => ({
+        id: p.id ? p.id.toString() : "",
+        title: p.title || "Portfolio",
+        url: p.url || ""
+      })).filter((p: any) => p.url !== "");
       
       return {
         application_id: item.id,
         student_id: item.student_id,
         fullname: student?.fullname || "Unknown Student",
+        phone: student?.phone || "",
         university: student?.university || "",
         faculty: student?.faculty || "",
         major: student?.major || "",
@@ -401,6 +414,7 @@ export async function getInternshipApplicants(internshipId: string) {
         status: item.status,
         applied_at: item.applied_at,
         skills: mappedSkills,
+        portfolios: mappedPortfolios,
       };
     });
 
@@ -451,9 +465,11 @@ export async function getCompanyApplications() {
         ),
         students (
           fullname,
+          phone,
           university,
           faculty,
           major,
+          study_year,
           profile_image,
           resume_path,
           student_skills (
@@ -463,6 +479,11 @@ export async function getCompanyApplications() {
               name,
               category
             )
+          ),
+          portfolios (
+            id,
+            title,
+            url
           ),
           users ( email )
         )
@@ -489,15 +510,23 @@ export async function getCompanyApplications() {
         category: ss.skills?.category || "Unknown",
         level: ss.level || "Intermediate"
       }));
+      const mappedPortfolios = (student?.portfolios || []).map((p: any) => ({
+        id: p.id ? p.id.toString() : "",
+        title: p.title || "Portfolio",
+        url: p.url || ""
+      })).filter((p: any) => p.url !== "");
+
       return {
         application_id: item.id,
         student_id: item.student_id,
         internship_id: item.internship_id,
         internship_title: item.internships?.title || "Unknown Position",
         fullname: student?.fullname || "Unknown Student",
+        phone: student?.phone || "",
         university: student?.university || "",
         faculty: student?.faculty || "",
         major: student?.major || "",
+        study_year: student?.study_year || 1,
         profile_image: student?.profile_image || "",
         resume_path: student?.resume_path || "",
         resume_url: "",
@@ -506,6 +535,7 @@ export async function getCompanyApplications() {
         status: item.status,
         applied_at: item.applied_at,
         skills: mappedSkills,
+        portfolios: mappedPortfolios,
       };
     });
 

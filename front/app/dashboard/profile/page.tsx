@@ -40,6 +40,8 @@ interface StudentProfile {
   faculty: string;
   major: string;
   study_year: number;
+  gpa: string | number;
+  internship_period: string;
   profile_image: string;
   resume_path: string;
   resume_url: string;
@@ -144,6 +146,8 @@ export default function ProfilePage() {
     faculty: "",
     major: "",
     study_year: 1,
+    gpa: "",
+    internship_period: "",
     profile_image: "",
     resume_path: "",
     resume_url: "",
@@ -240,6 +244,8 @@ export default function ProfilePage() {
             faculty: p.faculty || "",
             major: p.major || "",
             study_year: p.study_year || 1,
+            gpa: p.gpa || "",
+            internship_period: p.internship_period || "",
             profile_image: p.profile_image || "",
             resume_path: p.resume_path || "",
             resume_url: p.resume_url || "",
@@ -345,6 +351,8 @@ export default function ProfilePage() {
         faculty: profile.faculty || null,
         major: profile.major || null,
         study_year: Number(profile.study_year) || null,
+        gpa: profile.gpa || null,
+        internship_period: profile.internship_period || null,
         profile_image: profile.profile_image || null,
         resume_path: profile.resume_path || null,
       });
@@ -592,25 +600,37 @@ export default function ProfilePage() {
 
                       <div>
                         <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                          Study Year
+                          GPA (เกรดเฉลี่ยสะสม)
                         </label>
                         <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                          <select
-                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800 cursor-pointer"
-                            name="study_year"
-                            value={profile.study_year}
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="gpa"
+                            placeholder="3.50"
+                            value={profile.gpa}
                             onChange={handleInputChange}
-                          >
-                            <option value={1}>Year 1</option>
-                            <option value={2}>Year 2</option>
-                            <option value={3}>Year 3</option>
-                            <option value={4}>Year 4</option>
-                            <option value={5}>Year 5+</option>
-                          </select>
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
                         </div>
                       </div>
 
-
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Internship Period (ช่วงเวลาที่สะดวกฝึกงาน)
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="internship_period"
+                            placeholder="มิ.ย. - ส.ค. 2568"
+                            value={profile.internship_period}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
                     </>
                   ) : (
                     <>
