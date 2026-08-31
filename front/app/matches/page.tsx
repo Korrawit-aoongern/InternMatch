@@ -56,9 +56,9 @@ export default function MatchesPage() {
   }, []);
 
   const sortedMatches = useMemo(() => {
-    // Show only jobs that have some match (> 0) sorted descending
+    // Show only jobs that have some match (> 0) and the student has applied to
     return internships
-      .filter(item => item.match_score > 0)
+      .filter(item => item.match_score > 0 && item.has_applied)
       .sort((a, b) => b.match_score - a.match_score);
   }, [internships]);
 
@@ -66,7 +66,7 @@ export default function MatchesPage() {
     <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
       <DashboardSidebar />
       <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
-        <DashboardHeader title="Matches" />
+        <DashboardHeader title="AI Upskill" />
         <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
           
           {/* Page Heading */}
@@ -74,10 +74,10 @@ export default function MatchesPage() {
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-slate-800 flex items-center gap-2.5">
                 <Brain className="w-8 h-8 text-blue-600 fill-blue-50" />
-                AI Matches & Upskilling
+                AI Upskill
               </h1>
               <p className="text-sm text-slate-500 mt-1">
-                จับคู่ตำแหน่งฝึกงานตามโปรไฟล์ทักษะของคุณ พร้อมวิเคราะห์ช่องว่างทักษะและแนะนำคอร์สเรียนจำลองเพื่อปิดจุดอ่อน
+                วิเคราะห์ช่องว่างทักษะและแนะนำคอร์สเรียนเพิ่มพูนทักษะจากตำแหน่งงานที่คุณสมัคร
               </p>
             </div>
           </div>
@@ -90,8 +90,8 @@ export default function MatchesPage() {
           ) : sortedMatches.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 space-y-3">
               <Briefcase className="w-12 h-12 text-slate-300 mx-auto" />
-              <p className="text-base font-semibold text-slate-700">ยังไม่พบตำแหน่งงานที่แมตช์</p>
-              <p className="text-xs text-slate-400">ลองเพิ่มทักษะความชำนาญในเมนูการตั้งค่าโปรไฟล์ของคุณ</p>
+              <p className="text-base font-semibold text-slate-700">ยังไม่มีการฝึกงานที่คุณสมัครในระบบ</p>
+              <p className="text-xs text-slate-400">เมื่อคุณสมัครงาน ระบบจะแสดงคำวิเคราะห์แผนการเรียนรู้ที่นี่</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
