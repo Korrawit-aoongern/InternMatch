@@ -299,8 +299,12 @@ function MatchesInternshipDetailsModal({
           </div>
           
           <div className="pt-2">
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs transition-colors shadow-sm">
-              สมัครฝึกงานตำแหน่งนี้
+            <button 
+              disabled 
+              className="w-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-default"
+            >
+              <CheckCircle className="w-4 h-4 text-emerald-600" />
+              สมัครฝึกงานเรียบร้อยแล้ว
             </button>
           </div>
         </div>
