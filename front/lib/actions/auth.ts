@@ -235,8 +235,6 @@ export async function updateStudentProfile(profileData: {
         faculty: profileData.faculty,
         major: profileData.major,
         study_year: profileData.study_year,
-        gpa: profileData.gpa,
-        internship_period: profileData.internship_period,
         profile_image: profileData.profile_image,
         resume_path: profileData.resume_path,
       })

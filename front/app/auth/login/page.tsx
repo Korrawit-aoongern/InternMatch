@@ -144,14 +144,15 @@ export default function LoginPage() {
                 <div className="flex items-center">
                   <input
                     className="h-4 w-4 rounded border-outline-variant text-primary cursor-pointer"
-                    id="remember-me"
+                    id="remember_me"
+                    name="remember_me"
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
                   />
                   <label
                     className="ml-sm block text-on-surface-variant text-sm select-none cursor-pointer"
-                    htmlFor="remember-me"
+                    htmlFor="remember_me"
                   >
                     Remember me
                   </label>

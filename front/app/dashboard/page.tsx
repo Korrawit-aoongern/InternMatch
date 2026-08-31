@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import jwt from "jsonwebtoken";
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
@@ -34,6 +35,9 @@ async function getUserData(): Promise<DecodedToken | null> {
 
 export default async function DashboardPage() {
   const user = await getUserData();
+  if (!user) {
+    redirect("/auth/login");
+  }
   const displayName = user?.fullname || user?.username || "Guest User";
   const role = user?.role || "student";
 

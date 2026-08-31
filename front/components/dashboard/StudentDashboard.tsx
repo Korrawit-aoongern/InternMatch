@@ -12,6 +12,7 @@ export default function StudentDashboard({ displayName }: StudentDashboardProps)
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
+          <span className="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2.5 py-1 rounded-md mb-2 inline-block">Student Dashboard</span>
           <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Welcome back, {displayName}!</h2>
           <p className="text-sm text-slate-500 mt-1">{"Here's your career progress at a glance."}</p>
         </div>
