@@ -516,15 +516,6 @@ function StudentApplicationsView() {
                                             {selectedApplication.company_name} ({selectedApplication.company_province})
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={() => {
-                                            setIsDetailsOpen(false);
-                                            setSelectedApplication(null);
-                                        }}
-                                        className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-2">
