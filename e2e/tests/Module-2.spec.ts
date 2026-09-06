@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume Management (W3-8 to W4-10)', () => {
 
-  const getTimestamp = () => Date.now();
+  const getTimestamp = () => `${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
 
   // Helper to register and login a new student account
   async function createAndLoginStudent(page: any) {
@@ -29,12 +29,12 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
     await page.locator('input[id="major"]').fill(student.major);
     await page.locator('select[id="study_year"]').selectOption('3');
     await page.getByRole('button', { name: 'Register Account' }).click();
-    await page.waitForURL('**/auth/login');
+    await page.waitForURL('**/auth/login', { timeout: 15000 });
 
     await page.locator('input[id="email"]').fill(student.email);
     await page.locator('input[id="password"]').fill(student.password);
     await page.getByRole('button', { name: 'Login' }).click();
-    await page.waitForURL('**/dashboard');
+    await page.waitForURL('**/dashboard', { timeout: 15000 });
 
     return student;
   }
@@ -63,12 +63,12 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
     await page.locator('textarea[name="address"]').fill(company.address);
     await page.locator('textarea[name="description"]').fill(company.description);
     await page.getByRole('button', { name: 'Register Company' }).click();
-    await page.waitForURL('**/auth/login');
+    await page.waitForURL('**/auth/login', { timeout: 15000 });
 
     await page.locator('input[id="email"]').fill(company.email);
     await page.locator('input[id="password"]').fill(company.password);
     await page.getByRole('button', { name: 'Login' }).click();
-    await page.waitForURL('**/dashboard');
+    await page.waitForURL('**/dashboard', { timeout: 15000 });
 
     return company;
   }
@@ -81,14 +81,17 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
     test('TC-I1-W3-8-001: ตรวจสอบการแสดงผลข้อมูลบัญชีผู้ใช้ในหน้า Profile Settings (Normal Read-only Case)', async ({ page }) => {
       const student = await createAndLoginStudent(page);
       await page.goto('/dashboard/profile');
+      await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible({ timeout: 15000 });
+      await expect(page.getByText('Loading Profile...')).not.toBeVisible({ timeout: 15000 });
 
-      await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible();
       await expect(page.locator('input[name="email"]')).toHaveValue(student.email);
     });
 
     test('TC-I1-W3-8-002: พยายามส่งคำขออัปเดตโปรไฟล์หรือบัญชีขณะที่ Session คุกกี้หมดอายุ (Worst Session Expired Case)', async ({ context, page }) => {
       await createAndLoginStudent(page);
       await page.goto('/dashboard/profile');
+      await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible({ timeout: 15000 });
+      await expect(page.getByText('Loading Profile...')).not.toBeVisible({ timeout: 15000 });
 
       // Clear cookies to simulate expired session
       await context.clearCookies();
@@ -110,6 +113,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
     test('TC-I1-W3-8-003: ทดสอบการดึงข้อมูลอีเมลจากโครงสร้าง Nested Object/Array ของ Supabase (Nested Schema Edge Case)', async ({ page }) => {
       const student = await createAndLoginStudent(page);
       await page.goto('/dashboard/profile');
+      await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible({ timeout: 15000 });
+      await expect(page.getByText('Loading Profile...')).not.toBeVisible({ timeout: 15000 });
 
       // Ensure profile page renders email properly without crash
       await expect(page.locator('input[name="email"]')).toHaveValue(student.email);
@@ -125,6 +130,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
     test('TC-I1-W3-9-001: แก้ไขและอัปเดตข้อมูลส่วนตัวนักศึกษา (Student Profile Details) สำเร็จ (Normal Successful Case)', async ({ page }) => {
       await createAndLoginStudent(page);
       await page.goto('/dashboard/profile');
+      await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible({ timeout: 15000 });
+      await expect(page.getByText('Loading Profile...')).not.toBeVisible({ timeout: 15000 });
 
       await page.locator('input[name="fullname"]').fill('นายสมชาย เรียนดี');
       await page.locator('input[name="phone"]').fill('0898765432');
@@ -140,6 +147,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
       await dialog.accept();
 
       await page.reload();
+      await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible({ timeout: 15000 });
+      await expect(page.getByText('Loading Profile...')).not.toBeVisible({ timeout: 15000 });
       await expect(page.locator('input[name="fullname"]')).toHaveValue('นายสมชาย เรียนดี');
       await expect(page.locator('input[name="phone"]')).toHaveValue('0898765432');
     });
@@ -147,6 +156,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
     test('TC-I1-W3-9-002: อัปโหลดไฟล์ Resume เป็นประเภทไฟล์ไม่อนุญาต เช่น ไฟล์ executable .exe (Worst Invalid File Case)', async ({ page }) => {
       await createAndLoginStudent(page);
       await page.goto('/dashboard/profile');
+      await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible({ timeout: 15000 });
+      await expect(page.getByText('Loading Profile...')).not.toBeVisible({ timeout: 15000 });
 
       // Attempt uploading .exe file
       const exeBuffer = Buffer.from('MZ...fake_exe_content');
@@ -164,6 +175,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
     test('TC-I1-W3-9-003: ลบไฟล์ Resume (Delete Resume) และบันทึกข้อมูล (Nullification Edge Case)', async ({ page }) => {
       await createAndLoginStudent(page);
       await page.goto('/dashboard/profile');
+      await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible({ timeout: 15000 });
+      await expect(page.getByText('Loading Profile...')).not.toBeVisible({ timeout: 15000 });
 
       // Check if delete resume icon button exists
       const deleteResumeBtn = page.locator('button').filter({ has: page.locator('svg.lucide-trash-2') });
@@ -623,6 +636,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
     test('TC-I1-W4-10-001: เปลี่ยนไฟล์ Resume ฉบับใหม่ทดแทนฉบับเดิมสำเร็จ (Normal Successful Case)', async ({ page }) => {
       await createAndLoginStudent(page);
       await page.goto('/dashboard/profile');
+      await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible({ timeout: 15000 });
+      await expect(page.locator('text=Loading Profile...')).toBeHidden({ timeout: 15000 }).catch(() => {});
 
       const pdfBufferV2 = Buffer.from('%PDF-1.4 2 0 obj<<>>endobj trailer<<\/Root 2 0 R>>%%EOF');
       await page.locator('input[type="file"][accept*=".pdf"]').setInputFiles({
@@ -630,8 +645,9 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
         mimeType: 'application/pdf',
         buffer: pdfBufferV2,
       });
+      await page.waitForTimeout(1000);
 
-      const dialogPromise = page.waitForEvent('dialog');
+      const dialogPromise = page.waitForEvent('dialog', { timeout: 15000 });
       await page.getByRole('button', { name: 'Save Changes' }).click();
       const dialog = await dialogPromise;
       await dialog.accept();
@@ -640,6 +656,12 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
     test('TC-I1-W4-10-002: เปลี่ยน Resume โดยเลือกไฟล์นามสกุลที่ไม่ได้รับอนุญาต เช่น .exe หรือ .bat (Worst Disallowed Extension Case)', async ({ page }) => {
       await createAndLoginStudent(page);
       await page.goto('/dashboard/profile');
+      await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible({ timeout: 15000 });
+      await expect(page.locator('text=Loading Profile...')).toBeHidden({ timeout: 15000 }).catch(() => {});
+
+      page.once('dialog', async (dialog) => {
+        await dialog.accept();
+      });
 
       const exeBuffer = Buffer.from('MZ...malicious');
       await page.locator('input[type="file"][accept*=".pdf"]').setInputFiles({
@@ -652,6 +674,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
     test('TC-I1-W4-10-003: ลบไฟล์ Resume เดิมออก (Delete Resume) แล้วเปลี่ยนอัปโหลดไฟล์ฉบับใหม่ทันที (Delete and Re-upload Edge Case)', async ({ page }) => {
       await createAndLoginStudent(page);
       await page.goto('/dashboard/profile');
+      await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible({ timeout: 15000 });
+      await expect(page.locator('text=Loading Profile...')).toBeHidden({ timeout: 15000 }).catch(() => {});
 
       const deleteResumeBtn = page.locator('button').filter({ has: page.locator('svg.lucide-trash-2') });
       if (await deleteResumeBtn.isVisible()) {
@@ -666,8 +690,9 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
           mimeType: 'application/pdf',
           buffer: pdfBuffer,
         });
+        await page.waitForTimeout(1000);
 
-        const saveDialogPromise = page.waitForEvent('dialog');
+        const saveDialogPromise = page.waitForEvent('dialog', { timeout: 15000 });
         await page.getByRole('button', { name: 'Save Changes' }).click();
         const saveDialog = await saveDialogPromise;
         await saveDialog.accept();

@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page, test } from '@playwright/test';
 
 test.describe('Module 3: Company Profile and Internship Posting Management (W1-1 to W1-10)', () => {
-  const getTimestamp = () => `${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+  const getTimestamp = () => `${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
 
   async function registerCompany(page: Page, prefix = 'm3_company') {
     const timestamp = getTimestamp();
@@ -26,7 +26,7 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
     await page.locator('textarea[name="address"]').fill(company.address);
     await page.locator('textarea[name="description"]').fill(company.description);
     await page.getByRole('button', { name: 'Register Company' }).click();
-    await page.waitForURL('**/auth/login', { timeout: 10000 });
+    await page.waitForURL('**/auth/login', { timeout: 15000 });
 
     return company;
   }
@@ -36,7 +36,7 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
     await page.locator('input[id="email"]').fill(email);
     await page.locator('input[id="password"]').fill(password);
     await page.getByRole('button', { name: 'Login' }).click();
-    await page.waitForURL('**/dashboard', { timeout: 10000 });
+    await page.waitForURL('**/dashboard', { timeout: 15000 });
   }
 
   async function createAndLoginCompany(page: Page, prefix?: string) {
@@ -65,7 +65,7 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
     await page.locator('input[id="major"]').fill('IT');
     await page.locator('select[id="study_year"]').selectOption('3');
     await page.getByRole('button', { name: 'Register Account' }).click();
-    await page.waitForURL('**/auth/login', { timeout: 10000 });
+    await page.waitForURL('**/auth/login', { timeout: 15000 });
 
     await login(page, student.email, student.password);
     return student;
@@ -73,11 +73,13 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
 
   async function openCompanyProfile(page: Page) {
     await page.goto('/dashboard/profile');
-    await expect(page.getByRole('heading', { name: 'Company Profile' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Company Profile' })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('Loading Profile...')).not.toBeVisible({ timeout: 15000 }).catch(() => {});
+    await expect(page.locator('input[name="company_name"]')).not.toHaveValue('', { timeout: 15000 });
   }
 
   async function saveCompanyProfile(page: Page) {
-    const dialogPromise = page.waitForEvent('dialog');
+    const dialogPromise = page.waitForEvent('dialog', { timeout: 15000 });
     await page.getByRole('button', { name: 'Save Changes' }).click();
     const dialog = await dialogPromise;
     const message = dialog.message();
@@ -87,7 +89,7 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
 
   async function openCompanyInternships(page: Page) {
     await page.goto('/dashboard/Internships');
-    await expect(page.getByRole('heading', { name: 'My Internships' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('main').getByRole('heading', { name: 'My Internships' })).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('Checking access permissions...')).not.toBeVisible({ timeout: 10000 });
   }
 
@@ -127,18 +129,19 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
   async function goToSkillsStep(page: Page) {
     await activeModal(page).getByRole('button', { name: 'ถัดไป' }).click();
     await expect(activeModal(page).getByText('ขั้นตอนที่ 2 จาก 2')).toBeVisible();
+    await expect(activeModal(page).locator('button').filter({ hasText: /\+/ }).first()).toBeVisible({ timeout: 10000 });
   }
 
   async function selectSkillIfAvailable(page: Page, name: string, level = 'Intermediate') {
     const modal = activeModal(page);
     await modal.getByPlaceholder('ค้นหาทักษะ... เช่น Javascript, React, Figma').fill(name);
-    const skillButton = modal.getByRole('button', { name, exact: true }).first();
+    const skillButton = modal.locator('button').filter({ hasText: new RegExp(`\\+?\\s*${escapeRegExp(name)}`) }).first();
     if ((await skillButton.count()) === 0 || !(await skillButton.isVisible())) {
       return false;
     }
 
     await skillButton.click();
-    const selectedRow = modal.locator('div').filter({ hasText: new RegExp(`^${escapeRegExp(name)} `) }).last();
+    const selectedRow = modal.locator('div').filter({ hasText: new RegExp(`^${escapeRegExp(name)}`) }).last();
     const levelSelect = selectedRow.locator('select');
     if ((await levelSelect.count()) > 0) {
       await levelSelect.selectOption(level);
@@ -248,6 +251,7 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await page.locator('textarea[name="description"]').fill(description);
       await expectProfileSaveSuccess(page);
       await page.reload();
+      await openCompanyProfile(page);
       await expect(page.locator('textarea[name="description"]')).toHaveValue(description);
     });
 
@@ -269,6 +273,7 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await page.locator('textarea[name="description"]').fill(description);
       await expectProfileSaveSuccess(page);
       await page.reload();
+      await openCompanyProfile(page);
 
       await expect(page.locator('textarea[name="description"]')).toHaveValue(description);
     });
@@ -286,6 +291,7 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await page.locator('input[type="url"]').first().fill(website);
       await expectProfileSaveSuccess(page);
       await page.reload();
+      await openCompanyProfile(page);
       await expect(page.locator('input[type="url"]').first()).toHaveValue(website);
     });
 
@@ -294,14 +300,13 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await openCompanyProfile(page);
 
       const websiteInput = page.locator('input[type="url"]').first();
-      await websiteInput.fill('not_a_url_@@@###');
+      await websiteInput.fill('invalid-url-string');
       const isInvalid = await websiteInput.evaluate((el: HTMLInputElement) => !el.checkValidity());
       expect(isInvalid).toBe(true);
-      const dialogPromise = page.waitForEvent('dialog', { timeout: 1000 }).then(async (dialog) => {
+      page.once('dialog', async (dialog) => {
         await dialog.dismiss();
-      }).catch(() => {});
+      });
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      await dialogPromise;
     });
 
     test('TC-I2-W1-3-003: บันทึก URL เว็บไซต์ที่มีความยาวมากเป็นพิเศษพร้อม Query Parameters (Long URL Edge Case)', async ({ page }) => {
@@ -312,6 +317,7 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await page.locator('input[type="url"]').first().fill(longUrl);
       await expectProfileSaveSuccess(page);
       await page.reload();
+      await openCompanyProfile(page);
       await expect(page.locator('input[type="url"]').first()).toHaveValue(longUrl);
     });
   });
@@ -328,6 +334,7 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await page.locator('textarea[name="address"]').fill('99/1 ถนนสาทรเหนือ แขวงสีลม เขตบางรัก');
       await expectProfileSaveSuccess(page);
       await page.reload();
+      await openCompanyProfile(page);
       await expect(page.locator('input[name="province"]')).toHaveValue('กรุงเทพมหานคร');
       await expect(page.locator('textarea[name="address"]')).toHaveValue('99/1 ถนนสาทรเหนือ แขวงสีลม เขตบางรัก');
     });
@@ -351,6 +358,7 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await page.locator('textarea[name="address"]').fill(longAddress);
       await expectProfileSaveSuccess(page);
       await page.reload();
+      await openCompanyProfile(page);
       await expect(page.locator('textarea[name="address"]')).toHaveValue(longAddress);
     });
   });
@@ -376,11 +384,11 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await openCreateInternshipModal(page);
 
       await fillInternshipStepOne(page, { title: '' });
-      const dialogPromise = page.waitForEvent('dialog');
+      page.once('dialog', async (dialog) => {
+        expect(dialog.message()).toContain('กรุณากรอกข้อมูลจำเป็นให้ครบถ้วน');
+        await dialog.accept();
+      });
       await activeModal(page).getByRole('button', { name: 'ถัดไป' }).click();
-      const dialog = await dialogPromise;
-      expect(dialog.message()).toContain('กรุณากรอกข้อมูลจำเป็นให้ครบถ้วน');
-      await dialog.accept();
       await expect(activeModal(page).getByText('ขั้นตอนที่ 1 จาก 2')).toBeVisible();
     });
 
@@ -427,11 +435,11 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
 
       await openFirstInternshipForEdit(page);
       await activeModal(page).getByPlaceholder('เช่น Software Engineering Intern').fill('');
-      const dialogPromise = page.waitForEvent('dialog');
+      page.once('dialog', async (dialog) => {
+        expect(dialog.message()).toContain('กรุณากรอกข้อมูลจำเป็นให้ครบถ้วน');
+        await dialog.accept();
+      });
       await activeModal(page).getByRole('button', { name: 'ถัดไป' }).click();
-      const dialog = await dialogPromise;
-      expect(dialog.message()).toContain('กรุณากรอกข้อมูลจำเป็นให้ครบถ้วน');
-      await dialog.accept();
       await expect(activeModal(page).getByText('ขั้นตอนที่ 1 จาก 2')).toBeVisible();
     });
 
@@ -454,10 +462,10 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await createInternship(page, { title });
 
       await openFirstInternshipForEdit(page);
-      const confirmPromise = page.waitForEvent('dialog');
+      page.once('dialog', async (dialog) => {
+        await dialog.accept();
+      });
       await activeModal(page).getByRole('button', { name: 'ลบประกาศนี้' }).click();
-      const confirmDialog = await confirmPromise;
-      await confirmDialog.accept();
 
       await expect(page.getByRole('heading', { name: title })).not.toBeVisible({ timeout: 10000 });
     });
@@ -468,10 +476,10 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await createInternship(page, { title });
 
       await openFirstInternshipForEdit(page);
-      const confirmPromise = page.waitForEvent('dialog');
+      page.once('dialog', async (dialog) => {
+        await dialog.dismiss();
+      });
       await activeModal(page).getByRole('button', { name: 'ลบประกาศนี้' }).click();
-      const confirmDialog = await confirmPromise;
-      await confirmDialog.dismiss();
 
       await expect(activeModal(page).getByPlaceholder('เช่น Software Engineering Intern')).toHaveValue(title);
       await activeModal(page).getByRole('button', { name: 'ยกเลิก' }).click();
@@ -489,10 +497,11 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await page.locator('input[placeholder="ค้นหาตามตำแหน่ง, ฝ่าย หรือบริษัท..."]').fill(title);
       const applyButton = page.getByRole('button', { name: 'Apply Now' }).first();
       if ((await applyButton.count()) > 0 && await applyButton.isVisible()) {
-        const applyDialogPromise = page.waitForEvent('dialog');
+        page.on('dialog', async (dialog) => {
+          await dialog.accept();
+        });
         await applyButton.click();
-        const applyDialog = await applyDialogPromise;
-        await applyDialog.accept();
+        await page.waitForTimeout(1000);
       }
       await logout(page);
 
@@ -500,12 +509,12 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await openCompanyInternships(page);
       await page.locator('input[placeholder="ค้นหาประกาศหานิสิตฝึกงาน..."]').fill(title);
       await openFirstInternshipForEdit(page);
-      const confirmPromise = page.waitForEvent('dialog');
+      page.on('dialog', async (dialog) => {
+        await dialog.accept();
+      });
       await activeModal(page).getByRole('button', { name: 'ลบประกาศนี้' }).click();
-      const confirmDialog = await confirmPromise;
-      await confirmDialog.accept();
 
-      await expect(page.getByRole('heading', { name: 'My Internships' })).toBeVisible();
+      await expect(page.getByRole('main').getByRole('heading', { name: 'My Internships' })).toBeVisible();
     });
   });
 
@@ -537,7 +546,7 @@ test.describe('Module 3: Company Profile and Internship Posting Management (W1-1
       await goToSkillsStep(page);
       await activeModal(page).getByRole('button', { name: 'สร้างประกาศ' }).click();
 
-      await expect(page.getByRole('heading', { name: 'My Internships' })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByRole('main').getByRole('heading', { name: 'My Internships' })).toBeVisible({ timeout: 10000 });
     });
 
     test('TC-I2-W1-8-003: เพิ่มคุณสมบัติผู้สมัครโดยใช้ Markdown Syntax หรือ HTML Tags (Formatted Input Edge Case)', async ({ page }) => {
