@@ -13,6 +13,7 @@ export default function CompanyDashboard({ displayName }: CompanyDashboardProps)
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
+          <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider bg-indigo-50 px-2.5 py-1 rounded-md mb-2 inline-block">Company Dashboard</span>
           <h2 className="text-2xl md:text-3xl font-bold text-slate-800">Welcome, {displayName}!</h2>
           <p className="text-sm text-slate-500 mt-1">{"Here's your recruitment status at a glance."}</p>
         </div>

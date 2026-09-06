@@ -78,6 +78,18 @@ export default function RegisterPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 10 * 1024 * 1024) {
+      alert("ขนาดไฟล์ Resume เกินกำหนด (ไม่เกิน 10MB)");
+      if (e.target) e.target.value = "";
+      return;
+    }
+
+    if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
+      alert("กรุณาอัปโหลดไฟล์ Resume ในรูปแบบ PDF เท่านั้น");
+      if (e.target) e.target.value = "";
+      return;
+    }
+
     const formData = new FormData();
     formData.append("file", file);
 

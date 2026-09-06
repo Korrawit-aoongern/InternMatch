@@ -427,12 +427,6 @@ function CompanyInternshipsView() {
                                             ขั้นตอนที่ {currentStep} จาก 2: {currentStep === 1 ? "กรอกข้อมูลทั่วไป" : "ระบุทักษะที่ต้องการ"}
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={() => setIsModalOpen(false)}
-                                        className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors"
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
                                 </div>
 
                                 {/* Progress bar */}

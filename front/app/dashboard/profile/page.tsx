@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Save,
   Camera,
@@ -40,6 +41,8 @@ interface StudentProfile {
   faculty: string;
   major: string;
   study_year: number;
+  gpa: string | number;
+  internship_period: string;
   profile_image: string;
   resume_path: string;
   resume_url: string;
@@ -60,6 +63,7 @@ interface StudentProfile {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [role, setRole] = useState<"student" | "company">("student");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const resumeInputRef = React.useRef<HTMLInputElement>(null);
@@ -103,6 +107,18 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 10 * 1024 * 1024) {
+      alert("ขนาดไฟล์ Resume เกินกำหนด (ไม่เกิน 10MB)");
+      if (e.target) e.target.value = "";
+      return;
+    }
+
+    if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
+      alert("กรุณาอัปโหลดไฟล์ Resume ในรูปแบบ PDF เท่านั้น");
+      if (e.target) e.target.value = "";
+      return;
+    }
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -144,6 +160,8 @@ export default function ProfilePage() {
     faculty: "",
     major: "",
     study_year: 1,
+    gpa: "",
+    internship_period: "",
     profile_image: "",
     resume_path: "",
     resume_url: "",
@@ -240,6 +258,8 @@ export default function ProfilePage() {
             faculty: p.faculty || "",
             major: p.major || "",
             study_year: p.study_year || 1,
+            gpa: p.gpa || "",
+            internship_period: p.internship_period || "",
             profile_image: p.profile_image || "",
             resume_path: p.resume_path || "",
             resume_url: p.resume_url || "",
@@ -288,13 +308,19 @@ export default function ProfilePage() {
             logo: c.logo || "",
             email: userEmail || "",
           }));
+          return;
+        }
+
+        if (!studentRes.success && !companyRes.success) {
+          router.replace("/auth/login");
+          return;
         }
       } finally {
         setIsLoadingProfile(false);
       }
     };
     fetchProfile();
-  }, []);
+  }, [router]);
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -345,6 +371,8 @@ export default function ProfilePage() {
         faculty: profile.faculty || null,
         major: profile.major || null,
         study_year: Number(profile.study_year) || null,
+        gpa: profile.gpa || null,
+        internship_period: profile.internship_period || null,
         profile_image: profile.profile_image || null,
         resume_path: profile.resume_path || null,
       });
@@ -592,25 +620,58 @@ export default function ProfilePage() {
 
                       <div>
                         <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                          Study Year
+                          Study Year (ชั้นปีที่ศึกษา)
                         </label>
                         <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
                           <select
                             className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800 cursor-pointer"
                             name="study_year"
-                            value={profile.study_year}
+                            id="study_year"
+                            value={profile.study_year || 1}
                             onChange={handleInputChange}
                           >
-                            <option value={1}>Year 1</option>
-                            <option value={2}>Year 2</option>
-                            <option value={3}>Year 3</option>
-                            <option value={4}>Year 4</option>
-                            <option value={5}>Year 5+</option>
+                            <option value={1}>ปี 1 (First Year)</option>
+                            <option value={2}>ปี 2 (Second Year)</option>
+                            <option value={3}>ปี 3 (Third Year)</option>
+                            <option value={4}>ปี 4 (Fourth Year)</option>
+                            <option value={5}>อื่นๆ / จบการศึกษาแล้ว</option>
                           </select>
                         </div>
                       </div>
 
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          GPA (เกรดเฉลี่ยสะสม)
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="gpa"
+                            placeholder="3.50"
+                            value={profile.gpa}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
 
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Internship Period (ช่วงเวลาที่สะดวกฝึกงาน)
+                        </label>
+                        <div className="flex items-center justify-between border border-slate-200 rounded-xl px-3 py-2 bg-slate-50 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                          <input
+                            className="bg-transparent border-none outline-none w-full text-sm font-semibold text-slate-800"
+                            type="text"
+                            name="internship_period"
+                            placeholder="มิ.ย. - ส.ค. 2568"
+                            value={profile.internship_period}
+                            onChange={handleInputChange}
+                          />
+                          <Edit2 className="w-4 h-4 text-slate-400" />
+                        </div>
+                      </div>
                     </>
                   ) : (
                     <>

@@ -25,7 +25,11 @@ import {
     Briefcase,
     Users,
     FileText,
-    Mail
+    Mail,
+    Phone,
+    Globe,
+    Code,
+    Link2
 } from "lucide-react";
 
 interface StudentApplicationItem {
@@ -54,14 +58,31 @@ interface CompanyPosition {
     applicantsCount: number;
 }
 
+interface StudentSkillItem {
+    id?: string;
+    skill_id: number;
+    name: string;
+    category: string;
+    level: string;
+}
+
+interface PortfolioItem {
+    id?: string;
+    title: string;
+    url: string;
+}
+
 interface ApplicantItem {
     application_id: string;
     student_id: string;
     fullname: string;
+    phone: string;
     university: string;
     faculty: string;
     major: string;
     study_year: number;
+    gpa: string;
+    internship_period: string;
     profile_image: string;
     resume_path: string;
     resume_url: string;
@@ -69,6 +90,8 @@ interface ApplicantItem {
     match_score: number;
     status: string;
     applied_at: string;
+    skills: StudentSkillItem[];
+    portfolios: PortfolioItem[];
 }
 
 const STATUS_OPTIONS = [
@@ -311,11 +334,10 @@ function StudentApplicationsView() {
                                                     setIsFilterDropdownOpen(false);
                                                     setCurrentPage(1);
                                                 }}
-                                                className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors ${
-                                                    statusFilter === status
-                                                        ? "text-blue-600 bg-blue-50/55 font-bold"
-                                                        : "text-slate-600 font-medium"
-                                                }`}
+                                                className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors ${statusFilter === status
+                                                    ? "text-blue-600 bg-blue-50/55 font-bold"
+                                                    : "text-slate-600 font-medium"
+                                                    }`}
                                             >
                                                 {status}
                                             </button>
@@ -460,11 +482,10 @@ function StudentApplicationsView() {
                                         <button
                                             key={page}
                                             onClick={() => setCurrentPage(page)}
-                                            className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer ${
-                                                currentPage === page
-                                                    ? "bg-blue-600 text-white"
-                                                    : "border border-slate-200 text-slate-600 hover:bg-white hover:text-slate-800"
-                                            }`}
+                                            className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer ${currentPage === page
+                                                ? "bg-blue-600 text-white"
+                                                : "border border-slate-200 text-slate-600 hover:bg-white hover:text-slate-800"
+                                                }`}
                                         >
                                             {page}
                                         </button>
@@ -495,15 +516,6 @@ function StudentApplicationsView() {
                                             {selectedApplication.company_name} ({selectedApplication.company_province})
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={() => {
-                                            setIsDetailsOpen(false);
-                                            setSelectedApplication(null);
-                                        }}
-                                        className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-2">
@@ -544,10 +556,10 @@ function StudentApplicationsView() {
                                                 {selectedApplication.status.toLowerCase() === "accepted"
                                                     ? "ยินดีด้วย! บริษัทได้รับใบสมัครของคุณเรียบร้อยแล้วและอนุมัติการสมัคร"
                                                     : selectedApplication.status.toLowerCase() === "rejected"
-                                                    ? "น่าเสียดาย บริษัทปฏิเสธใบสมัครของคุณแล้วในรอบนี้"
-                                                    : selectedApplication.status.toLowerCase() === "reviewing"
-                                                    ? "บริษัทกำลังอยู่ระหว่างการพิจารณาตรวจสอบข้อมูลของคุณ"
-                                                    : "ใบสมัครของคุณถูกส่งแล้วและอยู่ในคิวรอการตรวจสอบ"}
+                                                        ? "น่าเสียดาย บริษัทปฏิเสธใบสมัครของคุณแล้วในรอบนี้"
+                                                        : selectedApplication.status.toLowerCase() === "reviewing"
+                                                            ? "บริษัทกำลังอยู่ระหว่างการพิจารณาตรวจสอบข้อมูลของคุณ"
+                                                            : "ใบสมัครของคุณถูกส่งแล้วและอยู่ในคิวรอการตรวจสอบ"}
                                             </span>
                                         </div>
                                     </div>
@@ -659,6 +671,7 @@ function CompanyApplicationsView() {
                 if (res.success && res.applicants) {
                     setApplicants(res.applicants as ApplicantItem[]);
                 } else {
+                    console.error("getInternshipApplicants error response:", res);
                     setApplicants([]);
                 }
             } catch (err) {
@@ -818,17 +831,15 @@ function CompanyApplicationsView() {
                                         <button
                                             key={pos.id}
                                             onClick={() => handleSelectPosition(pos.id)}
-                                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all cursor-pointer ${
-                                                isActive
-                                                    ? "bg-blue-600 border-blue-600 text-white shadow-sm"
-                                                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                                            }`}
+                                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all cursor-pointer ${isActive
+                                                ? "bg-blue-600 border-blue-600 text-white shadow-sm"
+                                                : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                }`}
                                         >
                                             {pos.title}
                                             <span
-                                                className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                                    isActive ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"
-                                                }`}
+                                                className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${isActive ? "bg-white/20 text-white" : "bg-blue-50 text-blue-600"
+                                                    }`}
                                             >
                                                 {pos.applicantsCount}
                                             </span>
@@ -851,11 +862,10 @@ function CompanyApplicationsView() {
                                             {selectedPosition.internship_type}
                                         </span>
                                         <span
-                                            className={`text-xs font-bold px-2.5 py-0.5 rounded-full uppercase ${
-                                                selectedPosition.status === "open"
-                                                    ? "bg-blue-50 text-blue-600"
-                                                    : "bg-rose-50 text-rose-600"
-                                            }`}
+                                            className={`text-xs font-bold px-2.5 py-0.5 rounded-full uppercase ${selectedPosition.status === "open"
+                                                ? "bg-blue-50 text-blue-600"
+                                                : "bg-rose-50 text-rose-600"
+                                                }`}
                                         >
                                             {selectedPosition.status === "open" ? "Active" : "Closed"}
                                         </span>
@@ -901,11 +911,10 @@ function CompanyApplicationsView() {
                                                             setIsFilterDropdownOpen(false);
                                                             setCurrentPage(1);
                                                         }}
-                                                        className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors ${
-                                                            statusFilter === status
-                                                                ? "text-blue-600 bg-blue-50/55 font-bold"
-                                                                : "text-slate-600 font-medium"
-                                                        }`}
+                                                        className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors ${statusFilter === status
+                                                            ? "text-blue-600 bg-blue-50/55 font-bold"
+                                                            : "text-slate-600 font-medium"
+                                                            }`}
                                                     >
                                                         {status}
                                                     </button>
@@ -1055,11 +1064,10 @@ function CompanyApplicationsView() {
                                                 <button
                                                     key={page}
                                                     onClick={() => setCurrentPage(page)}
-                                                    className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer ${
-                                                        currentPage === page
-                                                            ? "bg-blue-600 text-white"
-                                                            : "border border-slate-200 text-slate-600 hover:bg-white hover:text-slate-800"
-                                                    }`}
+                                                    className={`px-3 py-1 text-xs font-bold rounded-lg cursor-pointer ${currentPage === page
+                                                        ? "bg-blue-600 text-white"
+                                                        : "border border-slate-200 text-slate-600 hover:bg-white hover:text-slate-800"
+                                                        }`}
                                                 >
                                                     {page}
                                                 </button>
@@ -1081,11 +1089,12 @@ function CompanyApplicationsView() {
 
                     {/* Applicant Details Modal */}
                     {isDetailsOpen && selectedApplicant && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-                            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-150 space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
-                                <div className="flex items-start justify-between border-b border-slate-100 pb-3 shrink-0">
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
+                            <div className="bg-white rounded-2xl p-4 sm:p-5  flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+                                {/* Fixed Header */}
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
                                     <div className="flex items-center gap-3 min-w-0">
-                                        <div className="w-11 h-11 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center shrink-0 overflow-hidden font-bold text-sm text-slate-500">
+                                        <div className="w-10 h-10 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center shrink-0 overflow-hidden font-bold text-xs text-slate-500">
                                             {selectedApplicant.profile_image ? (
                                                 <img
                                                     src={selectedApplicant.profile_image}
@@ -1097,10 +1106,10 @@ function CompanyApplicationsView() {
                                             )}
                                         </div>
                                         <div className="min-w-0">
-                                            <h2 className="text-lg font-bold text-slate-800 truncate">
+                                            <h2 className="text-base font-bold text-slate-800 truncate leading-tight">
                                                 {selectedApplicant.fullname}
                                             </h2>
-                                            <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">
+                                            <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">
                                                 {selectedApplicant.university}
                                                 {selectedApplicant.major ? ` • ${selectedApplicant.major}` : ""}
                                             </p>
@@ -1111,82 +1120,176 @@ function CompanyApplicationsView() {
                                             setIsDetailsOpen(false);
                                             setSelectedApplicant(null);
                                         }}
-                                        className="text-slate-400 hover:text-slate-600 p-1 rounded-lg shrink-0"
+                                        className="text-slate-400 hover:text-slate-600 p-1 rounded-lg shrink-0 cursor-pointer"
                                     >
                                         <X className="w-5 h-5" />
                                     </button>
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-2">
-                                    <div className="flex flex-wrap gap-2">
-                                        <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-100">
+                                {/* Scrollable Body */}
+                                <div className="flex-1 overflow-y-auto pr-1.5 space-y-3.5 py-3 text-xs">
+                                    {/* Badges Bar */}
+                                    <div className="flex flex-wrap gap-1.5">
+                                        <span className="text-[11px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-100">
                                             Match Score: {selectedApplicant.match_score}%
                                         </span>
-                                        <span className="text-xs font-bold bg-slate-50 text-slate-500 px-2.5 py-0.5 rounded-full border border-slate-100">
+                                        <span className="text-[11px] font-bold bg-slate-50 text-slate-500 px-2.5 py-0.5 rounded-full border border-slate-100">
                                             Applied on {formatDate(selectedApplicant.applied_at)}
                                         </span>
                                         {selectedApplicant.email && (
-                                            <span className="inline-flex items-center gap-1 text-xs font-bold bg-slate-50 text-slate-500 px-2.5 py-0.5 rounded-full border border-slate-100">
-                                                <Mail className="w-3 h-3" />
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-slate-50 text-slate-600 px-2.5 py-0.5 rounded-full border border-slate-100">
+                                                <Mail className="w-3 h-3 text-slate-400" />
                                                 {selectedApplicant.email}
+                                            </span>
+                                        )}
+                                        {selectedApplicant.phone && (
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-slate-50 text-slate-600 px-2.5 py-0.5 rounded-full border border-slate-100">
+                                                <Phone className="w-3 h-3 text-slate-400" />
+                                                {selectedApplicant.phone}
                                             </span>
                                         )}
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">มหาวิทยาลัย</p>
-                                            <p className="text-sm font-semibold text-slate-700 mt-0.5">
+                                    {/* Compact Academic Grid */}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">มหาวิทยาลัย</p>
+                                            <p className="text-xs font-semibold text-slate-700 mt-0.5 truncate">
                                                 {selectedApplicant.university || "-"}
                                             </p>
                                         </div>
-                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">คณะ</p>
-                                            <p className="text-sm font-semibold text-slate-700 mt-0.5">
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">คณะ</p>
+                                            <p className="text-xs font-semibold text-slate-700 mt-0.5 truncate">
                                                 {selectedApplicant.faculty || "-"}
                                             </p>
                                         </div>
-                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">สาขาวิชา</p>
-                                            <p className="text-sm font-semibold text-slate-700 mt-0.5">
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">สาขาวิชา</p>
+                                            <p className="text-xs font-semibold text-slate-700 mt-0.5 truncate">
                                                 {selectedApplicant.major || "-"}
                                             </p>
                                         </div>
-                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ชั้นปี</p>
-                                            <p className="text-sm font-semibold text-slate-700 mt-0.5">
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">ชั้นปี</p>
+                                            <p className="text-xs font-semibold text-slate-700 mt-0.5 truncate">
                                                 {selectedApplicant.study_year ? `ปี ${selectedApplicant.study_year}` : "-"}
+                                            </p>
+                                        </div>
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 col-span-2">
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">ช่วงเวลาที่สะดวกฝึกงาน</p>
+                                            <p className="text-xs font-semibold text-slate-700 mt-0.5">
+                                                {selectedApplicant.internship_period || "มิ.ย. - ส.ค. 2568 (โดยประมาณ)"}
                                             </p>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-1.5">
-                                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Resume (ประวัตินิสิต)</h4>
+                                    {/* Resume */}
+                                    <div className="space-y-1">
+                                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Resume (ประวัตินิสิต)</h4>
                                         {selectedApplicant.resume_url ? (
                                             <a
                                                 href={selectedApplicant.resume_url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl p-3 transition-colors group"
+                                                className="flex items-center justify-between bg-slate-50 hover:bg-blue-50/50 border border-slate-200 hover:border-blue-300 rounded-lg px-3 py-2 transition-colors group cursor-pointer"
                                             >
-                                                <FileText className="w-5 h-5 text-blue-600 shrink-0" />
-                                                <span className="text-sm font-bold text-blue-600 group-hover:text-blue-700">
-                                                    เปิดไฟล์ Resume
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                                                    <span className="text-xs font-bold text-blue-600 group-hover:text-blue-700">
+                                                        เปิดไฟล์ Resume
+                                                    </span>
+                                                </div>
+                                                <span className="text-[10px] text-slate-400 group-hover:text-blue-500 font-medium">คลิกเพื่อดูไฟล์ PDF</span>
                                             </a>
                                         ) : (
-                                            <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl p-3">
-                                                <FileText className="w-5 h-5 text-slate-300 shrink-0" />
-                                                <span className="text-sm font-medium text-slate-400">
+                                            <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">
+                                                <FileText className="w-4 h-4 text-slate-300 shrink-0" />
+                                                <span className="text-xs font-medium text-slate-400">
                                                     ไม่มีไฟล์ Resume
                                                 </span>
                                             </div>
                                         )}
                                     </div>
 
-                                    <div className="space-y-1.5">
-                                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">จัดการสถานะใบสมัคร (Manage Status)</h4>
-                                        <div className="grid grid-cols-2 gap-2">
+                                    {/* Skills */}
+                                    <div className="space-y-1">
+                                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">ทักษะและความสามารถ (Skills)</h4>
+                                        {selectedApplicant.skills && selectedApplicant.skills.length > 0 ? (
+                                            <div className="flex flex-wrap gap-1.5 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                                {selectedApplicant.skills.map((skill, index) => (
+                                                    <span
+                                                        key={skill.skill_id || index}
+                                                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700 shadow-2xs"
+                                                    >
+                                                        <span>{skill.name}</span>
+                                                        {skill.level && (
+                                                            <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1 rounded">
+                                                                {skill.level}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg p-2.5">
+                                                <span className="text-xs font-medium text-slate-400">
+                                                    ยังไม่ได้ระบุทักษะความสามารถ
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Portfolios & External Links */}
+                                    <div className="space-y-1">
+                                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">ผลงานและลิงก์ภายนอก (Portfolio / Links)</h4>
+                                        {selectedApplicant.portfolios && selectedApplicant.portfolios.length > 0 ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                                {selectedApplicant.portfolios.map((port, index) => {
+                                                    const rawUrl = port.url.startsWith("http://") || port.url.startsWith("https://") ? port.url : `https://${port.url}`;
+                                                    const isGithub = port.title.toLowerCase().includes("github") || port.url.toLowerCase().includes("github");
+                                                    const isLinkedin = port.title.toLowerCase().includes("linkedin") || port.url.toLowerCase().includes("linkedin");
+                                                    
+                                                    return (
+                                                        <a
+                                                            key={port.id || index}
+                                                            href={rawUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-2 bg-white border border-slate-200 hover:border-blue-400 rounded-lg p-2 transition-colors group shadow-2xs"
+                                                        >
+                                                            {isGithub ? (
+                                                                <Code className="w-3.5 h-3.5 text-slate-700 shrink-0" />
+                                                            ) : isLinkedin ? (
+                                                                <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                                            ) : (
+                                                                <Link2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                                            )}
+                                                            <div className="flex flex-col min-w-0">
+                                                                <span className="text-[11px] font-bold text-slate-700 group-hover:text-blue-600 truncate">
+                                                                    {port.title}
+                                                                </span>
+                                                                <span className="text-[9px] text-slate-400 truncate">
+                                                                    {port.url}
+                                                                </span>
+                                                            </div>
+                                                        </a>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg p-2.5">
+                                                <span className="text-xs font-medium text-slate-400">
+                                                    ยังไม่ได้แนบลิงก์ผลงานภายนอก
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Manage Status */}
+                                    <div className="space-y-1.5 pt-1">
+                                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">จัดการสถานะใบสมัคร (Manage Status)</h4>
+                                        <div className="grid grid-cols-2 gap-1.5">
                                             {STATUS_OPTIONS.map((option) => (
                                                 <button
                                                     key={option.value}
@@ -1195,31 +1298,32 @@ function CompanyApplicationsView() {
                                                         updatingStatusId === selectedApplicant.application_id ||
                                                         selectedApplicant.status.toLowerCase() === option.value
                                                     }
-                                                    className={`flex items-center justify-center gap-1.5 border text-xs font-bold py-2.5 px-3 rounded-xl transition-all disabled:cursor-not-allowed disabled:opacity-60 ${getStatusButtonStyles(
+                                                    className={`flex items-center justify-center gap-1 border text-[11px] font-bold py-2 px-2.5 rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${getStatusButtonStyles(
                                                         option.value,
                                                         selectedApplicant.status.toLowerCase() === option.value
                                                     )}`}
                                                 >
-                                                    {option.value === "accepted" && <CheckCircle2 className="w-3.5 h-3.5" />}
-                                                    {option.value === "rejected" && <X className="w-3.5 h-3.5" />}
-                                                    {option.value === "reviewing" && <Eye className="w-3.5 h-3.5" />}
+                                                    {option.value === "accepted" && <CheckCircle2 className="w-3 h-3" />}
+                                                    {option.value === "rejected" && <X className="w-3 h-3" />}
+                                                    {option.value === "reviewing" && <Eye className="w-3 h-3" />}
                                                     {option.label}
                                                 </button>
                                             ))}
                                         </div>
-                                        <p className="text-xs text-slate-400 font-medium pt-1">
-                                            สถานะปัจจุบัน: {renderStatusBadge(selectedApplicant.status)}
-                                        </p>
                                     </div>
                                 </div>
 
-                                <div className="border-t border-slate-100 pt-3 shrink-0 flex justify-end">
+                                {/* Fixed Footer */}
+                                <div className="border-t border-slate-100 pt-2.5 shrink-0 flex items-center justify-between">
+                                    <span className="text-[10px] text-slate-400 font-medium">
+                                        สถานะปัจจุบัน: <strong className="text-slate-600">{selectedApplicant.status}</strong>
+                                    </span>
                                     <button
                                         onClick={() => {
                                             setIsDetailsOpen(false);
                                             setSelectedApplicant(null);
                                         }}
-                                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold py-2.5 px-4 rounded-xl transition-all shadow-sm cursor-pointer"
+                                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold py-2 px-3.5 rounded-lg transition-all cursor-pointer"
                                     >
                                         ปิดหน้าต่าง
                                     </button>

@@ -99,10 +99,16 @@ export default function DashboardSidebar() {
             </Link>
           </li>
           <li>
-            <Link href="/auth/login" className="flex items-center gap-4 text-red-500 py-2.5 px-4 text-sm hover:bg-red-50 rounded-lg transition-colors">
+            <button
+              onClick={async () => {
+                await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+                window.location.href = "/auth/login";
+              }}
+              className="flex items-center gap-4 text-red-500 py-2.5 px-4 text-sm hover:bg-red-50 rounded-lg transition-colors w-full text-left cursor-pointer"
+            >
               <LogOut className="w-5 h-5" />
               Logout
-            </Link>
+            </button>
           </li>
         </ul>
       </div>
