@@ -5,25 +5,9 @@ import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import { getStudentInternships } from "@/lib/actions/internships";
 import { getStudentSkills } from "@/lib/actions/skills";
-import { generateMockAiUpskilling, MockResource } from "@/lib/utils/mockAnalysis";
-import { 
-  Brain, 
-  MapPin, 
-  Briefcase, 
-  X, 
-  ArrowRight, 
-  AlertTriangle,
-  Play, 
-  BookOpen, 
-  CheckCircle,
-  ExternalLink
-} from "lucide-react";
-
-const LEVEL_WEIGHTS: Record<string, number> = {
-  "beginner": 1,
-  "intermediate": 2,
-  "advanced": 3
-};
+import MatchCardItem from "@/components/matches/MatchCardItem";
+import MatchesInternshipDetailsModal from "@/components/matches/MatchesInternshipDetailsModal";
+import { Brain, Briefcase, Sparkles } from "lucide-react";
 
 export default function MatchesPage() {
   const [internships, setInternships] = useState<any[]>([]);
@@ -58,7 +42,7 @@ export default function MatchesPage() {
   const sortedMatches = useMemo(() => {
     // Show only jobs that have some match (> 0) and the student has applied to
     return internships
-      .filter(item => item.match_score > 0 && item.has_applied)
+      .filter((item) => item.match_score > 0 && item.has_applied)
       .sort((a, b) => b.match_score - a.match_score);
   }, [internships]);
 
@@ -72,12 +56,18 @@ export default function MatchesPage() {
           {/* Page Heading */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-800 flex items-center gap-2.5">
-                <Brain className="w-8 h-8 text-blue-600 fill-blue-50" />
-                AI Upskill
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-800 flex items-center gap-2.5">
+                  <Brain className="w-8 h-8 text-blue-600 fill-blue-50" />
+                  AI Upskill & แนะนำการเรียนรู้
+                </h1>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-100/70 border border-blue-200 px-2.5 py-0.5 rounded-full">
+                  <Sparkles className="w-3 h-3 text-blue-600 fill-blue-600" />
+                  Powered by Gemini
+                </span>
+              </div>
               <p className="text-sm text-slate-500 mt-1">
-                วิเคราะห์ช่องว่างทักษะและแนะนำคอร์สเรียนเพิ่มพูนทักษะจากตำแหน่งงานที่คุณสมัคร
+                วิเคราะห์ช่องว่างทักษะ พร้อมแนะนำคลิปสอน YouTube และคอร์สออนไลน์เสริมด้วย Google Gemini AI
               </p>
             </div>
           </div>
@@ -372,6 +362,13 @@ function MatchesInternshipDetailsModal({
               </div>
             )}
           </div>
+
+          <div className="border-t border-slate-200 pt-4 mt-6 flex justify-end shrink-0">
+            <button onClick={onClose} className="text-slate-500 hover:text-slate-800 text-xs font-bold px-4 py-2 rounded-lg transition-colors">
+              ปิดหน้าต่าง
+            </button>
+          </div>
+
         </div>
       </div>
     </div>
