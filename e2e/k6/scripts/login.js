@@ -44,5 +44,6 @@ export default function () {
 export function handleSummary(data) {
   return {
     'results/login_summary.json': JSON.stringify(data, null, 2),
+    stdout: `login: p95=${data.metrics.http_req_duration?.values['p(95)']?.toFixed(1)}ms RPS=${data.metrics.http_reqs?.values.rate?.toFixed(1)}/s failed=${(data.metrics.http_req_failed?.values.rate*100).toFixed(2)}%`,
   };
 }
