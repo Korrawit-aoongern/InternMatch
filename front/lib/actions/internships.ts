@@ -140,6 +140,10 @@ export async function createInternship(input: InternshipInput) {
     const supabase = getSupabaseAdmin();
     const companyId = await getCurrentCompanyId(supabase);
 
+    if (!input.skills || input.skills.length === 0) {
+      return { success: false, error: "กรุณาเลือกทักษะอย่างน้อย 1 ทักษะก่อนสร้างประกาศรับสมัครฝึกงาน" };
+    }
+
     const { data, error } = await supabase
       .from("internships")
       .insert([
@@ -226,8 +230,11 @@ export async function updateInternship(id: string, input: Partial<InternshipInpu
       return { success: false, error: error.message };
     }
 
-    // Update associated skills if provided
+    // Update associated skills if provided - enforce at least 1 skill for open/edited positions
     if (input.skills !== undefined) {
+      if (input.skills.length === 0) {
+        return { success: false, error: "กรุณาเลือกทักษะอย่างน้อย 1 ทักษะก่อนบันทึกประกาศ" };
+      }
       // 1. Delete existing skills
       const { error: deleteError } = await supabase
         .from("internship_skills")

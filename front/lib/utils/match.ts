@@ -16,7 +16,7 @@ export function calculateMatchScoreHelper(
   const sSkills = studentSkills || [];
   const reqSkills = internshipSkills || [];
   const requiredSkillsCount = reqSkills.length;
-  if (requiredSkillsCount === 0) return 100;
+  if (requiredSkillsCount === 0) return 0;
 
   let matchScoreSum = 0;
 
