@@ -44,10 +44,10 @@ export default function DashboardSidebar() {
     ...(role === "student" || role === "company"
       ? [
           { name: "Applications", href: "/dashboard/applications", icon: Briefcase },
-          { name: "AI Upskill", href: "/matches", icon: Brain },
         ]
       : []
     ),
+    ...(role === "student" ? [{ name: "AI Upskill", href: "/matches", icon: Brain }] : []),
     { name: "Settings", href: "/dashboard/profile", icon: Settings },
   ];
 
