@@ -139,7 +139,11 @@ const renderStatusBadge = (status: string) => {
             );
         default:
             return (
-                <span className="inline-flex items-center text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 shadow-2xs">
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                    </span>
                     Pending
                 </span>
             );
@@ -217,6 +221,16 @@ function StudentApplicationsView() {
                 const res = await getStudentApplications();
                 if (res.success && res.applications) {
                     setApplications(res.applications);
+                    // Check URL search params for deep linking notification target
+                    const params = new URLSearchParams(window.location.search);
+                    const appId = params.get("id");
+                    if (appId) {
+                        const target = res.applications.find((a: any) => a.id === appId);
+                        if (target) {
+                            setSelectedApplication(target);
+                            setIsDetailsOpen(true);
+                        }
+                    }
                 }
             } catch (err) {
                 console.error("Failed to load applications:", err);
@@ -516,6 +530,15 @@ function StudentApplicationsView() {
                                             {selectedApplication.company_name} ({selectedApplication.company_province})
                                         </p>
                                     </div>
+                                    <button
+                                        onClick={() => {
+                                            setIsDetailsOpen(false);
+                                            setSelectedApplication(null);
+                                        }}
+                                        className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg shrink-0 cursor-pointer"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-2">
@@ -565,17 +588,7 @@ function StudentApplicationsView() {
                                     </div>
                                 </div>
 
-                                <div className="border-t border-slate-100 pt-3 shrink-0 flex justify-end">
-                                    <button
-                                        onClick={() => {
-                                            setIsDetailsOpen(false);
-                                            setSelectedApplication(null);
-                                        }}
-                                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold py-2.5 px-4 rounded-xl transition-all shadow-sm cursor-pointer"
-                                    >
-                                        ปิดหน้าต่าง
-                                    </button>
-                                </div>
+
                             </div>
                         </div>
                     )}
@@ -669,7 +682,18 @@ function CompanyApplicationsView() {
                 const res = await getInternshipApplicants(selectedPositionId!);
                 if (!isMounted) return;
                 if (res.success && res.applicants) {
-                    setApplicants(res.applicants as ApplicantItem[]);
+                    const fetchedApplicants = res.applicants as ApplicantItem[];
+                    setApplicants(fetchedApplicants);
+
+                    // Check URL search params for applicant deep linking
+                    const params = new URLSearchParams(window.location.search);
+                    const appId = params.get("appId");
+                    if (appId) {
+                        const target = fetchedApplicants.find((a) => a.application_id === appId);
+                        if (target) {
+                            handleViewApplicantDetails(target);
+                        }
+                    }
                 } else {
                     console.error("getInternshipApplicants error response:", res);
                     setApplicants([]);
@@ -758,9 +782,11 @@ function CompanyApplicationsView() {
         setCurrentPage(1);
     };
 
-    const handleUpdateStatus = async (applicationId: string, newStatus: string) => {
-        const label = STATUS_OPTIONS.find((o) => o.value === newStatus)?.label || newStatus;
-        if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการเปลี่ยนสถานะใบสมัครเป็น "${label}"?`)) return;
+    const handleUpdateStatus = async (applicationId: string, newStatus: string, skipConfirm = false) => {
+        if (!skipConfirm) {
+            const label = STATUS_OPTIONS.find((o) => o.value === newStatus)?.label || newStatus;
+            if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการเปลี่ยนสถานะใบสมัครเป็น "${label}"?`)) return;
+        }
         setUpdatingStatusId(applicationId);
         try {
             const res = await updateApplicationStatus(applicationId, newStatus);
@@ -775,13 +801,22 @@ function CompanyApplicationsView() {
                         ? { ...prev, status: newStatus }
                         : prev
                 );
-            } else {
+            } else if (!skipConfirm) {
                 alert("Failed to update status: " + res.error);
             }
         } catch (err) {
             console.error("Failed to update application status:", err);
         } finally {
             setUpdatingStatusId(null);
+        }
+    };
+
+    const handleViewApplicantDetails = (item: ApplicantItem) => {
+        setSelectedApplicant(item);
+        setIsDetailsOpen(true);
+        // Automatically change status from pending to reviewing if it has not been reviewed yet
+        if (item.status.toLowerCase() === "pending") {
+            handleUpdateStatus(item.application_id, "reviewing", true);
         }
     };
 
@@ -1028,10 +1063,7 @@ function CompanyApplicationsView() {
                                                         {/* Action */}
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <button
-                                                                onClick={() => {
-                                                                    setSelectedApplicant(item);
-                                                                    setIsDetailsOpen(true);
-                                                                }}
+                                                                onClick={() => handleViewApplicantDetails(item)}
                                                                 className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                                                                 title="View Details"
                                                             >
@@ -1318,15 +1350,6 @@ function CompanyApplicationsView() {
                                     <span className="text-[10px] text-slate-400 font-medium">
                                         สถานะปัจจุบัน: <strong className="text-slate-600">{selectedApplicant.status}</strong>
                                     </span>
-                                    <button
-                                        onClick={() => {
-                                            setIsDetailsOpen(false);
-                                            setSelectedApplicant(null);
-                                        }}
-                                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold py-2 px-3.5 rounded-lg transition-all cursor-pointer"
-                                    >
-                                        ปิดหน้าต่าง
-                                    </button>
                                 </div>
                             </div>
                         </div>

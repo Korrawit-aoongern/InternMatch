@@ -372,13 +372,6 @@ function MatchesInternshipDetailsModal({
               </div>
             )}
           </div>
-
-          <div className="border-t border-slate-200 pt-4 mt-6 flex justify-end shrink-0">
-            <button onClick={onClose} className="text-slate-500 hover:text-slate-800 text-xs font-bold px-4 py-2 rounded-lg transition-colors">
-              ปิดหน้าต่าง
-            </button>
-          </div>
-
         </div>
       </div>
     </div>

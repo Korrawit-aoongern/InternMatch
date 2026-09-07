@@ -687,8 +687,14 @@ function CompanyInternshipsView() {
                                                 </button>
                                                 <button
                                                     type="button"
-                                                    onClick={handleSaveInternship}
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                                                    onClick={(e) => {
+                                                        if (!editingInternship && selectedSkills.length === 0) {
+                                                            alert("กรุณาเลือกทักษะอย่างน้อย 1 ทักษะก่อนสร้างประกาศรับสมัครฝึกงาน");
+                                                            return;
+                                                        }
+                                                        handleSaveInternship(e);
+                                                    }}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     {editingInternship ? "บันทึกการแก้ไข" : "สร้างประกาศ"}
                                                 </button>
@@ -1362,9 +1368,6 @@ function StudentInternshipDetailsModal({
                 </div>
 
                 <div className="border-t border-slate-100 pt-3 shrink-0 flex justify-end gap-2">
-                    <button onClick={onClose} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">
-                        ปิดหน้าต่าง
-                    </button>
                     {has_applied ? (
                         <button
                             onClick={onCancel}
