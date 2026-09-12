@@ -55,7 +55,9 @@ e2e_test:
 
 
 # ==========================================
-# MAIN — Deploy Frontend
+# MAIN — Deploy Frontend (front/ is full-stack: Next.js + Supabase)
+# NOTE: Backend lives inside front/ via Server Actions / API Routes.
+#       back/ is archived dead code — see back/README.md
 # ==========================================
 
 deploy_frontend:
@@ -63,7 +65,7 @@ deploy_frontend:
   image: node:20-alpine
 
   script:
-    - cd frontend
+    - cd front
     - npm ci
     - npm run build
 
@@ -77,19 +79,21 @@ deploy_frontend:
 
 
 # ==========================================
-# MAIN — Deploy Backend
+# MAIN — Deploy Backend — ARCHIVED
 # ==========================================
-
+# back/ is a dormant Express scaffold (src/app.ts Hello World only).
+# It is NOT deployed. The real backend is inside front/.
+# This job is kept as manual + allow_failure so old pipelines referencing
+# it don't break, but it does nothing. Delete this block when ready
+# to fully remove back/.
 deploy_backend:
   stage: deploy
   image: node:20-alpine
 
   script:
-    - cd backend
-    - npm ci
-
-    - echo "Deploying backend to Cloudflare..."
-    - npx wrangler deploy
+    - echo "back/ is archived — skipping backend deploy. See back/README.md"
 
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+      allow_failure: true
