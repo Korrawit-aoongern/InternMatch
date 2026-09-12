@@ -1,6 +1,7 @@
 "use server";
 
 import { generateMockAiUpskilling } from "@/lib/utils/mockAnalysis";
+import { ensureVideoSearchUrl } from "@/lib/utils/videoUrl";
 
 export interface SkillRecommendation {
   id: string;
@@ -106,17 +107,20 @@ export async function getAiSkillRecommendations(
       success: true,
       hasGaps: fallback.hasGaps,
       analysisText: fallback.analysisText,
-      recommendations: fallback.recommendedCourses.map((c) => ({
-        id: c.id,
-        title: c.title,
-        url: c.url,
-        platform: c.platform,
-        author: c.author,
-        level: c.level,
-        resource_type: c.resource_type,
-        targetSkill: "ทักษะที่เกี่ยวข้อง",
-        reason: "หลักสูตรแนะนำสำหรับปูพื้นฐานและพัฒนาทักษะสู่ระดับที่ตลาดต้องการ",
-      })),
+      recommendations: fallback.recommendedCourses.map((c) => {
+        const isVideo = c.resource_type === "video" || c.platform?.toLowerCase().includes("youtube");
+        return {
+          id: c.id,
+          title: c.title,
+          url: isVideo ? ensureVideoSearchUrl(c.url, c.title, "ทักษะที่เกี่ยวข้อง") : c.url,
+          platform: c.platform,
+          author: c.author,
+          level: c.level,
+          resource_type: c.resource_type,
+          targetSkill: "ทักษะที่เกี่ยวข้อง",
+          reason: "หลักสูตรแนะนำสำหรับปูพื้นฐานและพัฒนาทักษะสู่ระดับที่ตลาดต้องการ",
+        };
+      }),
       provider: "fallback",
     };
   }
@@ -132,6 +136,11 @@ export async function getAiSkillRecommendations(
 เป้าหมายของคุณ:
 1. เขียนบทวิเคราะห์และคำแนะนำภาพรวม (analysisText) สั้นกระชับ 2-3 ย่อหน้าในภาษาไทย ให้กำลังใจ เป็นกันเอง พร้อมลำดับขั้นตอนที่ควรเริ่มเรียนรู้ก่อน-หลัง
 2. คัดเลือกคลิปสอน YouTube (ฟรี) และคอร์สออนไลน์เสริม (Coursera, Udemy, ThaiMOOC ฯลฯ) รวมกัน 3-4 รายการที่ตรงเป้าหมายที่สุด
+**ข้อกำหนดพิเศษสำหรับคลิปวิดีโอ (YouTube)**:
+เพื่อป้องกันปัญหาลิงก์เสียหรือเจ้าของลบคลิป ให้สร้าง url เป็น **ลิงก์หน้าค้นหาบน YouTube (Search Query URL)** เสมอในรูปแบบ:
+https://www.youtube.com/results?search_query=คำค้นหาภาษาไทยหรืออังกฤษ
+(ตัวอย่าง: https://www.youtube.com/results?search_query=สอน+React+เบื้องต้น หรือ https://www.youtube.com/results?search_query=Node.js+Crash+Course)
+ห้ามใส่ลิงก์เจาะจงคลิป watch?v= เด็ดขาด
 
 ข้อกำหนดการตอบ:
 ตอบเป็น JSON เท่านั้น โครงสร้าง:
@@ -140,8 +149,8 @@ export async function getAiSkillRecommendations(
   "recommendations": [
     {
       "id": "rec-1",
-      "title": "ชื่อคลิปวิดีโอหรือชื่อคอร์ส",
-      "url": "URL สำหรับเข้าไปเรียน เช่น https://www.youtube.com/results?search_query=... หรือ https://www.udemy.com/...",
+      "title": "ชื่อหัวข้อคลิปสอนหรือชื่อคอร์สที่แนะนำ",
+      "url": "URL สำหรับเข้าไปเรียนหรือค้นหา เช่น https://www.youtube.com/results?search_query=... หรือ https://www.udemy.com/...",
       "platform": "YouTube | Coursera | Udemy | ThaiMOOC | FutureSkill | Other",
       "author": "ชื่อช่อง YouTube หรือสถาบัน/ผู้สอน",
       "level": "Beginner | Intermediate | Advanced",
@@ -188,11 +197,20 @@ export async function getAiSkillRecommendations(
 
       const parsed = JSON.parse(text);
       if (parsed && typeof parsed.analysisText === "string" && Array.isArray(parsed.recommendations)) {
+        const sanitizedRecs = parsed.recommendations.map((rec: any, idx: number) => {
+          const isVideo = rec.resource_type === "video" || rec.platform?.toLowerCase()?.includes("youtube");
+          return {
+            ...rec,
+            id: rec.id || `rec-${idx + 1}`,
+            url: isVideo ? ensureVideoSearchUrl(rec.url, rec.title, rec.targetSkill) : rec.url,
+          };
+        });
+
         return {
           success: true,
           hasGaps: true,
           analysisText: parsed.analysisText,
-          recommendations: parsed.recommendations,
+          recommendations: sanitizedRecs,
           provider: "gemini",
         };
       }
@@ -208,17 +226,20 @@ export async function getAiSkillRecommendations(
     success: true,
     hasGaps: fallback.hasGaps,
     analysisText: fallback.analysisText,
-    recommendations: fallback.recommendedCourses.map((c) => ({
-      id: c.id,
-      title: c.title,
-      url: c.url,
-      platform: c.platform,
-      author: c.author,
-      level: c.level,
-      resource_type: c.resource_type,
-      targetSkill: "ทักษะที่เกี่ยวข้อง",
-      reason: "หลักสูตรแนะนำสำหรับปูพื้นฐานและพัฒนาทักษะสู่ระดับที่ตลาดต้องการ",
-    })),
+    recommendations: fallback.recommendedCourses.map((c) => {
+      const isVideo = c.resource_type === "video" || c.platform?.toLowerCase().includes("youtube");
+      return {
+        id: c.id,
+        title: c.title,
+        url: isVideo ? ensureVideoSearchUrl(c.url, c.title, "ทักษะที่เกี่ยวข้อง") : c.url,
+        platform: c.platform,
+        author: c.author,
+        level: c.level,
+        resource_type: c.resource_type,
+        targetSkill: "ทักษะที่เกี่ยวข้อง",
+        reason: "หลักสูตรแนะนำสำหรับปูพื้นฐานและพัฒนาทักษะสู่ระดับที่ตลาดต้องการ",
+      };
+    }),
     provider: "fallback",
     error: "AI service temporarily busy; displaying curated recommendations.",
   };

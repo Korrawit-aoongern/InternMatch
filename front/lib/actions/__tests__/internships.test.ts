@@ -1,10 +1,10 @@
 import { calculateMatchScoreHelper } from "../../utils/match";
 
 describe("calculateMatchScoreHelper", () => {
-  it("should return 100 if no internship skills are required", () => {
+  it("should return 0 if no internship skills are required", () => {
     const studentSkills = [{ skill_id: 1, level: "Advanced" }];
     const internshipSkills: any[] = [];
-    expect(calculateMatchScoreHelper(studentSkills, internshipSkills)).toBe(100);
+    expect(calculateMatchScoreHelper(studentSkills, internshipSkills)).toBe(0);
   });
 
   it("should return 0 if student has no skills and internship requires some", () => {

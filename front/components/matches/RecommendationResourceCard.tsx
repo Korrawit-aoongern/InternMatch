@@ -1,6 +1,7 @@
-import React from "react";
-import { ExternalLink, Play, BookOpen } from "lucide-react";
+import React, { useMemo } from "react";
+import { ExternalLink, Play, BookOpen, Search } from "lucide-react";
 import { SkillRecommendation } from "@/lib/actions/geminiRecommendations";
+import { ensureVideoSearchUrl } from "@/lib/utils/videoUrl";
 
 interface Props {
   resource: SkillRecommendation;
@@ -9,6 +10,15 @@ interface Props {
 export default function RecommendationResourceCard({ resource }: Props) {
   const isVideo = resource.resource_type === "video";
   const platform = resource.platform?.toLowerCase() || "";
+
+  // Always sanitize URL for video/YouTube to be a YouTube search query URL
+  // so users won't encounter deleted/unavailable video links
+  const targetUrl = useMemo(() => {
+    if (isVideo || platform.includes("youtube")) {
+      return ensureVideoSearchUrl(resource.url, resource.title, resource.targetSkill);
+    }
+    return resource.url;
+  }, [isVideo, platform, resource.url, resource.title, resource.targetSkill]);
 
   const getPlatformStyle = () => {
     if (platform.includes("youtube")) {
@@ -42,8 +52,8 @@ export default function RecommendationResourceCard({ resource }: Props) {
             {resource.platform}
           </span>
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 flex items-center gap-1">
-            {isVideo ? <Play className="w-2.5 h-2.5 text-red-500 fill-red-500" /> : <BookOpen className="w-2.5 h-2.5 text-blue-500" />}
-            {isVideo ? "คลิปสอน" : "คอร์สเรียน"}
+            {isVideo ? <Search className="w-2.5 h-2.5 text-red-500" /> : <BookOpen className="w-2.5 h-2.5 text-blue-500" />}
+            {isVideo ? "ค้นหาคลิปสอน" : "คอร์สเรียน"}
           </span>
           {resource.targetSkill && (
             <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-100">
@@ -77,13 +87,13 @@ export default function RecommendationResourceCard({ resource }: Props) {
       {/* Action Footer */}
       <div className="flex justify-end pt-1">
         <a
-          href={resource.url}
+          href={targetUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200 hover:border-transparent text-[11px] font-bold py-1.5 px-3 rounded-lg transition-colors flex items-center gap-1.5 shadow-2xs"
         >
-          {isVideo ? "ดูคลิปสอน" : "เข้าสู่คอร์สเรียน"}
-          <ExternalLink className="w-3 h-3" />
+          {isVideo ? "ค้นหาคลิปบน YouTube" : "เข้าสู่คอร์สเรียน"}
+          {isVideo ? <Search className="w-3 h-3" /> : <ExternalLink className="w-3 h-3" />}
         </a>
       </div>
     </div>

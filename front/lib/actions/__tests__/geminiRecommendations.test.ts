@@ -115,6 +115,7 @@ describe("getAiSkillRecommendations", () => {
     expect(result.recommendations).toHaveLength(1);
     expect(result.recommendations[0].title).toBe("React 19 Crash Course");
     expect(result.recommendations[0].author).toBe("KongRuksiam");
+    expect(result.recommendations[0].url).toContain("youtube.com/results?search_query=");
   });
 
   it("should fallback gracefully if Gemini API throws an error", async () => {
@@ -135,5 +136,9 @@ describe("getAiSkillRecommendations", () => {
     expect(result.success).toBe(true);
     expect(result.provider).toBe("fallback");
     expect(result.recommendations.length).toBeGreaterThan(0);
+    const videoRec = result.recommendations.find((r) => r.resource_type === "video");
+    if (videoRec) {
+      expect(videoRec.url).toContain("youtube.com/results?search_query=");
+    }
   });
 });

@@ -13,7 +13,7 @@ export const MOCK_RESOURCES: Record<string, MockResource[]> = {
     {
       id: "r1",
       title: "React State Management (Redux/Zustand) in 1 Hour",
-      url: "https://www.youtube.com/watch?v=mock_react_1",
+      url: "https://www.youtube.com/results?search_query=React+State+Management+Redux+Zustand",
       platform: "YouTube",
       author: "KongRuksiam Official",
       level: "Intermediate",
@@ -33,7 +33,7 @@ export const MOCK_RESOURCES: Record<string, MockResource[]> = {
     {
       id: "n1",
       title: "Node.js & Express.js API Crash Course for Beginners",
-      url: "https://www.youtube.com/watch?v=mock_node_1",
+      url: "https://www.youtube.com/results?search_query=Node.js+Express.js+API+Crash+Course",
       platform: "YouTube",
       author: "Code Camp Thailand",
       level: "Beginner",
@@ -55,7 +55,7 @@ export const MOCK_RESOURCES: Record<string, MockResource[]> = {
     {
       id: "c1",
       title: "Tailwind CSS Next-Gen Styling Guide",
-      url: "https://www.youtube.com/watch?v=mock_css_1",
+      url: "https://www.youtube.com/results?search_query=Tailwind+CSS+Styling+Guide",
       platform: "YouTube",
       author: "DesignCourse",
       level: "Intermediate",
