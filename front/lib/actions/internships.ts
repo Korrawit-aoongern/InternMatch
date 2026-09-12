@@ -917,7 +917,7 @@ export async function getStudentApplications() {
 
     const { data: student, error: studentError } = await supabase
       .from("students")
-      .select("id")
+      .select("id, fullname")
       .eq("user_id", decoded.userId)
       .maybeSingle();
 
@@ -955,7 +955,8 @@ export async function getStudentApplications() {
           companies (
             company_name,
             logo,
-            province
+            province,
+            user_id
           ),
           internship_skills (
             skill_id,
@@ -971,11 +972,34 @@ export async function getStudentApplications() {
       return { success: false, error: error.message };
     }
 
+    // Fetch emails for companies associated with the applications
+    const companyUserIds = Array.from(
+      new Set(
+        (data || [])
+          .map((app: any) => app.internships?.companies?.user_id)
+          .filter(Boolean)
+      )
+    );
+
+    const emailMap = new Map<string, string>();
+    if (companyUserIds.length > 0) {
+      const { data: userEmails } = await supabase
+        .from("users")
+        .select("id, email")
+        .in("id", companyUserIds);
+      if (userEmails) {
+        userEmails.forEach((u: any) => emailMap.set(u.id, u.email));
+      }
+    }
+
     const mapped = (data || []).map((app: any) => {
       const recalculatedScore = calculateMatchScoreHelper(
         studentSkills || [],
         app.internships?.internship_skills || []
       );
+
+      const compUserId = app.internships?.companies?.user_id;
+      const compEmail = (compUserId && emailMap.get(compUserId)) || "";
 
       return {
         id: app.id,
@@ -987,6 +1011,8 @@ export async function getStudentApplications() {
         company_name: app.internships?.companies?.company_name || "Unknown Company",
         company_logo: app.internships?.companies?.logo || "",
         company_province: app.internships?.companies?.province || "",
+        company_email: compEmail,
+        student_name: student.fullname || decoded.fullname || decoded.username || "นักศึกษา",
         description: app.internships?.description || "",
         responsibilities: app.internships?.responsibilities || "",
         location: app.internships?.location || "",

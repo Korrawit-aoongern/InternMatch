@@ -29,7 +29,8 @@ import {
     Phone,
     Globe,
     Code,
-    Link2
+    Link2,
+    Download
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toaster";
 import { useAppModal } from "@/components/ui/AppModal";
@@ -44,6 +45,8 @@ interface StudentApplicationItem {
     company_name: string;
     company_logo: string;
     company_province: string;
+    company_email?: string;
+    student_name?: string;
     description: string;
     responsibilities: string;
     location: string;
@@ -196,9 +199,279 @@ export default function ApplicationsPage() {
     return role === "company" ? <CompanyApplicationsView /> : <StudentApplicationsView />;
 }
 
+function downloadAcceptanceCertificate(item: StudentApplicationItem) {
+    const studentName = item.student_name || "นักศึกษาผู้สมัคร";
+    const dateStr = new Date().toLocaleDateString("th-TH", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    });
+    const appliedDateStr = formatDate(item.applied_at);
+    const refNo = `IM-ACC-${item.id.slice(0, 8).toUpperCase()}`;
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>หนังสือยืนยันการตอบรับเข้าฝึกงาน - ${item.company_name}</title>
+  <style>
+    body {
+      font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 40px 20px;
+      color: #1e293b;
+    }
+    .cert-card {
+      max-width: 760px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 48px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+      position: relative;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #2563eb;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .brand {
+      font-size: 24px;
+      font-weight: 800;
+      color: #2563eb;
+      letter-spacing: -0.5px;
+    }
+    .brand span {
+      color: #64748b;
+      font-size: 13px;
+      display: block;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+    .ref-badge {
+      background: #eff6ff;
+      color: #1d4ed8;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid #bfdbfe;
+    }
+    .title-box {
+      text-align: center;
+      margin: 24px 0 32px 0;
+    }
+    .title-box h1 {
+      font-size: 22px;
+      color: #0f172a;
+      margin: 0 0 8px 0;
+    }
+    .title-box p {
+      font-size: 13px;
+      color: #64748b;
+      margin: 0;
+    }
+    .status-stamp {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #dcfce7;
+      color: #15803d;
+      font-size: 13px;
+      font-weight: 800;
+      padding: 6px 16px;
+      border-radius: 8px;
+      border: 1px solid #86efac;
+      margin-top: 10px;
+    }
+    .content-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      font-size: 14px;
+    }
+    .content-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .content-table td.label {
+      width: 35%;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .content-table td.value {
+      width: 65%;
+      color: #0f172a;
+      font-weight: 700;
+    }
+    .description-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px 20px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #334155;
+      margin-top: 24px;
+    }
+    .footer {
+      margin-top: 40px;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .notice {
+      font-size: 11px;
+      color: #94a3b8;
+      max-width: 400px;
+      line-height: 1.5;
+    }
+    .signature {
+      text-align: right;
+    }
+    .signature .name {
+      font-weight: 700;
+      font-size: 13px;
+      color: #1e293b;
+    }
+    .signature .role {
+      font-size: 11px;
+      color: #64748b;
+    }
+    .print-btn {
+      display: block;
+      margin: 20px auto 0 auto;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .print-btn:hover {
+      background: #1d4ed8;
+    }
+    @media print {
+      body { background: white; padding: 0; }
+      .cert-card { border: none; box-shadow: none; padding: 20px 0; }
+      .print-btn { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="cert-card">
+    <div class="header">
+      <div class="brand">
+        InternMatch
+        <span>AI-Powered Internship Matching Platform</span>
+      </div>
+      <div class="ref-badge">เลขที่อ้างอิง: ${refNo}</div>
+    </div>
+
+    <div class="title-box">
+      <h1>หนังสือรับรองการตอบรับเข้าฝึกงาน</h1>
+      <p>INTERNSHIP ACCEPTANCE CONFIRMATION LETTER</p>
+      <div class="status-stamp">✓ ผ่านการคัดเลือก (ACCEPTED)</div>
+    </div>
+
+    <table class="content-table">
+      <tr>
+        <td class="label">ชื่อ-นามสกุล นักศึกษา:</td>
+        <td class="value">${studentName}</td>
+      </tr>
+      <tr>
+        <td class="label">บริษัท / สถานประกอบการ:</td>
+        <td class="value">${item.company_name}</td>
+      </tr>
+      <tr>
+        <td class="label">ตำแหน่งฝึกงาน:</td>
+        <td class="value">${item.title}</td>
+      </tr>
+      <tr>
+        <td class="label">สถานที่ปฏิบัติงาน:</td>
+        <td class="value">${item.location || item.company_province || "กรุงเทพมหานคร"}</td>
+      </tr>
+      <tr>
+        <td class="label">รูปแบบการฝึกงาน:</td>
+        <td class="value">${item.internship_type || "Hybrid"}</td>
+      </tr>
+      <tr>
+        <td class="label">คะแนนความเหมาะสม (Match Score):</td>
+        <td class="value">${item.match_score}%</td>
+      </tr>
+      <tr>
+        <td class="label">วันที่ยื่นสมัคร:</td>
+        <td class="value">${appliedDateStr}</td>
+      </tr>
+      <tr>
+        <td class="label">วันที่ออกหนังสือรับรอง:</td>
+        <td class="value">${dateStr}</td>
+      </tr>
+    </table>
+
+    <div class="description-box">
+      <strong>ข้อความรับรอง:</strong><br />
+      เอกสารฉบับนี้ออกโดยระบบ InternMatch เพื่อรับรองว่าผู้สมัครข้างต้นได้รับการพิจารณาและตอบรับเข้าฝึกงานอย่างเป็นทางการจากสถานประกอบการ <strong>${item.company_name}</strong> ขอให้นักศึกษาติดต่อสถานประกอบการเพื่อยืนยันกำหนดการเริ่มฝึกงานและดำเนินการตามขั้นตอนต่อไป
+    </div>
+
+    <div class="footer">
+      <div class="notice">
+        * เอกสารอิเล็กทรอนิกส์นี้สร้างขึ้นโดยระบบอัตโนมัติของ InternMatch สามารถใช้เป็นหลักฐานยืนยันผลการสมัครงานฝึกงานเบื้องต้นได้
+      </div>
+      <div class="signature">
+        <div class="name">InternMatch Verification System</div>
+        <div class="role">Verified Electronic Confirmation</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="print-btn" onclick="window.print()">พิมพ์เอกสาร / บันทึกเป็น PDF</button>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const cleanCompany = (item.company_name || "Company").replace(/[^a-zA-Z0-9ก-๙]/g, "_");
+    const cleanTitle = (item.title || "Internship").replace(/[^a-zA-Z0-9ก-๙]/g, "_");
+    a.download = `หลักฐานการตอบรับฝึกงาน_${cleanCompany}_${cleanTitle}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function openCompanyContactEmail(item: StudentApplicationItem) {
+    const studentName = item.student_name || "นักศึกษาผู้สมัคร";
+    const companyEmail = item.company_email || "contact@internmatch.co.th";
+    const subject = `[InternMatch] ยืนยันการฝึกงาน ตำแหน่ง ${item.title} - ${studentName}`;
+    const body = `เรียน ฝ่ายบุคคล/ผู้ดูแลการรับสมัคร ${item.company_name},\n\nกระผมนักศึกษา/ดิฉัน ${studentName} ได้รับการตอบรับเข้าฝึกงานในตำแหน่ง "${item.title}" ผ่านระบบ InternMatch (รหัสใบสมัคร: ${item.id})\n\nจึงขอส่งอีเมลนี้เพื่อติดต่อยืนยันการเข้าฝึกงาน และขอสอบถามขั้นตอนการเตรียมตัว เอกสารที่ต้องใช้เพิ่มเติม หรือกำหนดการเริ่มฝึกงานครับ/ค่ะ\n\nข้อมูลผู้สมัคร:\n- ชื่อ-นามสกุล: ${studentName}\n- ตำแหน่งที่สมัคร: ${item.title}\n\nขอขอบพระคุณเป็นอย่างยิ่งที่ให้โอกาสเข้าร่วมฝึกงานกับ ${item.company_name} ครับ/ค่ะ\n\nขอแสดงความนับถือ,\n${studentName}`;
+
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(companyEmail)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(gmailUrl, "_blank", "noopener,noreferrer");
+}
+
 function StudentApplicationsView() {
+    const toast = useToast();
     const [applications, setApplications] = useState<StudentApplicationItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    const handleAcceptedAction = (item: StudentApplicationItem) => {
+        downloadAcceptanceCertificate(item);
+        openCompanyContactEmail(item);
+        toast.success("ดาวน์โหลดหลักฐานและเปิดหน้าต่างส่งอีเมลหาบริษัทเรียบร้อยแล้ว! 🎉");
+    };
 
     // Filters and Sorting States
     const [searchQuery, setSearchQuery] = useState("");
@@ -461,16 +734,40 @@ function StudentApplicationsView() {
 
                                                 {/* Action */}
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedApplication(item);
-                                                            setIsDetailsOpen(true);
-                                                        }}
-                                                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                                                        title="View Details"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </button>
+                                                    {item.status.toLowerCase() === "accepted" ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                onClick={() => handleAcceptedAction(item)}
+                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-lg shadow-xs transition-all cursor-pointer"
+                                                                title="ดาวน์โหลดหลักฐานการตอบรับ & ส่งอีเมลติดต่อบริษัท"
+                                                            >
+                                                                <Download className="w-3.5 h-3.5" />
+                                                                <span>หลักฐาน & ส่งอีเมล</span>
+                                                                <Mail className="w-3.5 h-3.5" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedApplication(item);
+                                                                    setIsDetailsOpen(true);
+                                                                }}
+                                                                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                                                title="ดูรายละเอียด (View Details)"
+                                                            >
+                                                                <Eye className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedApplication(item);
+                                                                setIsDetailsOpen(true);
+                                                            }}
+                                                            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                                            title="ดูรายละเอียด (View Details)"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}
@@ -588,6 +885,28 @@ function StudentApplicationsView() {
                                             </span>
                                         </div>
                                     </div>
+
+                                    {selectedApplication.status.toLowerCase() === "accepted" && (
+                                        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-2">
+                                            <div>
+                                                <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                                                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                                    คุณผ่านการคัดเลือกเข้าฝึกงานกับบริษัทนี้แล้ว!
+                                                </div>
+                                                <p className="text-xs text-emerald-700 mt-0.5">
+                                                    ดาวน์โหลดเอกสารหลักฐานการตอบรับ และเปิดหน้าต่างส่งอีเมลยืนยันไปยังบริษัท ({selectedApplication.company_email || selectedApplication.company_name})
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleAcceptedAction(selectedApplication)}
+                                                className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm transition-all shrink-0 cursor-pointer"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                <span>ดาวน์โหลดหลักฐาน & ส่งอีเมล</span>
+                                                <Mail className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
 
