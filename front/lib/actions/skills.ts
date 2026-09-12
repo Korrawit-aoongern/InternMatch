@@ -126,6 +126,9 @@ export async function getStudentSkills() {
 // Update the student's skills: deletes old list and inserts the new list
 export async function updateStudentSkills(selectedSkills: { skill_id: number; level: string }[]) {
   try {
+    if (selectedSkills.length > 20) {
+      return { success: false, error: "เลือกทักษะได้สูงสุด 20 ทักษะเท่านั้น (Hard limit)" };
+    }
     const supabase = getSupabaseAdmin();
     const studentId = await getCurrentStudentId(supabase);
 

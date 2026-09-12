@@ -23,9 +23,12 @@ import {
   Sparkles,
   RefreshCw,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Trash2
 } from "lucide-react";
 import { getMasterSkills } from "@/lib/actions/skills";
+import { useToast } from "@/components/ui/Toaster";
+import { useAppModal } from "@/components/ui/AppModal";
 
 interface Skill {
   id: string;
@@ -69,6 +72,8 @@ const getCategoryMeta = (catName: string) => {
 };
 
 export default function SkillsManagement({ skills, setSkills }: SkillsManagementProps) {
+  const toast = useToast();
+  const { confirm } = useAppModal();
   const [masterSkills, setMasterSkills] = useState<{ id: number; name: string; category: string }[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -121,12 +126,16 @@ export default function SkillsManagement({ skills, setSkills }: SkillsManagement
     loadSkills();
   }, []);
 
-  // Handle toggling skill (add as Intermediate or remove)
+  // Handle toggling skill (add as Intermediate or remove) — hard limit 20
   const handleToggleSkill = (masterSkill: { id: number; name: string; category: string }) => {
     const existing = skills.find((s) => s.skill_id === masterSkill.id);
     if (existing) {
       setSkills(skills.filter((s) => s.skill_id !== masterSkill.id));
     } else {
+      if (skills.length >= 20) {
+        toast.warning("เลือกทักษะได้สูงสุด 20 ทักษะเท่านั้น");
+        return;
+      }
       setSkills([
         ...skills,
         {
@@ -158,6 +167,21 @@ export default function SkillsManagement({ skills, setSkills }: SkillsManagement
   const handleClearCategory = (categoryName: string, categorySkills: typeof masterSkills) => {
     const catSkillIds = categorySkills.map(s => s.id);
     setSkills(skills.filter(s => !catSkillIds.includes(s.skill_id)));
+  };
+
+  // Clear all selected skills
+  const handleClearAll = async () => {
+    if (skills.length === 0) return;
+    const ok = await confirm({
+      title: "ล้างทักษะทั้งหมด?",
+      message: `คุณต้องการลบ ${skills.length} ทักษะที่เลือกไว้ทั้งหมดหรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้ (ต้องกด Save Changes เพื่อบันทึก)`,
+      confirmText: "ล้างทั้งหมด",
+      cancelText: "ยกเลิก",
+      variant: "danger",
+    });
+    if (!ok) return;
+    setSkills([]);
+    toast.success("ล้างทักษะทั้งหมดแล้ว — อย่าลืมกด Save Changes เพื่อบันทึก");
   };
 
   // Group master skills by category dynamically based on search query
@@ -306,12 +330,19 @@ export default function SkillsManagement({ skills, setSkills }: SkillsManagement
                 );
               }
 
+              const atLimit = skills.length >= 20;
               return (
                 <button
                   type="button"
                   key={masterSkill.id}
                   onClick={() => handleToggleSkill(masterSkill)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100 hover:border-slate-300 text-[11px] font-medium text-slate-600 hover:text-slate-800 transition-all cursor-pointer shadow-3xs"
+                  disabled={atLimit}
+                  title={atLimit ? "เต็ม 20 ทักษะแล้ว — ลบออกก่อนเพิ่มใหม่" : ""}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl border text-[11px] font-medium transition-all shadow-3xs ${
+                    atLimit
+                      ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60"
+                      : "border-slate-200 bg-slate-50/50 hover:bg-slate-100 hover:border-slate-300 text-slate-600 hover:text-slate-800 cursor-pointer"
+                  }`}
                 >
                   <Plus className="w-3 h-3 text-slate-400" />
                   {masterSkill.name}
@@ -341,13 +372,13 @@ export default function SkillsManagement({ skills, setSkills }: SkillsManagement
 
         {/* AI Skill Index indicator */}
         <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-3 self-start md:self-auto min-w-[200px]">
-          <div className="relative w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-700 rounded-xl font-bold text-sm">
-            {skills.length}
+          <div className={`relative w-10 h-10 flex items-center justify-center rounded-xl font-bold text-sm ${skills.length >= 20 ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}>
+            {skills.length}/20
           </div>
           <div className="flex-1">
             <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
               <span>Skill Index</span>
-              <span className="text-blue-600 font-extrabold">{skillProgress}%</span>
+              <span className={`${skills.length >= 20 ? "text-amber-600" : "text-blue-600"} font-extrabold`}>{skillProgress}%</span>
             </div>
             <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden">
               <div 
@@ -359,13 +390,28 @@ export default function SkillsManagement({ skills, setSkills }: SkillsManagement
         </div>
       </div>
 
-      {/* Selected Skills Summary Section */}
+      {/* Selected Skills Summary Section — mirrors Company style */}
       {skills.length > 0 && (
-        <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
-          <h4 className="text-xs font-bold text-slate-500 mb-3 uppercase tracking-wider flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            ทักษะที่คุณเลือกไว้ ({skills.length})
-          </h4>
+        <div className={`p-4 rounded-2xl border space-y-2 ${skills.length >= 20 ? "bg-amber-50 border-amber-200" : "bg-slate-50/50 border-slate-100"}`}>
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              ทักษะที่เลือกแล้ว ({skills.length}/20)
+            </h4>
+            <div className="flex items-center gap-2">
+              {skills.length >= 20 && (
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">เต็ม 20 แล้ว</span>
+              )}
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 text-[11px] font-bold transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Clear all
+              </button>
+            </div>
+          </div>
           <div className="flex flex-wrap gap-2">
             {skills.map((skill) => {
               const isAdvanced = skill.level === "Advanced";

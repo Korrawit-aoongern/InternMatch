@@ -143,6 +143,9 @@ export async function createInternship(input: InternshipInput) {
     if (!input.skills || input.skills.length === 0) {
       return { success: false, error: "กรุณาเลือกทักษะอย่างน้อย 1 ทักษะก่อนสร้างประกาศรับสมัครฝึกงาน" };
     }
+    if (input.skills.length > 20) {
+      return { success: false, error: "เลือกทักษะได้สูงสุด 20 ทักษะเท่านั้น (Hard limit)" };
+    }
 
     const { data, error } = await supabase
       .from("internships")
@@ -230,10 +233,13 @@ export async function updateInternship(id: string, input: Partial<InternshipInpu
       return { success: false, error: error.message };
     }
 
-    // Update associated skills if provided - enforce at least 1 skill for open/edited positions
+    // Update associated skills if provided - enforce 1..20 skills
     if (input.skills !== undefined) {
       if (input.skills.length === 0) {
         return { success: false, error: "กรุณาเลือกทักษะอย่างน้อย 1 ทักษะก่อนบันทึกประกาศ" };
+      }
+      if (input.skills.length > 20) {
+        return { success: false, error: "เลือกทักษะได้สูงสุด 20 ทักษะเท่านั้น (Hard limit)" };
       }
       // 1. Delete existing skills
       const { error: deleteError } = await supabase

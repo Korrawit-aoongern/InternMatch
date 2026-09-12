@@ -6,9 +6,13 @@ import { Briefcase, Mail, User, Lock, Image, FileText, Upload, Trash2, Loader2, 
 import { useRouter } from "next/navigation";
 import { registerUser, uploadResume, uploadProfileImage } from "@/lib/actions/auth";
 import FormInput from "@/components/ui/FormInput";
+import { useToast } from "@/components/ui/Toaster";
+import { useAppModal } from "@/components/ui/AppModal";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const toast = useToast();
+  const { confirm } = useAppModal();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -57,11 +61,11 @@ export default function RegisterPage() {
           profile_image: res.url || "",
         }));
       } else {
-        alert("Upload failed: " + res.error);
+        toast.error("Upload failed: " + res.error);
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert("An error occurred during file upload.");
+      toast.error("An error occurred during file upload.");
     } finally {
       setIsUploadingProfileImage(false);
     }
@@ -79,13 +83,13 @@ export default function RegisterPage() {
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      alert("ขนาดไฟล์ Resume เกินกำหนด (ไม่เกิน 10MB)");
+      toast.warning("ขนาดไฟล์ Resume เกินกำหนด (ไม่เกิน 10MB)");
       if (e.target) e.target.value = "";
       return;
     }
 
     if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
-      alert("กรุณาอัปโหลดไฟล์ Resume ในรูปแบบ PDF เท่านั้น");
+      toast.warning("กรุณาอัปโหลดไฟล์ Resume ในรูปแบบ PDF เท่านั้น");
       if (e.target) e.target.value = "";
       return;
     }
@@ -103,18 +107,25 @@ export default function RegisterPage() {
           resume_url: res.url || "",
         }));
       } else {
-        alert("Upload failed: " + res.error);
+        toast.error("Upload failed: " + res.error);
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert("An error occurred during file upload.");
+      toast.error("An error occurred during file upload.");
     } finally {
       setIsUploadingResume(false);
     }
   };
 
-  const handleDeleteResume = () => {
-    if (confirm("Are you sure you want to delete your resume?")) {
+  const handleDeleteResume = async () => {
+    const ok = await confirm({
+      title: "ลบ Resume?",
+      message: "Are you sure you want to delete your resume?",
+      confirmText: "ลบ",
+      cancelText: "ยกเลิก",
+      variant: "danger",
+    });
+    if (ok) {
       setFields((prev) => ({
         ...prev,
         resume_path: "",

@@ -22,6 +22,8 @@ import {
 import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import SkillsManagement from "@/components/ui/SkillsManagement";
+import { useToast } from "@/components/ui/Toaster";
+import { useAppModal } from "@/components/ui/AppModal";
 import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile, uploadProfileImage, changeUserPassword, uploadResume } from "@/lib/actions/auth";
 import { getStudentSkills, updateStudentSkills } from "@/lib/actions/skills";
 import { getStudentPortfolios, updateStudentPortfolios } from "@/lib/actions/portfolios";
@@ -64,6 +66,8 @@ interface StudentProfile {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const toast = useToast();
+  const { confirm } = useAppModal();
   const [role, setRole] = useState<"student" | "company">("student");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const resumeInputRef = React.useRef<HTMLInputElement>(null);
@@ -89,11 +93,11 @@ export default function ProfilePage() {
           [role === "company" ? "logo" : "profile_image"]: res.url,
         }));
       } else {
-        alert("Upload failed: " + res.error);
+        toast.error("Upload failed: " + res.error);
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert("An error occurred during file upload.");
+      toast.error("An error occurred during file upload.");
     } finally {
       setIsSaving(false);
     }
@@ -108,13 +112,13 @@ export default function ProfilePage() {
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      alert("ขนาดไฟล์ Resume เกินกำหนด (ไม่เกิน 10MB)");
+      toast.warning("ขนาดไฟล์ Resume เกินกำหนด (ไม่เกิน 10MB)");
       if (e.target) e.target.value = "";
       return;
     }
 
     if (!file.name.toLowerCase().endsWith(".pdf") && file.type !== "application/pdf") {
-      alert("กรุณาอัปโหลดไฟล์ Resume ในรูปแบบ PDF เท่านั้น");
+      toast.warning("กรุณาอัปโหลดไฟล์ Resume ในรูปแบบ PDF เท่านั้น");
       if (e.target) e.target.value = "";
       return;
     }
@@ -132,18 +136,25 @@ export default function ProfilePage() {
         resume_url: res.url || "",
       }));
       } else {
-        alert("Upload failed: " + res.error);
+        toast.error("Upload failed: " + res.error);
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert("An error occurred during file upload.");
+      toast.error("An error occurred during file upload.");
     } finally {
       setIsUploadingResume(false);
     }
   };
 
-  const handleDeleteResume = () => {
-    if (confirm("Are you sure you want to delete your resume?")) {
+  const handleDeleteResume = async () => {
+    const ok = await confirm({
+      title: "ลบ Resume?",
+      message: "Are you sure you want to delete your resume?",
+      confirmText: "ลบ",
+      cancelText: "ยกเลิก",
+      variant: "danger",
+    });
+    if (ok) {
       setProfile((prev) => ({
         ...prev,
         resume_path: "",
@@ -378,7 +389,7 @@ export default function ProfilePage() {
       });
 
       if (res.success) {
-        // บันทึกทักษะของนักศึกษาลงฐานข้อมูล
+        // บันทึกทักษะ — limit enforced at add-time (20 max, like Company), backend still hard-checks
         const skillsToSave = skills.map((s) => ({
           skill_id: s.skill_id,
           level: s.level,
@@ -412,9 +423,9 @@ export default function ProfilePage() {
     }
     setIsSaving(false);
     if (res.success) {
-      alert(res.message);
+      toast.success(res.message || "บันทึกสำเร็จ");
     } else {
-      alert("เกิดข้อผิดพลาด: " + res.error);
+      toast.error("เกิดข้อผิดพลาด: " + res.error);
     }
   };
 

@@ -31,6 +31,8 @@ import {
     Code,
     Link2
 } from "lucide-react";
+import { useToast } from "@/components/ui/Toaster";
+import { useAppModal } from "@/components/ui/AppModal";
 
 interface StudentApplicationItem {
     id: string;
@@ -520,7 +522,7 @@ function StudentApplicationsView() {
                     {/* View Details Modal */}
                     {isDetailsOpen && selectedApplication && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-                            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-150 space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
+                            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-250 space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
                                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
                                     <div>
                                         <h2 className="text-lg font-bold text-slate-800">
@@ -613,6 +615,8 @@ const getStatusButtonStyles = (value: string, isActive: boolean) => {
 };
 
 function CompanyApplicationsView() {
+    const toast = useToast();
+    const { confirm } = useAppModal();
     const [positions, setPositions] = useState<CompanyPosition[]>([]);
     const [isLoadingPositions, setIsLoadingPositions] = useState(true);
     const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null);
@@ -785,12 +789,20 @@ function CompanyApplicationsView() {
     const handleUpdateStatus = async (applicationId: string, newStatus: string, skipConfirm = false) => {
         if (!skipConfirm) {
             const label = STATUS_OPTIONS.find((o) => o.value === newStatus)?.label || newStatus;
-            if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการเปลี่ยนสถานะใบสมัครเป็น "${label}"?`)) return;
+            const ok = await confirm({
+              title: "เปลี่ยนสถานะ?",
+              message: `คุณแน่ใจหรือไม่ว่าต้องการเปลี่ยนสถานะใบสมัครเป็น "${label}"?`,
+              confirmText: "ยืนยัน",
+              cancelText: "ยกเลิก",
+              variant: newStatus === "rejected" ? "danger" : "default",
+            });
+            if (!ok) return;
         }
         setUpdatingStatusId(applicationId);
         try {
             const res = await updateApplicationStatus(applicationId, newStatus);
             if (res.success) {
+                if (!skipConfirm) toast.success(`เปลี่ยนสถานะเป็น ${newStatus} สำเร็จ`);
                 setApplicants((prev) =>
                     prev.map((a) =>
                         a.application_id === applicationId ? { ...a, status: newStatus } : a
@@ -802,10 +814,13 @@ function CompanyApplicationsView() {
                         : prev
                 );
             } else if (!skipConfirm) {
-                alert("Failed to update status: " + res.error);
+                toast.error("Failed to update status: " + res.error);
+            } else {
+                toast.error("Failed to update status: " + res.error);
             }
         } catch (err) {
             console.error("Failed to update application status:", err);
+            toast.error("เกิดข้อผิดพลาดในการอัปเดตสถานะ");
         } finally {
             setUpdatingStatusId(null);
         }
@@ -1122,7 +1137,7 @@ function CompanyApplicationsView() {
                     {/* Applicant Details Modal */}
                     {isDetailsOpen && selectedApplicant && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
-                            <div className="bg-white rounded-2xl p-4 sm:p-5  flex flex-col shadow-2xl border border-slate-100 overflow-hidden">
+                            <div className="bg-white rounded-2xl p-4 sm:p-5  flex flex-col shadow-2xl border max-w-400 border-slate-100 overflow-hidden">
                                 {/* Fixed Header */}
                                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
                                     <div className="flex items-center gap-3 min-w-0">

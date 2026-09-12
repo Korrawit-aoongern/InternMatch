@@ -32,6 +32,8 @@ import {
     ChevronRight,
     ChevronLeft
 } from "lucide-react";
+import { useToast } from "@/components/ui/Toaster";
+import { useAppModal } from "@/components/ui/AppModal";
 
 export type InternshipStatus = "open" | "closed";
 
@@ -65,6 +67,8 @@ export interface Internship {
 }
 
 function CompanyInternshipsView() {
+    const toast = useToast();
+    const { confirm } = useAppModal();
     const [internships, setInternships] = useState<Internship[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
@@ -232,12 +236,16 @@ function CompanyInternshipsView() {
         setIsModalOpen(true);
     };
 
-    // Toggle skills selection in Step 2
+    // Toggle skills selection in Step 2 — hard limit 20
     const handleToggleSkill = (skill: { id: number; name?: string; category?: string }) => {
         const index = selectedSkills.findIndex(s => s.skill_id === skill.id);
         if (index > -1) {
             setSelectedSkills(selectedSkills.filter(s => s.skill_id !== skill.id));
         } else {
+            if (selectedSkills.length >= 20) {
+                toast.warning("เลือกทักษะได้สูงสุด 20 ทักษะเท่านั้น");
+                return;
+            }
             setSelectedSkills([...selectedSkills, {
                 skill_id: skill.id,
                 name: skill.name || "",
@@ -257,22 +265,31 @@ function CompanyInternshipsView() {
     const handleToggleStatus = async (id: string, newStatus: InternshipStatus) => {
         const res = await updateInternship(id, { status: newStatus });
         if (res.success) {
+            toast.success(newStatus === "open" ? "เปิดรับสมัครแล้ว" : "ปิดรับสมัครแล้ว");
             fetchInternships();
         } else {
-            alert("Failed to update status: " + res.error);
+            toast.error("Failed to update status: " + res.error);
         }
     };
 
     // Delete Internship Action
     const handleDeleteInternship = async (id: string) => {
-        if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบประกาศรับสมัครฝึกงานนี้?")) {
+        const ok = await confirm({
+          title: "ลบประกาศ?",
+          message: "คุณแน่ใจหรือไม่ว่าต้องการลบประกาศรับสมัครฝึกงานนี้?",
+          confirmText: "ลบ",
+          cancelText: "ยกเลิก",
+          variant: "danger",
+        });
+        if (ok) {
             const res = await deleteInternship(id);
             if (res.success) {
+                toast.success("ลบประกาศสำเร็จ");
                 fetchInternships();
                 setIsModalOpen(false);
                 setEditingInternship(null);
             } else {
-                alert("Failed to delete internship: " + res.error);
+                toast.error("Failed to delete internship: " + res.error);
             }
         }
     };
@@ -313,10 +330,11 @@ function CompanyInternshipsView() {
         }
 
         if (res.success) {
+            toast.success(editingInternship ? "บันทึกการแก้ไขสำเร็จ" : "สร้างประกาศสำเร็จ");
             setIsModalOpen(false);
             fetchInternships();
         } else {
-            alert("Error saving: " + res.error);
+            toast.error("Error saving: " + res.error);
         }
     };
 
@@ -563,10 +581,15 @@ function CompanyInternshipsView() {
 
                                             {/* Selected skills summary list */}
                                             {selectedSkills.length > 0 && (
-                                                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
-                                                    <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                                                        ทักษะที่เลือกแล้ว ({selectedSkills.length})
-                                                    </h3>
+                                                <div className={`p-4 rounded-2xl border space-y-2 ${selectedSkills.length >= 20 ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-100"}`}>
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                                            ทักษะที่เลือกแล้ว ({selectedSkills.length}/20)
+                                                        </h3>
+                                                        {selectedSkills.length >= 20 && (
+                                                            <span className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">เต็ม 20 แล้ว</span>
+                                                        )}
+                                                    </div>
                                                     <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
                                                         {selectedSkills.map((s) => (
                                                             <div key={s.skill_id} className="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-slate-200">
@@ -619,13 +642,18 @@ function CompanyInternshipsView() {
                                                         <div className="flex flex-wrap gap-2">
                                                             {skills.map((skill) => {
                                                                 const isSelected = selectedSkills.some((s) => s.skill_id === skill.id);
+                                                                const atLimit = !isSelected && selectedSkills.length >= 20;
                                                                 return (
                                                                     <button
                                                                         key={skill.id}
                                                                         type="button"
+                                                                        disabled={atLimit}
+                                                                        title={atLimit ? "เต็ม 20 ทักษะแล้ว" : ""}
                                                                         onClick={() => handleToggleSkill(skill)}
                                                                         className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${isSelected
                                                                             ? "bg-blue-600 border-blue-600 text-white"
+                                                                            : atLimit
+                                                                            ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
                                                                             : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
                                                                             }`}
                                                                     >
@@ -672,7 +700,7 @@ function CompanyInternshipsView() {
                                                         if (formData.title && formData.location && formData.description && formData.department && formData.responsibilities) {
                                                             setCurrentStep(2);
                                                         } else {
-                                                            alert("กรุณากรอกข้อมูลจำเป็นให้ครบถ้วนก่อนไปขั้นตอนถัดไป (*)");
+                                                            toast.warning("กรุณากรอกข้อมูลจำเป็นให้ครบถ้วนก่อนไปขั้นตอนถัดไป (*)");
                                                         }
                                                     }}
                                                     className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center gap-1.5"
@@ -696,7 +724,7 @@ function CompanyInternshipsView() {
                                                     disabled={selectedSkills.length === 0}
                                                     onClick={(e) => {
                                                         if (selectedSkills.length === 0) {
-                                                            alert("กรุณาเลือกทักษะอย่างน้อย 1 ทักษะก่อนสร้างประกาศรับสมัครฝึกงาน");
+                                                            toast.warning("กรุณาเลือกทักษะอย่างน้อย 1 ทักษะก่อนสร้างประกาศรับสมัครฝึกงาน");
                                                             return;
                                                         }
                                                         handleSaveInternship(e);
@@ -980,6 +1008,8 @@ export default function MyInternshipsPage() {
 }
 
 function StudentInternshipsView() {
+    const toast = useToast();
+    const { confirm } = useAppModal();
     const [internships, setInternships] = useState<any[]>([]);
     const [studentSkills, setStudentSkills] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -1012,42 +1042,58 @@ function StudentInternshipsView() {
     }, []);
 
     const handleApply = async (internshipId: string) => {
-        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการสมัครตำแหน่งงานนี้?")) return;
+        const ok = await confirm({
+          title: "ยืนยันการสมัคร?",
+          message: "คุณแน่ใจหรือไม่ว่าต้องการสมัครตำแหน่งงานนี้?",
+          confirmText: "สมัคร",
+          cancelText: "ยกเลิก",
+          variant: "default",
+        });
+        if (!ok) return;
         setApplyingId(internshipId);
         try {
             const res = await applyToInternship(internshipId);
             if (res.success) {
-                alert("สมัครตำแหน่งงานเสร็จสิ้นสำเร็จเรียบร้อย! 🎉");
+                toast.success("สมัครตำแหน่งงานเสร็จสิ้นสำเร็จเรียบร้อย! 🎉");
                 fetchInternships();
                 if (selectedInternship && selectedInternship.id === internshipId) {
                     setSelectedInternship((prev: any) => prev ? { ...prev, has_applied: true } : null);
                 }
             } else {
-                alert("เกิดข้อผิดพลาดในการสมัคร: " + res.error);
+                toast.error("เกิดข้อผิดพลาดในการสมัคร: " + res.error);
             }
         } catch (err) {
             console.error("Apply error:", err);
+            toast.error("เกิดข้อผิดพลาดในการสมัคร");
         } finally {
             setApplyingId(null);
         }
     };
 
     const handleCancelApply = async (internshipId: string) => {
-        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการยกเลิกการสมัครสำหรับตำแหน่งงานนี้?")) return;
+        const ok = await confirm({
+          title: "ยกเลิกการสมัคร?",
+          message: "คุณแน่ใจหรือไม่ว่าต้องการยกเลิกการสมัครสำหรับตำแหน่งงานนี้?",
+          confirmText: "ยกเลิกสมัคร",
+          cancelText: "กลับ",
+          variant: "danger",
+        });
+        if (!ok) return;
         setCancelingId(internshipId);
         try {
             const res = await cancelApplication(internshipId);
             if (res.success) {
-                alert("ยกเลิกการสมัครเสร็จสิ้นสำเร็จเรียบร้อย! 📥");
+                toast.success("ยกเลิกการสมัครเสร็จสิ้นสำเร็จเรียบร้อย! 📥");
                 fetchInternships();
                 if (selectedInternship && selectedInternship.id === internshipId) {
                     setSelectedInternship((prev: any) => prev ? { ...prev, has_applied: false } : null);
                 }
             } else {
-                alert("เกิดข้อผิดพลาดในการยกเลิกสมัคร: " + res.error);
+                toast.error("เกิดข้อผิดพลาดในการยกเลิกสมัคร: " + res.error);
             }
         } catch (err) {
             console.error("Cancel apply error:", err);
+            toast.error("เกิดข้อผิดพลาดในการยกเลิกสมัคร");
         } finally {
             setCancelingId(null);
         }
@@ -1295,7 +1341,7 @@ function StudentInternshipDetailsModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-150 space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
+            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-250 space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
                     <div>
                         <h2 className="text-lg font-bold text-slate-800">{title}</h2>
