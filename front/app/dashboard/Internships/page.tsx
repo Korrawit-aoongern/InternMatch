@@ -73,6 +73,10 @@ function CompanyInternshipsView() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState<string>("All");
+    // W4 filters for company
+    const [filterType, setFilterType] = useState<string>("All");
+    const [filterProvince, setFilterProvince] = useState<string>("All");
+    const [filterSkill, setFilterSkill] = useState<string>("All");
     const router = useRouter();
 
     // Modal Wizard States
@@ -182,10 +186,28 @@ function CompanyInternshipsView() {
         };
     }, [internships]);
 
+    // Unique options for company filters (derived from loaded data)
+    const typeOptions = useMemo(() => Array.from(new Set(internships.map((i) => i.internship_type).filter(Boolean))) as string[], [internships]);
+    const provinceOptions = useMemo(() => Array.from(new Set(internships.map((i) => (i.location || "").trim()).filter(Boolean))) as string[], [internships]);
+    const skillOptions = useMemo(() => {
+        const m = new Map<string, string>();
+        internships.forEach((intern) => (intern.skills || []).forEach((s: any) => { if (s.name) m.set(s.name, s.name); }));
+        return Array.from(m.values()).sort();
+    }, [internships]);
+
     const filteredInternships = useMemo(() => {
         return internships.filter((item) => {
             if (activeTab === "Active" && item.status !== "open") return false;
             if (activeTab === "Closed" && item.status !== "closed") return false;
+            // W4-5 ประเภทงาน
+            if (filterType !== "All" && (item.internship_type || "").toLowerCase() !== filterType.toLowerCase()) return false;
+            // W4-7 จังหวัด (location) — case-insensitive exact or includes
+            if (filterProvince !== "All") {
+                const prov = (item.location || "").trim().toLowerCase();
+                if (prov !== filterProvince.toLowerCase() && !prov.includes(filterProvince.toLowerCase())) return false;
+            }
+            // W4-6 Skill — case-insensitive
+            if (filterSkill !== "All" && !(item.skills || []).some((s: any) => (s.name || "").toLowerCase() === filterSkill.toLowerCase())) return false;
 
             if (searchQuery.trim() !== "") {
                 const query = searchQuery.toLowerCase();
@@ -196,7 +218,7 @@ function CompanyInternshipsView() {
             }
             return true;
         });
-    }, [internships, activeTab, searchQuery]);
+    }, [internships, activeTab, searchQuery, filterType, filterProvince, filterSkill]);
 
     // Open Modal Handlers
     const handleOpenCreateModal = () => {
@@ -367,40 +389,82 @@ function CompanyInternshipsView() {
                     </div>
 
                     {/* Filter and Search Bar */}
-                    <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 pt-2">
+                    <div className="flex flex-col gap-3 pt-2">
+                        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+                            {/* Search Input */}
+                            <div className="flex-1 w-full">
+                                <div className="relative w-full">
+                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="ค้นหาประกาศหานิสิตฝึกงาน..."
+                                        className="pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm w-full"
+                                    />
+                                </div>
+                            </div>
 
-                        {/* Search Input */}
-                        <div className="flex-1 w-full md:max-w-md">
-                            <div className="relative w-full">
-                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder="ค้นหาประกาศหานิสิตฝึกงาน..."
-                                    className=" pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
-                                />
+                            {/* Status Filter Tabs */}
+                            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 shrink-0">
+                                {[
+                                    { label: "All", count: counts.All },
+                                    { label: "Active", count: counts.Active },
+                                    { label: "Closed", count: counts.Closed },
+                                ].map((tab) => (
+                                    <button
+                                        key={tab.label}
+                                        onClick={() => setActiveTab(tab.label)}
+                                        className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${activeTab === tab.label
+                                            ? "bg-blue-50 text-blue-600 border-blue-200"
+                                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                                            }`}
+                                    >
+                                        {tab.label === "Active" ? "Active (เปิดรับ)" : tab.label === "Closed" ? "Closed (ปิดรับ)" : "All"} ({tab.count})
+                                    </button>
+                                ))}
                             </div>
                         </div>
-
-                        {/* Status Filter Tabs */}
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-                            {[
-                                { label: "All", count: counts.All },
-                                { label: "Active", count: counts.Active },
-                                { label: "Closed", count: counts.Closed },
-                            ].map((tab) => (
+                        {/* W4 Company filters: type / province / skill */}
+                        <div className="flex flex-wrap gap-2 items-center bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">กรอง:</span>
+                            <select
+                                value={filterType}
+                                onChange={(e) => setFilterType(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer"
+                                title="W4-5 กรองตามประเภทงาน"
+                            >
+                                <option value="All">ทุกประเภท</option>
+                                {typeOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                                {typeOptions.length === 0 && <><option value="Hybrid">Hybrid</option><option value="Remote">Remote</option><option value="On-site">On-site</option></>}
+                            </select>
+                            <select
+                                value={filterProvince}
+                                onChange={(e) => setFilterProvince(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer max-w-[160px]"
+                                title="W4-7 กรองตามจังหวัด"
+                            >
+                                <option value="All">ทุกจังหวัด</option>
+                                {provinceOptions.map((p) => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                            <select
+                                value={filterSkill}
+                                onChange={(e) => setFilterSkill(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer max-w-[160px]"
+                                title="W4-6 กรองตาม Skill"
+                            >
+                                <option value="All">ทุกทักษะ</option>
+                                {skillOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                            {(filterType !== "All" || filterProvince !== "All" || filterSkill !== "All") && (
                                 <button
-                                    key={tab.label}
-                                    onClick={() => setActiveTab(tab.label)}
-                                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${activeTab === tab.label
-                                        ? "bg-blue-50 text-blue-600 border-blue-200"
-                                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                                        }`}
+                                    onClick={() => { setFilterType("All"); setFilterProvince("All"); setFilterSkill("All"); }}
+                                    className="ml-auto px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors cursor-pointer"
                                 >
-                                    {tab.label === "Active" ? "Active (เปิดรับ)" : tab.label === "Closed" ? "Closed (ปิดรับ)" : "All"} ({tab.count})
+                                    ล้างตัวกรอง
                                 </button>
-                            ))}
+                            )}
+                            <span className="text-xs text-slate-400 font-medium ml-1">พบ {filteredInternships.length} รายการ</span>
                         </div>
                     </div>
 
@@ -1018,6 +1082,11 @@ function StudentInternshipsView() {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [applyingId, setApplyingId] = useState<string | null>(null);
     const [cancelingId, setCancelingId] = useState<string | null>(null);
+    // W4 filters
+    const [filterType, setFilterType] = useState<string>("All");
+    const [filterProvince, setFilterProvince] = useState<string>("All");
+    const [filterSkill, setFilterSkill] = useState<string>("All");
+    const [filterMatch, setFilterMatch] = useState<string>("All");
 
     const fetchInternships = async () => {
         setIsLoading(true);
@@ -1099,19 +1168,54 @@ function StudentInternshipsView() {
         }
     };
 
+    // Unique options for filters
+    const typeOptions = useMemo(() => {
+        const vals = Array.from(new Set(internships.map((i: any) => i.internship_type).filter(Boolean)));
+        return vals as string[];
+    }, [internships]);
+    const provinceOptions = useMemo(() => {
+        const vals = Array.from(new Set(internships.map((i: any) => (i.company_province || i.location || "").trim()).filter(Boolean)));
+        return vals as string[];
+    }, [internships]);
+    const skillOptions = useMemo(() => {
+        const map = new Map<string, string>();
+        internships.forEach((intern: any) => (intern.skills || []).forEach((s: any) => { if (s.name) map.set(s.name, s.name); }));
+        return Array.from(map.values()).sort();
+    }, [internships]);
+
     const filteredInternships = useMemo(() => {
         return internships.filter((item) => {
             if (searchQuery.trim() !== "") {
                 const query = searchQuery.toLowerCase();
                 const matchTitle = item.title.toLowerCase().includes(query);
                 const matchCompany = item.company_name.toLowerCase().includes(query);
-                const matchDept = item.department.toLowerCase().includes(query);
-                const matchLocation = item.location.toLowerCase().includes(query);
-                return matchTitle || matchCompany || matchDept || matchLocation;
+                const matchDept = (item.department || "").toLowerCase().includes(query);
+                const matchLocation = (item.location || "").toLowerCase().includes(query);
+                if (!(matchTitle || matchCompany || matchDept || matchLocation)) return false;
+            }
+            // W4-5 ประเภทงาน — case-insensitive
+            if (filterType !== "All" && (item.internship_type || "").toLowerCase() !== filterType.toLowerCase()) return false;
+            // W4-7 จังหวัด (company_province fallback to location) — case-insensitive
+            if (filterProvince !== "All") {
+                const prov = (item.company_province || item.location || "").trim().toLowerCase();
+                if (prov !== filterProvince.toLowerCase() && !prov.includes(filterProvince.toLowerCase())) return false;
+            }
+            // W4-6 Skill — case-insensitive
+            if (filterSkill !== "All") {
+                const hasSkill = (item.skills || []).some((s: any) => (s.name || "").toLowerCase() === filterSkill.toLowerCase());
+                if (!hasSkill) return false;
+            }
+            // W4-8 Match Score
+            if (filterMatch !== "All") {
+                const sc = Number(item.match_score) || 0;
+                if (filterMatch === "high" && sc < 80) return false;
+                if (filterMatch === "medium" && (sc < 50 || sc >= 80)) return false;
+                if (filterMatch === "low" && sc >= 50) return false;
+                if (filterMatch === "50plus" && sc < 50) return false;
             }
             return true;
         });
-    }, [internships, searchQuery]);
+    }, [internships, searchQuery, filterType, filterProvince, filterSkill, filterMatch]);
 
     return (
         <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
@@ -1128,16 +1232,77 @@ function StudentInternshipsView() {
                         </div>
                     </div>
 
-                    <div className="flex-1 w-full md:max-w-md">
-                        <div className="relative w-full">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="ค้นหาตามตำแหน่ง, ฝ่าย หรือบริษัท..."
-                                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm "
-                            />
+                    <div className="flex flex-col gap-3">
+                        <div className="flex-1 w-full">
+                            <div className="relative w-full">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="ค้นหาตามตำแหน่ง, ฝ่าย หรือบริษัท..."
+                                    className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm w-full"
+                                />
+                            </div>
+                        </div>
+                        {/* W4-5..W4-8 Filters */}
+                        <div className="flex flex-wrap gap-2 items-center bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">กรอง:</span>
+                            {/* W4-5 ประเภทงาน */}
+                            <select
+                                value={filterType}
+                                onChange={(e) => setFilterType(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer"
+                                title="W4-5 กรองตามประเภทงาน"
+                            >
+                                <option value="All">ทุกประเภท</option>
+                                {typeOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                                {typeOptions.length === 0 && <><option value="Hybrid">Hybrid</option><option value="Remote">Remote</option><option value="On-site">On-site</option></>}
+                            </select>
+                            {/* W4-7 จังหวัด */}
+                            <select
+                                value={filterProvince}
+                                onChange={(e) => setFilterProvince(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer max-w-[160px]"
+                                title="W4-7 กรองตามจังหวัด"
+                            >
+                                <option value="All">ทุกจังหวัด</option>
+                                {provinceOptions.map((p) => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                            {/* W4-6 Skill */}
+                            <select
+                                value={filterSkill}
+                                onChange={(e) => setFilterSkill(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer max-w-[160px]"
+                                title="W4-6 กรองตาม Skill"
+                            >
+                                <option value="All">ทุกทักษะ</option>
+                                {skillOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                            {/* W4-8 Match Score */}
+                            <select
+                                value={filterMatch}
+                                onChange={(e) => setFilterMatch(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer"
+                                title="W4-8 กรองตาม Match Score"
+                            >
+                                <option value="All">ทุกคะแนน</option>
+                                <option value="high">สูง ≥80%</option>
+                                <option value="medium">กลาง 50-79%</option>
+                                <option value="low">ต่ำ &lt;50%</option>
+                                <option value="50plus">50% ขึ้นไป</option>
+                            </select>
+                            {(filterType !== "All" || filterProvince !== "All" || filterSkill !== "All" || filterMatch !== "All") && (
+                                <button
+                                    onClick={() => { setFilterType("All"); setFilterProvince("All"); setFilterSkill("All"); setFilterMatch("All"); }}
+                                    className="ml-auto px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+                                >
+                                    ล้างตัวกรอง
+                                </button>
+                            )}
+                            <span className="text-xs text-slate-400 font-medium ml-1">
+                                พบ {filteredInternships.length} รายการ
+                            </span>
                         </div>
                     </div>
 
