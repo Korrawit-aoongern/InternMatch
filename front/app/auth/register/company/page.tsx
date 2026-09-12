@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
-import { Building2, Mail, User, Lock, Image } from "lucide-react";
+import { Building2, Mail, User, Lock, Image, Trash2, Loader2, Eye, Camera, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { registerUser } from "@/lib/actions/auth";
+import { registerUser, uploadProfileImage } from "@/lib/actions/auth";
 import FormInput from "@/components/ui/FormInput";
+import { useToast } from "@/components/ui/Toaster";
 
 export default function RegisterCompanyPage() {
   const router = useRouter();
+  const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -24,6 +26,38 @@ export default function RegisterCompanyPage() {
     province: "",
     logo: "",
   });
+
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+
+  const handleLogoUploadClick = () => {
+    logoInputRef.current?.click();
+  };
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    setIsUploadingLogo(true);
+    try {
+      const res = await uploadProfileImage(formData);
+      if (res.success && res.url) {
+        setFields((prev) => ({ ...prev, logo: res.url || "" }));
+      } else {
+        toast.error("Upload failed: " + res.error);
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast.error("An error occurred during file upload.");
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const handleDeleteLogo = () => {
+    setFields((prev) => ({ ...prev, logo: "" }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -184,21 +218,53 @@ export default function RegisterCompanyPage() {
                 </div>
               </div>
 
-              {/* --- Section 3: Media (Logo) --- */}
+              {/* --- Section 3: Media (Logo) — upload like Student profile_image --- */}
               <div>
                 <span className="text-xs font-bold text-primary uppercase tracking-wider block mb-4">Media & Identity</span>
                 
                 <div className="space-y-4">
-                  <FormInput
-                    label="Company Logo URL"
-                    id="logo"
-                    name="logo"
-                    type="url"
-                    placeholder="https://example.com/logo.png"
-                    value={fields.logo}
-                    onChange={handleChange}
-                    icon={Image}
-                  />
+                  <div>
+                    <label className="block text-on-surface mb-sm text-sm font-semibold">Company Logo</label>
+                    {fields.logo ? (
+                      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/60 flex items-center justify-between">
+                        <div className="flex items-center gap-3 overflow-hidden mr-2">
+                          <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 flex-shrink-0">
+                            <img src={fields.logo} alt="Logo Preview" className="w-full h-full object-cover" />
+                          </div>
+                          <div className="truncate">
+                            <p className="text-xs font-bold text-slate-800 truncate">Logo Uploaded</p>
+                            <p className="text-[10px] text-slate-400 truncate">{fields.logo}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <a href={fields.logo} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 text-xs font-bold px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                            <Eye className="w-3.5 h-3.5" /> View
+                          </a>
+                          <button type="button" onClick={handleDeleteLogo} className="text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 text-xs font-bold p-1.5 rounded-lg transition-colors" title="Delete Logo">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div onClick={handleLogoUploadClick} className="border-2 border-dashed border-slate-200 hover:border-blue-400 bg-slate-50 hover:bg-blue-50/20 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all text-center group">
+                        {isUploadingLogo ? (
+                          <div className="flex flex-col items-center gap-2">
+                            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                            <p className="text-xs font-bold text-slate-500">Uploading...</p>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="bg-slate-100 group-hover:bg-blue-100 text-slate-400 group-hover:text-blue-600 p-2.5 rounded-full transition-colors mb-2">
+                              <Camera className="w-5 h-5" />
+                            </div>
+                            <p className="text-xs font-bold text-slate-700">Click to upload logo</p>
+                            <p className="text-[10px] text-slate-400 mt-1">PNG, JPG, or GIF — stored in Supabase avatars bucket</p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    <input type="file" ref={logoInputRef} onChange={handleLogoChange} accept="image/*" className="hidden" />
+                  </div>
                 </div>
               </div>
 
