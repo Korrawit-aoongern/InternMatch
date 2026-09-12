@@ -1108,12 +1108,21 @@ function CompanyApplicationsView() {
     const handleUpdateStatus = async (applicationId: string, newStatus: string, skipConfirm = false) => {
         if (!skipConfirm) {
             const label = STATUS_OPTIONS.find((o) => o.value === newStatus)?.label || newStatus;
+            const isAccepting = newStatus === "accepted";
+            const isRejecting = newStatus === "rejected";
+
             const ok = await confirm({
-              title: "เปลี่ยนสถานะ?",
-              message: `คุณแน่ใจหรือไม่ว่าต้องการเปลี่ยนสถานะใบสมัครเป็น "${label}"?`,
-              confirmText: "ยืนยัน",
+              title: isAccepting
+                ? "ยืนยันรับเข้าฝึกงาน (Accept)?"
+                : isRejecting
+                ? "ยืนยันปฏิเสธใบสมัคร (Reject)?"
+                : "เปลี่ยนสถานะ?",
+              message: isAccepting
+                ? "คุณต้องการรับผู้สมัครคนนี้เข้าฝึกงานใช่หรือไม่? ระบบจะส่งอีเมลแจ้งผลการคัดเลือกไปยังนักศึกษาโดยอัตโนมัติ 📧🎉"
+                : `คุณแน่ใจหรือไม่ว่าต้องการเปลี่ยนสถานะใบสมัครเป็น "${label}"?`,
+              confirmText: isAccepting ? "ยืนยันและส่งอีเมลแจ้งผล" : "ยืนยัน",
               cancelText: "ยกเลิก",
-              variant: newStatus === "rejected" ? "danger" : "default",
+              variant: isRejecting ? "danger" : "default",
             });
             if (!ok) return;
         }
@@ -1121,7 +1130,7 @@ function CompanyApplicationsView() {
         try {
             const res = await updateApplicationStatus(applicationId, newStatus);
             if (res.success) {
-                if (!skipConfirm) toast.success(`เปลี่ยนสถานะเป็น ${newStatus} สำเร็จ`);
+                if (!skipConfirm) toast.success(res.message || `เปลี่ยนสถานะเป็น ${newStatus} สำเร็จ`);
                 setApplicants((prev) =>
                     prev.map((a) =>
                         a.application_id === applicationId ? { ...a, status: newStatus } : a
@@ -1133,9 +1142,9 @@ function CompanyApplicationsView() {
                         : prev
                 );
             } else if (!skipConfirm) {
-                toast.error("Failed to update status: " + res.error);
+                toast.error("ไม่สามารถเปลี่ยนสถานะได้: " + (res.error || ""));
             } else {
-                toast.error("Failed to update status: " + res.error);
+                toast.error("ไม่สามารถเปลี่ยนสถานะได้: " + (res.error || ""));
             }
         } catch (err) {
             console.error("Failed to update application status:", err);
@@ -1396,13 +1405,25 @@ function CompanyApplicationsView() {
 
                                                         {/* Action */}
                                                         <td className="px-6 py-4 whitespace-nowrap">
-                                                            <button
-                                                                onClick={() => handleViewApplicantDetails(item)}
-                                                                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                                                                title="View Details"
-                                                            >
-                                                                <Eye className="w-4 h-4" />
-                                                            </button>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <button
+                                                                    onClick={() => handleViewApplicantDetails(item)}
+                                                                    className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                                                    title="ดูรายละเอียดผู้สมัคร"
+                                                                >
+                                                                    <Eye className="w-4 h-4" />
+                                                                </button>
+                                                                {item.status.toLowerCase() !== "accepted" && (
+                                                                    <button
+                                                                        onClick={() => handleUpdateStatus(item.application_id, "accepted")}
+                                                                        disabled={updatingStatusId === item.application_id}
+                                                                        className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer disabled:opacity-40"
+                                                                        title="รับเข้าฝึกงาน (Accept & ส่งอีเมล)"
+                                                                    >
+                                                                        <CheckCircle2 className="w-4 h-4" />
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -1654,7 +1675,12 @@ function CompanyApplicationsView() {
 
                                     {/* Manage Status */}
                                     <div className="space-y-1.5 pt-1">
-                                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">จัดการสถานะใบสมัคร (Manage Status)</h4>
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">จัดการสถานะใบสมัคร (Manage Status)</h4>
+                                            <span className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                                                <Mail className="w-3 h-3" /> ส่งอีเมลอัตโนมัติเมื่อกด Accept
+                                            </span>
+                                        </div>
                                         <div className="grid grid-cols-2 gap-1.5">
                                             {STATUS_OPTIONS.map((option) => (
                                                 <button

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "../supabase/server";
+import { sendStudentAcceptedEmail } from "../utils/email";
 
 interface DecodedToken {
   userId: string;
@@ -588,7 +589,7 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
 
     const { data: appRow, error: findError } = await supabase
       .from("applications")
-      .select("id, internship_id")
+      .select("id, internship_id, student_id")
       .eq("id", applicationId)
       .maybeSingle();
 
@@ -619,7 +620,81 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
       return { success: false, error: error.message };
     }
 
-    return { success: true, application: data, message: "อัปเดตสถานะใบสมัครสำเร็จเรียบร้อย! 🎉" };
+    let emailSent = false;
+    // When status is changed to "accepted", automatically send notification email to the student
+    if (newStatus === "accepted") {
+      try {
+        let studentEmail = "";
+        let studentName = "นักศึกษา";
+
+        if (appRow.student_id) {
+          const { data: student } = await supabase
+            .from("students")
+            .select("id, fullname, user_id")
+            .eq("id", appRow.student_id)
+            .maybeSingle();
+
+          if (student) {
+            studentName = student.fullname || studentName;
+            if (student.user_id) {
+              const { data: u } = await supabase
+                .from("users")
+                .select("email")
+                .eq("id", student.user_id)
+                .maybeSingle();
+              if (u?.email) studentEmail = u.email;
+            }
+          }
+        }
+
+        const { data: intData } = await supabase
+          .from("internships")
+          .select(`
+            title,
+            location,
+            internship_type,
+            companies (
+              company_name
+            )
+          `)
+          .eq("id", appRow.internship_id)
+          .maybeSingle();
+
+        const internshipTitle = intData?.title || "ตำแหน่งฝึกงาน";
+        const companyName = (intData?.companies as any)?.company_name || "สถานประกอบการ";
+        const location = intData?.location || "";
+        const internshipType = intData?.internship_type || "";
+
+        if (studentEmail) {
+          console.log(`Sending acceptance email to student: ${studentEmail} (${studentName})...`);
+          const emailRes = await sendStudentAcceptedEmail({
+            studentEmail,
+            studentName,
+            internshipTitle,
+            companyName,
+            location,
+            internshipType,
+            applicationId,
+          });
+          emailSent = emailRes.success;
+        } else {
+          console.warn(`No student email found for student_id: ${appRow.student_id}`);
+        }
+      } catch (emailErr) {
+        console.error("Error sending student acceptance notification email:", emailErr);
+      }
+    }
+
+    return {
+      success: true,
+      application: data,
+      emailSent,
+      message: newStatus === "accepted"
+        ? (emailSent
+            ? "เปลี่ยนสถานะเป็น Accepted และส่งอีเมลแจ้งผลการคัดเลือกไปยังนักศึกษาเรียบร้อยแล้ว! 📧🎉"
+            : "เปลี่ยนสถานะเป็น Accepted สำเร็จเรียบร้อย! 🎉")
+        : "อัปเดตสถานะใบสมัครสำเร็จเรียบร้อย! 🎉",
+    };
   } catch (err: unknown) {
     console.error("Exception in updateApplicationStatus:", err);
     return {
