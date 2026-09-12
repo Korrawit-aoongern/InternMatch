@@ -8,9 +8,6 @@ export default function LandingNavbar() {
         <div className="font-h2 text-h2 font-bold text-primary">InternMatch</div>
         <div className="hidden md:flex items-center gap-lg font-body-lg text-body-lg">
           <a className="text-on-surface-variant hover:text-primary transition-colors hover:opacity-80" href="#features">Features</a>
-          <a className="text-on-surface-variant hover:text-primary transition-colors hover:opacity-80" href="#how-it-works">How It Works</a>
-          <a className="text-on-surface-variant hover:text-primary transition-colors hover:opacity-80" href="#testimonials">Testimonials</a>
-          <a className="text-on-surface-variant hover:text-primary transition-colors hover:opacity-80" href="#faq">FAQ</a>
         </div>
         <div className="flex items-center gap-md">
           <Link href="/auth/login" className="font-body-sm text-body-sm text-primary hover:opacity-80 transition-all px-4 py-2 rounded-lg font-medium border border-transparent flex items-center justify-center">Login</Link>
