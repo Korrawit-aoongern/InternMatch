@@ -32,9 +32,9 @@ export default function LandingFooter() {
         <div className="space-y-sm">
           <h4 className="font-body-lg text-body-lg font-bold text-on-background mb-sm">Support</h4>
           <ul className="space-y-2 font-body-sm text-body-sm">
+            <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="/help">Help Center</a></li>
+            <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="/help">FAQ</a></li>
             <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Contact Us</a></li>
-            <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">Help Center</a></li>
-            <li className=""><a className="text-on-surface-variant hover:text-primary transition-all hover:underline" href="#">FAQ</a></li>
           </ul>
         </div>
       </div>
