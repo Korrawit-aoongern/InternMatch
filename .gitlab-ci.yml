@@ -273,8 +273,10 @@ deploy_frontend:
       fi
   script:
     - cd front
+    - rm -rf .vercel  # stale link from cache/repo causes "Could not retrieve Project Settings" — Vercel CLI recreates it from env vars
     - echo "Pulling Vercel env (production)..."
-    - vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
+    - echo "VERCEL_ORG_ID=${VERCEL_ORG_ID:0:8}... VERCEL_PROJECT_ID=${VERCEL_PROJECT_ID:0:8}... token set=$([ -n "$VERCEL_TOKEN" ] && echo yes || echo no)"
+    - vercel pull --yes --environment=production --token "$VERCEL_TOKEN" || (echo "vercel pull failed — check that VERCEL_ORG_ID/PROJECT_ID match Vercel dashboard and token has project scope. If project never deployed, create it first via Vercel dashboard or 'cd front && vercel --prod' locally." && exit 1)
     - echo "Building on Vercel infrastructure..."
     - vercel build --prod --token "$VERCEL_TOKEN"
     - echo "Deploying to Vercel production..."
