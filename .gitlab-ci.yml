@@ -1,15 +1,14 @@
 # InternMatch — Finalized CI/CD Pipeline
 # Branch strategy:
-#   dev       → lint + unit test + build check (fast feedback)
+#   dev       → lint + unit test + build check
 #   pre-prod  → e2e smoke (M1) auto + full manual
-#   main      → deploy to Vercel production
+#   main      → deploy only (no test/build)
 #
 # Required GitLab CI/CD Variables (Settings > CI/CD > Variables, masked):
 #   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 #   SUPABASE_SERVICE_ROLE_KEY, JWT_SECRET, GEMINI_API_KEY,
 #   EMAIL_USER, EMAIL_PASS,
 #   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
-# Vercel env must be configured in Vercel dashboard as well — `vercel pull` syncs it.
 
 workflow:
   rules:
@@ -17,14 +16,10 @@ workflow:
       when: never
     - if: '$CI_COMMIT_BRANCH'
       when: always
-sast:
-  stage: test
+
 include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
-secret_detection:
-  stage: secret-detection
-
 
 stages:
   - lint
@@ -51,8 +46,7 @@ cache:
   policy: pull-push
 
 # ==========================================
-# LINT — front (dev / pre-prod / main)
-# non-blocking so legacy warnings don't block deploy
+# LINT — only dev / pre-prod
 # ==========================================
 lint:front:
   stage: lint
@@ -62,7 +56,7 @@ lint:front:
     - npm ci --cache ../.npm --prefer-offline
     - npm run lint || echo "lint warnings present — check logs"
   rules:
-    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "pre-prod" || $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "pre-prod"'
   allow_failure: true
   cache:
     key:
@@ -74,7 +68,7 @@ lint:front:
     policy: pull-push
 
 # ==========================================
-# DEV — Unit Tests (jest in front/)
+# Unit Tests — only dev / pre-prod
 # ==========================================
 unit_test:
   stage: test
@@ -85,19 +79,16 @@ unit_test:
     - npm ci --cache ../.npm --prefer-offline
     - npm test -- --ci --coverage=false
   rules:
-    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "pre-prod" || $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "pre-prod"'
 
 # ==========================================
-# BUILD CHECK — verify Next.js compiles
-# Runs on all branches to catch build breakage before merge
+# Build check — only dev / pre-prod
 # ==========================================
 build:front:
   stage: build
   image: node:22-alpine
   needs: ["unit_test"]
   before_script:
-    # Inject env from CI variables; fallback to dummy so `next build` can still
-    # compile in forks/MRs without secrets. Vercel deploy uses real env via `vercel pull`.
     - cd front
     - |
       if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
@@ -129,7 +120,7 @@ build:front:
   after_script:
     - rm -f .env
   rules:
-    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "pre-prod" || $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "pre-prod"'
   cache:
     key:
       files:
@@ -142,7 +133,6 @@ build:front:
 
 # ==========================================
 # PRE-PROD — E2E Smoke (Module-1 only, chromium, auto)
-# Fast gate: ~2-3 min vs 20 min for full suite
 # ==========================================
 e2e:smoke:
   stage: e2e
@@ -197,7 +187,6 @@ e2e:smoke:
 
 # ==========================================
 # PRE-PROD — E2E Full (all 7 modules, chromium, manual)
-# Run before merging pre-prod → main. allow_failure so it doesn't block pipeline if flaky.
 # ==========================================
 e2e:full:
   stage: e2e
@@ -254,14 +243,12 @@ e2e:full:
   timeout: 45m
 
 # ==========================================
-# MAIN — Deploy Frontend to Vercel
-# front/ is full-stack: Next.js + Supabase (Server Actions / API Routes)
-# back/ is archived — see back/README.md (no deploy)
+# MAIN — Deploy only (no test/build, self-contained)
 # ==========================================
 deploy_frontend:
   stage: deploy
   image: node:22-alpine
-  needs: ["build:front"]
+  # no needs — main is deploy-only, so it runs standalone
   before_script:
     - apk add --no-cache git
     - npm i -g vercel@latest
@@ -271,12 +258,12 @@ deploy_frontend:
         echo "ERROR: VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID must be set in GitLab CI/CD Variables"
         exit 1
       fi
+    - rm -rf front/.vercel
   script:
     - cd front
-    - rm -rf .vercel  # stale link from cache/repo causes "Could not retrieve Project Settings" — Vercel CLI recreates it from env vars
     - echo "Pulling Vercel env (production)..."
     - echo "VERCEL_ORG_ID=${VERCEL_ORG_ID:0:8}... VERCEL_PROJECT_ID=${VERCEL_PROJECT_ID:0:8}... token set=$([ -n "$VERCEL_TOKEN" ] && echo yes || echo no)"
-    - vercel pull --yes --environment=production --token "$VERCEL_TOKEN" || (echo "vercel pull failed — check that VERCEL_ORG_ID/PROJECT_ID match Vercel dashboard and token has project scope. If project never deployed, create it first via Vercel dashboard or 'cd front && vercel --prod' locally." && exit 1)
+    - vercel pull --yes --environment=production --token "$VERCEL_TOKEN" || (echo "vercel pull failed — check VERCEL_ORG_ID/PROJECT_ID and token scope. If project never deployed, create it via Vercel dashboard or 'cd front && vercel --prod' locally." && exit 1)
     - echo "Building on Vercel infrastructure..."
     - vercel build --prod --token "$VERCEL_TOKEN"
     - echo "Deploying to Vercel production..."
@@ -288,5 +275,8 @@ deploy_frontend:
     - if: '$CI_COMMIT_BRANCH == "main"'
   resource_group: production
 
-# Security jobs (from templates) — keep enabled for all branches
-
+# Security jobs — also skip main (deploy-only)
+sast:
+  stage: test
+secret_detection:
+  stage: secret-detection
