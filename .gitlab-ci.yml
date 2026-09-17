@@ -264,10 +264,8 @@ deploy_frontend:
     - echo "Pulling Vercel env (production)..."
     - echo "VERCEL_ORG_ID=${VERCEL_ORG_ID:0:8}... VERCEL_PROJECT_ID=${VERCEL_PROJECT_ID:0:8}... token set=$([ -n "$VERCEL_TOKEN" ] && echo yes || echo no)"
     - vercel pull --yes --environment=production --token "$VERCEL_TOKEN" || (echo "vercel pull failed — check VERCEL_ORG_ID/PROJECT_ID and token scope. If project never deployed, create it via Vercel dashboard or 'cd front && vercel --prod' locally." && exit 1)
-    - echo "Building on Vercel infrastructure..."
-    - vercel build --prod --token "$VERCEL_TOKEN"
-    - echo "Deploying to Vercel production..."
-    - vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN"
+    - echo "Deploying to Vercel production (remote build)..."
+    - vercel deploy --prod --yes --token "$VERCEL_TOKEN"
   environment:
     name: production
     url: https://internmatch.vercel.app
