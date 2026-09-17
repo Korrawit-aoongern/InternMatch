@@ -915,6 +915,17 @@ export async function applyToInternship(internshipId: string) {
       return { success: false, error: error.message };
     }
 
+    // Link application_id in ai_recommendations if a recommendation cache already exists for this student & internship
+    try {
+      await supabase
+        .from("ai_recommendations")
+        .update({ application_id: data.id })
+        .eq("student_id", student.id)
+        .eq("internship_id", internshipId);
+    } catch (linkErr) {
+      console.warn("Failed to link application_id to ai_recommendations:", linkErr);
+    }
+
     return { success: true, application: data, message: "สมัครงานสำเร็จเรียบร้อย! 🎉" };
   } catch (err: unknown) {
     console.error("Exception in applyToInternship:", err);

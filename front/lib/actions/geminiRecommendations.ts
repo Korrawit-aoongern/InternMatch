@@ -1,5 +1,8 @@
 "use server";
 
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 import { generateMockAiUpskilling } from "@/lib/utils/mockAnalysis";
 import { ensureVideoSearchUrl } from "@/lib/utils/videoUrl";
 
@@ -21,7 +24,15 @@ export interface AiUpskillingResult {
   analysisText: string;
   recommendations: SkillRecommendation[];
   provider: "gemini" | "fallback";
+  isCached?: boolean;
   error?: string;
+}
+
+export interface AiRecommendationOptions {
+  internshipId?: string;
+  studentId?: string;
+  applicationId?: string;
+  forceRefresh?: boolean;
 }
 
 const LEVEL_WEIGHTS: Record<string, number> = {
@@ -47,11 +58,40 @@ export interface SkillItem {
   };
 }
 
+// Safely extract student ID from cookie or passed argument without throwing
+async function getEffectiveStudentId(supabase: any, explicitStudentId?: string): Promise<string | null> {
+  if (explicitStudentId) return explicitStudentId;
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
+    if (!token) return null;
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || process.env.JWT_SECRET_KEY || "YOUR_SUPER_SECRET_KEY"
+    ) as { userId?: string };
+
+    if (!decoded?.userId) return null;
+
+    const { data: student, error } = await supabase
+      .from("students")
+      .select("id")
+      .eq("user_id", decoded.userId)
+      .maybeSingle();
+
+    if (error || !student) return null;
+    return student.id;
+  } catch {
+    return null;
+  }
+}
+
 export async function getAiSkillRecommendations(
   internshipTitle: string,
   internshipDescription: string | null | undefined,
   internshipSkills: SkillItem[] | null | undefined,
-  studentSkills: SkillItem[] | null | undefined
+  studentSkills: SkillItem[] | null | undefined,
+  options?: AiRecommendationOptions
 ): Promise<AiUpskillingResult> {
   const sSkills = studentSkills || [];
   const reqSkills = internshipSkills || [];
@@ -97,6 +137,50 @@ export async function getAiSkillRecommendations(
     };
   }
 
+  const supabase = getSupabaseAdmin();
+  const internshipId = options?.internshipId;
+  const effectiveStudentId = await getEffectiveStudentId(supabase, options?.studentId);
+
+  const skillsHash = sSkills
+    .map((s) => `${s.skill_id || s.id}_${s.level}`)
+    .sort()
+    .join(",");
+
+  // 1. Check Database Cache in ai_recommendations (unless forceRefresh is requested)
+  if (effectiveStudentId && internshipId && !options?.forceRefresh) {
+    try {
+      const { data: cached, error: cacheErr } = await supabase
+        .from("ai_recommendations")
+        .select("*")
+        .eq("student_id", effectiveStudentId)
+        .eq("internship_id", internshipId)
+        .maybeSingle();
+
+      if (!cacheErr && cached && cached.learning_path) {
+        // Check if student's current skills match the cached skills_hash
+        if (!cached.skills_hash || cached.skills_hash === skillsHash) {
+          let parsedRecs: SkillRecommendation[] = [];
+          try {
+            parsedRecs = JSON.parse(cached.recommended_courses || "[]");
+          } catch {
+            parsedRecs = [];
+          }
+
+          return {
+            success: true,
+            hasGaps: true,
+            analysisText: cached.learning_path,
+            recommendations: parsedRecs,
+            provider: "gemini",
+            isCached: true,
+          };
+        }
+      }
+    } catch (cacheLookupErr) {
+      console.warn("Error reading AI cache:", cacheLookupErr);
+    }
+  }
+
   const apiKey = process.env.GEMINI_API_KEY;
 
   // If no API key, fallback immediately to local mock data
@@ -125,41 +209,42 @@ export async function getAiSkillRecommendations(
     };
   }
 
-  const prompt = `คุณคือ Career Coach และ AI ผู้เชี่ยวชาญด้านการพัฒนาทักษะ (Skill Development Coach) ของแพลตฟอร์ม InternMatch
-นักศึกษากำลังพิจารณาฝึกงานในตำแหน่ง: "${internshipTitle}"
-รายละเอียดงาน: ${internshipDescription || "ไม่มีข้อมูลรายละเอียดเพิ่มเติม"}
+  const totalGaps = gapSkillNames.length;
+  const prompt = `คุณคือ Career Coach ของ InternMatch
+ตำแหน่งงาน: "${internshipTitle}"
+รายละเอียดงาน: ${internshipDescription || "ไม่มีข้อมูลเพิ่มเติม"}
 
 ข้อมูลการวิเคราะห์ช่องว่างทักษะ:
-- ทักษะที่ยังขาดในโปรไฟล์ (Missing Skills): ${missingSkills.length > 0 ? missingSkills.join(", ") : "ไม่มี"}
-- ทักษะที่ต้องอัปเลเวลเพิ่มเติม (Under-leveled Skills): ${underLeveledSkills.length > 0 ? underLeveledSkills.join(", ") : "ไม่มี"}
+- ทักษะที่ยังขาด (Missing Skills): ${missingSkills.length > 0 ? missingSkills.join(", ") : "ไม่มี"}
+- ทักษะที่ต้องอัปเลเวล (Under-leveled Skills): ${underLeveledSkills.length > 0 ? underLeveledSkills.join(", ") : "ไม่มี"}
 
 เป้าหมายของคุณ:
-1. เขียนบทวิเคราะห์และคำแนะนำภาพรวม (analysisText) สั้นกระชับ 2-3 ย่อหน้าในภาษาไทย ให้กำลังใจ เป็นกันเอง พร้อมลำดับขั้นตอนที่ควรเริ่มเรียนรู้ก่อน-หลัง
-2. คัดเลือกคลิปสอน YouTube (ฟรี) และคอร์สออนไลน์เสริม (Coursera, Udemy, ThaiMOOC ฯลฯ) รวมกัน 3-4 รายการที่ตรงเป้าหมายที่สุด
+1. เขียนบทวิเคราะห์และคำแนะนำภาพรวม (analysisText) สั้นกระชับ 1-2 ย่อหน้าในภาษาไทย เป็นกันเองและตรงประเด็น
+2. แนะนำสื่อการเรียนรู้ (คลิป YouTube ฟรี หรือคอร์สออนไลน์) **ให้ครอบคลุมครบทุกทักษะที่ต้องพัฒนาข้างต้น ทักษะละ 1 รายการ** (มีทั้งหมด ${totalGaps} ทักษะ: ${gapSkillNames.join(", ")} ให้แนะนำรวม ${totalGaps} รายการ ห้ามตกหล่นทักษะใด เพื่อให้นักศึกษาได้พัฒนาครบทุกจุด)
 **ข้อกำหนดพิเศษสำหรับคลิปวิดีโอ (YouTube)**:
-เพื่อป้องกันปัญหาลิงก์เสียหรือเจ้าของลบคลิป ให้สร้าง url เป็น **ลิงก์หน้าค้นหาบน YouTube (Search Query URL)** เสมอในรูปแบบ:
-https://www.youtube.com/results?search_query=คำค้นหาภาษาไทยหรืออังกฤษ
-(ตัวอย่าง: https://www.youtube.com/results?search_query=สอน+React+เบื้องต้น หรือ https://www.youtube.com/results?search_query=Node.js+Crash+Course)
-ห้ามใส่ลิงก์เจาะจงคลิป watch?v= เด็ดขาด
+เพื่อป้องกันปัญหาลิงก์เสีย ให้สร้าง url เป็นลิงก์หน้าค้นหาบน YouTube (Search Query URL) เสมอในรูปแบบ:
+https://www.youtube.com/results?search_query=คำค้นหา
+ห้ามใส่ลิงก์เจาะจง watch?v= เด็ดขาด
 
-ข้อกำหนดการตอบ:
 ตอบเป็น JSON เท่านั้น โครงสร้าง:
 {
-  "analysisText": "ข้อความวิเคราะห์และคำแนะนำภาพรวมในภาษาไทย",
+  "analysisText": "คำแนะนำสั้นกระชับ 1-2 ย่อหน้า",
   "recommendations": [
     {
       "id": "rec-1",
-      "title": "ชื่อหัวข้อคลิปสอนหรือชื่อคอร์สที่แนะนำ",
-      "url": "URL สำหรับเข้าไปเรียนหรือค้นหา เช่น https://www.youtube.com/results?search_query=... หรือ https://www.udemy.com/...",
-      "platform": "YouTube | Coursera | Udemy | ThaiMOOC | FutureSkill | Other",
-      "author": "ชื่อช่อง YouTube หรือสถาบัน/ผู้สอน",
+      "title": "ชื่อหัวข้อคลิปหรือคอร์ส",
+      "url": "https://www.youtube.com/results?search_query=...",
+      "platform": "YouTube | Coursera | Udemy | ThaiMOOC | Other",
+      "author": "ผู้สอนหรือสถาบัน",
       "level": "Beginner | Intermediate | Advanced",
       "resource_type": "video | course",
-      "targetSkill": "ชื่อทักษะเป้าหมาย",
-      "reason": "เหตุผลสั้นๆ 1 ประโยคว่าทำไมถึงแนะนำ"
+      "targetSkill": "ชื่อทักษะเป้าหมายที่ตรงกับทักษะที่ต้องพัฒนา",
+      "reason": "เหตุผลสั้นๆ 1 ประโยค"
     }
   ]
 }`;
+
+  const targetTokens = Math.min(2048, Math.max(800, totalGaps * 220 + 350));
 
   for (const model of GEMINI_MODELS) {
     try {
@@ -170,14 +255,13 @@ https://www.youtube.com/results?search_query=คำค้นหาภาษา�
           headers: {
             "Content-Type": "application/json",
           },
+          signal: AbortSignal.timeout(8000),
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               responseMimeType: "application/json",
-              temperature: 0.4,
-              thinkingConfig: {
-                thinkingBudget: 0,
-              },
+              temperature: 0.3,
+              maxOutputTokens: targetTokens,
             },
           }),
         }
@@ -206,12 +290,35 @@ https://www.youtube.com/results?search_query=คำค้นหาภาษา�
           };
         });
 
+        // Save / Upsert to Database Cache
+        if (effectiveStudentId && internshipId) {
+          try {
+            const recCoursesJson = JSON.stringify(sanitizedRecs);
+            await supabase.from("ai_recommendations").upsert(
+              {
+                student_id: effectiveStudentId,
+                internship_id: internshipId,
+                application_id: options?.applicationId || null,
+                missing_skills: missingSkills.join(", "),
+                learning_path: parsed.analysisText,
+                recommended_courses: recCoursesJson,
+                skills_hash: skillsHash,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "student_id,internship_id" }
+            );
+          } catch (saveCacheErr) {
+            console.warn("Failed to save AI cache to DB:", saveCacheErr);
+          }
+        }
+
         return {
           success: true,
           hasGaps: true,
           analysisText: parsed.analysisText,
           recommendations: sanitizedRecs,
           provider: "gemini",
+          isCached: false,
         };
       }
     } catch (err: any) {

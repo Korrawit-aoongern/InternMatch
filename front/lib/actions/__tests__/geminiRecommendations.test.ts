@@ -1,11 +1,19 @@
 import { getAiSkillRecommendations } from "../geminiRecommendations";
 
+const mockFrom = jest.fn();
+jest.mock("@/lib/supabase/server", () => ({
+  getSupabaseAdmin: jest.fn(() => ({
+    from: mockFrom,
+  })),
+}));
+
 describe("getAiSkillRecommendations", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
     jest.resetModules();
     process.env = { ...originalEnv };
+    mockFrom.mockReset();
   });
 
   afterAll(() => {
@@ -140,5 +148,59 @@ describe("getAiSkillRecommendations", () => {
     if (videoRec) {
       expect(videoRec.url).toContain("youtube.com/results?search_query=");
     }
+  });
+
+  it("should return cached recommendations from database without calling Gemini API", async () => {
+    const fetchSpy = jest.fn();
+    global.fetch = fetchSpy;
+
+    mockFrom.mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            maybeSingle: jest.fn().mockResolvedValue({
+              data: {
+                learning_path: "บทวิเคราะห์จาก Cache ในฐานข้อมูล",
+                recommended_courses: JSON.stringify([
+                  {
+                    id: "cached-1",
+                    title: "Cached React Course",
+                    url: "https://youtube.com/results?search_query=React",
+                    platform: "YouTube",
+                    author: "Author",
+                    level: "Beginner",
+                    resource_type: "video",
+                    targetSkill: "React",
+                    reason: "Cached reason",
+                  },
+                ]),
+                skills_hash: "3_Beginner",
+              },
+              error: null,
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const studentSkills = [{ skill_id: 3, name: "CSS", level: "Beginner" }];
+    const internshipSkills = [{ skill_id: 1, name: "React", level: "Advanced" }];
+
+    const result = await getAiSkillRecommendations(
+      "Frontend Intern",
+      "Description",
+      internshipSkills,
+      studentSkills,
+      {
+        internshipId: "mock-internship-123",
+        studentId: "mock-student-123",
+      }
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.isCached).toBe(true);
+    expect(result.analysisText).toBe("บทวิเคราะห์จาก Cache ในฐานข้อมูล");
+    expect(result.recommendations[0].title).toBe("Cached React Course");
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

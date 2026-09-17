@@ -131,9 +131,22 @@ export function generateMockAiUpskilling(
 
   // Filter recommended resources
   const recommendedCourses: MockResource[] = [];
-  gapSkillNames.forEach(name => {
-    const resources = MOCK_RESOURCES[name] || [];
-    recommendedCourses.push(...resources);
+  gapSkillNames.forEach((name, idx) => {
+    const resources = MOCK_RESOURCES[name];
+    if (resources && resources.length > 0) {
+      recommendedCourses.push(...resources);
+    } else {
+      const capitalized = name.charAt(0).toUpperCase() + name.slice(1);
+      recommendedCourses.push({
+        id: `mock-fallback-${idx + 1}`,
+        title: `เรียนรู้ ${capitalized} เบื้องต้นถึงระดับทำงานจริง`,
+        url: `https://www.youtube.com/results?search_query=${encodeURIComponent(`สอน ${capitalized} เบื้องต้น`)}`,
+        platform: "YouTube",
+        author: "YouTube Creator",
+        level: "Beginner",
+        resource_type: "video"
+      });
+    }
   });
 
   return {

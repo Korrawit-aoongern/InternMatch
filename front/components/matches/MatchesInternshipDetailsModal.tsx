@@ -37,6 +37,7 @@ export default function MatchesInternshipDetailsModal({
   const [aiText, setAiText] = useState("");
   const [recommendations, setRecommendations] = useState<SkillRecommendation[]>([]);
   const [provider, setProvider] = useState<"gemini" | "fallback">("gemini");
+  const [isCached, setIsCached] = useState(false);
   const [isGeminiRefining, setIsGeminiRefining] = useState(false);
   const [activeFilter, setActiveFilter] = useState<"all" | "video" | "course">("all");
 
@@ -58,6 +59,7 @@ export default function MatchesInternshipDetailsModal({
         setAiText(cached.analysisText);
         setRecommendations(cached.recommendations);
         setProvider(cached.provider);
+        setIsCached(!!cached.isCached);
         setIsGeminiRefining(false);
         return;
       }
@@ -69,6 +71,7 @@ export default function MatchesInternshipDetailsModal({
           setAiText(parsed.analysisText);
           setRecommendations(parsed.recommendations);
           setProvider(parsed.provider);
+          setIsCached(!!parsed.isCached);
           setIsGeminiRefining(false);
           return;
         }
@@ -94,6 +97,7 @@ export default function MatchesInternshipDetailsModal({
       }))
     );
     setProvider("fallback");
+    setIsCached(false);
 
     // If 100% matched, no background Gemini call needed
     if (!instant.hasGaps) {
@@ -101,19 +105,24 @@ export default function MatchesInternshipDetailsModal({
       return;
     }
 
-    // 3. Background Gemini refinement
+    // 3. Background Gemini refinement (with Database caching)
     setIsGeminiRefining(true);
     try {
       const res = await getAiSkillRecommendations(
         title,
         description,
         skills,
-        studentSkills
+        studentSkills,
+        {
+          internshipId: item.id,
+          forceRefresh,
+        }
       );
       if (isMountedRef.current && res.success) {
         setAiText(res.analysisText);
         setRecommendations(res.recommendations || []);
         setProvider(res.provider);
+        setIsCached(!!res.isCached);
         globalAiCache.set(cacheKey, res);
         try {
           sessionStorage.setItem(cacheKey, JSON.stringify(res));
@@ -163,7 +172,11 @@ export default function MatchesInternshipDetailsModal({
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-100/70 border border-blue-200/80 px-2.5 py-1 rounded-full">
                 <Sparkles className="w-3.5 h-3.5 text-blue-600 fill-blue-600" />
-                <span>{provider === "gemini" ? "Google Gemini AI Upskill" : "Curated AI Recommendations"}</span>
+                <span>
+                  {provider === "gemini"
+                    ? (isCached ? "Google Gemini AI (จากแคช)" : "Google Gemini AI Upskill")
+                    : "Curated AI Recommendations"}
+                </span>
               </span>
               {isGeminiRefining && (
                 <span className="inline-flex items-center gap-1 text-[11px] text-blue-600 font-semibold animate-pulse">
