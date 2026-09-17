@@ -1,0 +1,1610 @@
+"use client";
+
+import React, { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import DashboardSidebar from "@/components/layout/DashboardSidebar";
+import DashboardHeader from "@/components/layout/DashboardHeader";
+import { getUserRole } from "@/lib/actions/auth";
+import { getCachedRole, setCachedRole } from "@/lib/utils/roleCache";
+import {
+    getCompanyInternships,
+    createInternship,
+    updateInternship,
+    deleteInternship,
+    getStudentInternships,
+    applyToInternship,
+    cancelApplication
+} from "@/lib/actions/internships";
+import { getMasterSkills, getStudentSkills } from "@/lib/actions/skills";
+import {
+    PlusCircle,
+    Search,
+    MapPin,
+    MoreVertical,
+    Pencil,
+    Users,
+    Eye,
+    X,
+    CheckCircle2,
+    XCircle,
+    Briefcase,
+    Trash2,
+    ChevronRight,
+    ChevronLeft
+} from "lucide-react";
+import { useToast } from "@/components/ui/Toaster";
+import { useAppModal } from "@/components/ui/AppModal";
+
+export type InternshipStatus = "open" | "closed";
+
+export interface MasterSkill {
+    id: number;
+    name: string;
+    category: string;
+}
+
+export interface InternshipSkill {
+    id: string;
+    skill_id: number;
+    name: string;
+    category: string;
+    level: string;
+}
+
+export interface Internship {
+    id: string;
+    company_id: string;
+    title: string;
+    department: string;
+    location: string;
+    internship_type: string;
+    status: InternshipStatus;
+    applicantsCount: number;
+    postedDate: string;
+    description?: string;
+    responsibilities?: string;
+    skills: InternshipSkill[];
+}
+
+function CompanyInternshipsView() {
+    const toast = useToast();
+    const { confirm } = useAppModal();
+    const [internships, setInternships] = useState<Internship[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [activeTab, setActiveTab] = useState<string>("All");
+    // W4 filters for company
+    const [filterType, setFilterType] = useState<string>("All");
+    const [filterProvince, setFilterProvince] = useState<string>("All");
+    const [filterSkill, setFilterSkill] = useState<string>("All");
+    const router = useRouter();
+
+    // Modal Wizard States
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingInternship, setEditingInternship] = useState<Internship | null>(null);
+    const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+
+    // Skills data lists
+    const [masterSkills, setMasterSkills] = useState<MasterSkill[]>([]);
+    const [skillSearchQuery, setSkillSearchQuery] = useState("");
+    const [selectedSkills, setSelectedSkills] = useState<{
+        skill_id: number;
+        name: string;
+        category: string;
+        level: string;
+    }[]>([]);
+
+    // Form state
+    const [formData, setFormData] = useState({
+        title: "",
+        department: "",
+        location: "",
+        type: "Hybrid",
+        status: "open" as InternshipStatus,
+        description: "",
+        responsibilities: "",
+    });
+
+    const fetchInternships = async () => {
+        setIsLoading(true);
+        try {
+            const res = await getCompanyInternships();
+            if (res.success && res.internships) {
+                const mapped = res.internships.map((item) => ({
+                    id: item.id,
+                    company_id: item.company_id,
+                    title: item.title,
+                    department: item.department || "",
+                    location: item.location || "",
+                    internship_type: item.internship_type || "Hybrid",
+                    status: item.status as InternshipStatus,
+                    postedDate: item.created_at,
+                    applicantsCount: item.applicant_count || 0,
+                    skills: item.skills || [],
+                    description: item.description || "",
+                    responsibilities: item.responsibilities || ""
+                }));
+                setInternships(mapped);
+            }
+        } catch (err) {
+            console.error("Failed to load internships:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Load internships and master skills on mount
+    useEffect(() => {
+        let isMounted = true;
+        async function loadInitialData() {
+            try {
+                const [internshipsRes, skillsRes] = await Promise.all([
+                    getCompanyInternships(),
+                    getMasterSkills()
+                ]);
+                if (!isMounted) return;
+                if (internshipsRes.success && internshipsRes.internships) {
+                    const mapped = internshipsRes.internships.map((item) => ({
+                        id: item.id,
+                        company_id: item.company_id,
+                        title: item.title,
+                        department: item.department || "",
+                        location: item.location || "",
+                        internship_type: item.internship_type || "Hybrid",
+                        status: item.status as InternshipStatus,
+                        postedDate: item.created_at,
+                        applicantsCount: item.applicant_count || 0,
+                        skills: item.skills || [],
+                        description: item.description || "",
+                        responsibilities: item.responsibilities || ""
+                    }));
+                    setInternships(mapped);
+                }
+                if (skillsRes.success && skillsRes.skills) {
+                    setMasterSkills(skillsRes.skills);
+                }
+            } catch (err) {
+                console.error("Failed to load initial data:", err);
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        }
+        loadInitialData();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    // Filtered internships calculation
+    const counts = useMemo(() => {
+        return {
+            All: internships.length,
+            Active: internships.filter((item) => item.status === "open").length,
+            Closed: internships.filter((item) => item.status === "closed").length,
+        };
+    }, [internships]);
+
+    // Unique options for company filters (derived from loaded data)
+    const typeOptions = useMemo(() => Array.from(new Set(internships.map((i) => i.internship_type).filter(Boolean))) as string[], [internships]);
+    const provinceOptions = useMemo(() => Array.from(new Set(internships.map((i) => (i.location || "").trim()).filter(Boolean))) as string[], [internships]);
+    const skillOptions = useMemo(() => {
+        const m = new Map<string, string>();
+        internships.forEach((intern) => (intern.skills || []).forEach((s: any) => { if (s.name) m.set(s.name, s.name); }));
+        return Array.from(m.values()).sort();
+    }, [internships]);
+
+    const filteredInternships = useMemo(() => {
+        return internships.filter((item) => {
+            if (activeTab === "Active" && item.status !== "open") return false;
+            if (activeTab === "Closed" && item.status !== "closed") return false;
+            // W4-5 ประเภทงาน
+            if (filterType !== "All" && (item.internship_type || "").toLowerCase() !== filterType.toLowerCase()) return false;
+            // W4-7 จังหวัด (location) — case-insensitive exact or includes
+            if (filterProvince !== "All") {
+                const prov = (item.location || "").trim().toLowerCase();
+                if (prov !== filterProvince.toLowerCase() && !prov.includes(filterProvince.toLowerCase())) return false;
+            }
+            // W4-6 Skill — case-insensitive
+            if (filterSkill !== "All" && !(item.skills || []).some((s: any) => (s.name || "").toLowerCase() === filterSkill.toLowerCase())) return false;
+
+            if (searchQuery.trim() !== "") {
+                const query = searchQuery.toLowerCase();
+                const matchTitle = item.title.toLowerCase().includes(query);
+                const matchLocation = item.location.toLowerCase().includes(query);
+                const matchDept = (item.department || "").toLowerCase().includes(query);
+                return matchTitle || matchLocation || matchDept;
+            }
+            return true;
+        });
+    }, [internships, activeTab, searchQuery, filterType, filterProvince, filterSkill]);
+
+    // Open Modal Handlers
+    const handleOpenCreateModal = () => {
+        setEditingInternship(null);
+        setFormData({
+            title: "",
+            department: "",
+            location: "",
+            type: "Hybrid",
+            status: "open",
+            description: "",
+            responsibilities: "",
+        });
+        setSelectedSkills([]);
+        setCurrentStep(1);
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEditModal = (item: Internship) => {
+        setEditingInternship(item);
+        setFormData({
+            title: item.title,
+            department: item.department || "",
+            location: item.location,
+            type: item.internship_type || "Hybrid",
+            status: item.status,
+            description: item.description || "",
+            responsibilities: item.responsibilities || "",
+        });
+        setSelectedSkills(item.skills.map(s => ({
+            skill_id: s.skill_id,
+            name: s.name,
+            category: s.category,
+            level: s.level || "Intermediate"
+        })));
+        setCurrentStep(1);
+        setIsModalOpen(true);
+    };
+
+    // Toggle skills selection in Step 2 — hard limit 20
+    const handleToggleSkill = (skill: { id: number; name?: string; category?: string }) => {
+        const index = selectedSkills.findIndex(s => s.skill_id === skill.id);
+        if (index > -1) {
+            setSelectedSkills(selectedSkills.filter(s => s.skill_id !== skill.id));
+        } else {
+            if (selectedSkills.length >= 20) {
+                toast.warning("เลือกทักษะได้สูงสุด 20 ทักษะเท่านั้น");
+                return;
+            }
+            setSelectedSkills([...selectedSkills, {
+                skill_id: skill.id,
+                name: skill.name || "",
+                category: skill.category || "",
+                level: "Intermediate"
+            }]);
+        }
+    };
+
+    const handleToggleSkillLevel = (skillId: number, level: string) => {
+        setSelectedSkills(selectedSkills.map(s =>
+            s.skill_id === skillId ? { ...s, level } : s
+        ));
+    };
+
+    // Toggle status quickly
+    const handleToggleStatus = async (id: string, newStatus: InternshipStatus) => {
+        const res = await updateInternship(id, { status: newStatus });
+        if (res.success) {
+            toast.success(newStatus === "open" ? "เปิดรับสมัครแล้ว" : "ปิดรับสมัครแล้ว");
+            fetchInternships();
+        } else {
+            toast.error("Failed to update status: " + res.error);
+        }
+    };
+
+    // Delete Internship Action
+    const handleDeleteInternship = async (id: string) => {
+        const ok = await confirm({
+          title: "ลบประกาศ?",
+          message: "คุณแน่ใจหรือไม่ว่าต้องการลบประกาศรับสมัครฝึกงานนี้?",
+          confirmText: "ลบ",
+          cancelText: "ยกเลิก",
+          variant: "danger",
+        });
+        if (ok) {
+            const res = await deleteInternship(id);
+            if (res.success) {
+                toast.success("ลบประกาศสำเร็จ");
+                fetchInternships();
+                setIsModalOpen(false);
+                setEditingInternship(null);
+            } else {
+                toast.error("Failed to delete internship: " + res.error);
+            }
+        }
+    };
+
+    // Unified Save Handler (inserts matching skills inside same transaction)
+    const handleSaveInternship = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!formData.title || !formData.location || !formData.description || !formData.department || !formData.responsibilities) return;
+
+        const skillsPayload = selectedSkills.map(s => ({
+            skill_id: s.skill_id,
+            level: s.level || "Intermediate"
+        }));
+
+        let res;
+        if (editingInternship) {
+            res = await updateInternship(editingInternship.id, {
+                title: formData.title,
+                department: formData.department,
+                location: formData.location,
+                internship_type: formData.type,
+                status: formData.status,
+                description: formData.description,
+                responsibilities: formData.responsibilities,
+                skills: skillsPayload
+            });
+        } else {
+            res = await createInternship({
+                title: formData.title,
+                department: formData.department,
+                location: formData.location,
+                internship_type: formData.type,
+                status: formData.status,
+                description: formData.description,
+                responsibilities: formData.responsibilities,
+                skills: skillsPayload
+            });
+        }
+
+        if (res.success) {
+            toast.success(editingInternship ? "บันทึกการแก้ไขสำเร็จ" : "สร้างประกาศสำเร็จ");
+            setIsModalOpen(false);
+            fetchInternships();
+        } else {
+            toast.error("Error saving: " + res.error);
+        }
+    };
+
+    return (
+        <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
+            {/* Sidebar */}
+            <DashboardSidebar />
+
+            {/* Main Content Wrapper */}
+            <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
+                {/* Header */}
+                <DashboardHeader title="My Internships" />
+
+                <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+                    {/* Header Section */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold text-slate-800">My Internships</h1>
+                            <p className="text-sm text-slate-500 mt-1">
+                                จัดการและสร้างประกาศรับสมัครนิสิตฝึกงาน ดูจำนวนผู้สมัคร และสถานะการเปิดรับ
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleOpenCreateModal}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center gap-2"
+                        >
+                            <PlusCircle className="w-5 h-5" />
+                            Create New Internship
+                        </button>
+                    </div>
+
+                    {/* Filter and Search Bar */}
+                    <div className="flex flex-col gap-3 pt-2">
+                        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+                            {/* Search Input */}
+                            <div className="flex-1 w-full">
+                                <div className="relative w-full">
+                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        placeholder="ค้นหาประกาศหานิสิตฝึกงาน..."
+                                        className="pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm w-full"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Status Filter Tabs */}
+                            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 shrink-0">
+                                {[
+                                    { label: "All", count: counts.All },
+                                    { label: "Active", count: counts.Active },
+                                    { label: "Closed", count: counts.Closed },
+                                ].map((tab) => (
+                                    <button
+                                        key={tab.label}
+                                        onClick={() => setActiveTab(tab.label)}
+                                        className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${activeTab === tab.label
+                                            ? "bg-blue-50 text-blue-600 border-blue-200"
+                                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                                            }`}
+                                    >
+                                        {tab.label === "Active" ? "Active (เปิดรับ)" : tab.label === "Closed" ? "Closed (ปิดรับ)" : "All"} ({tab.count})
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        {/* W4 Company filters: type / province / skill */}
+                        <div className="flex flex-wrap gap-2 items-center bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">กรอง:</span>
+                            <select
+                                value={filterType}
+                                onChange={(e) => setFilterType(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer"
+                                title="W4-5 กรองตามประเภทงาน"
+                            >
+                                <option value="All">ทุกประเภท</option>
+                                {typeOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                                {typeOptions.length === 0 && <><option value="Hybrid">Hybrid</option><option value="Remote">Remote</option><option value="On-site">On-site</option></>}
+                            </select>
+                            <select
+                                value={filterProvince}
+                                onChange={(e) => setFilterProvince(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer max-w-[160px]"
+                                title="W4-7 กรองตามจังหวัด"
+                            >
+                                <option value="All">ทุกจังหวัด</option>
+                                {provinceOptions.map((p) => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                            <select
+                                value={filterSkill}
+                                onChange={(e) => setFilterSkill(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer max-w-[160px]"
+                                title="W4-6 กรองตาม Skill"
+                            >
+                                <option value="All">ทุกทักษะ</option>
+                                {skillOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                            {(filterType !== "All" || filterProvince !== "All" || filterSkill !== "All") && (
+                                <button
+                                    onClick={() => { setFilterType("All"); setFilterProvince("All"); setFilterSkill("All"); }}
+                                    className="ml-auto px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+                                >
+                                    ล้างตัวกรอง
+                                </button>
+                            )}
+                            <span className="text-xs text-slate-400 font-medium ml-1">พบ {filteredInternships.length} รายการ</span>
+                        </div>
+                    </div>
+
+                    {/* Internship Cards Grid */}
+                    {isLoading ? (
+                        <div className="flex justify-center items-center p-12">
+                            <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></span>
+                        </div>
+                    ) : filteredInternships.length === 0 ? (
+                        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 space-y-3">
+                            <Briefcase className="w-12 h-12 text-slate-300 mx-auto" />
+                            <p className="text-base font-semibold text-slate-700">ไม่พบประกาศรับสมัครฝึกงาน</p>
+                            <p className="text-xs text-slate-400">ลองเปลี่ยนคำค้นหา หรือสร้างประกาศฝึกงานใหม่</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+                            {filteredInternships.map((item) => (
+                                <InternshipCardItem
+                                    key={item.id}
+                                    item={item}
+                                    onEdit={() => handleOpenEditModal(item)}
+                                    onToggleStatus={handleToggleStatus}
+                                    onDelete={() => handleDeleteInternship(item.id)}
+                                    onViewApplicants={() => router.push(`/dashboard/applications?position=${item.id}`)}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Modal: Create & Edit Internship (Multi-step) */}
+                    {isModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
+                            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-4xl space-y-4 md:space-y-5 shadow-xl border border-slate-100 max-h-[calc(100vh-2rem)] md:max-h-[90vh] flex flex-col justify-between overflow-hidden">
+
+                                {/* Header */}
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
+                                    <div>
+                                        <h2 className="text-xl font-bold text-slate-800">
+                                            {editingInternship ? "แก้ไขประกาศรับสมัครฝึกงาน" : "สร้างประกาศรับสมัครฝึกงานใหม่"}
+                                        </h2>
+                                        <p className="text-xs text-slate-500 mt-1">
+                                            ขั้นตอนที่ {currentStep} จาก 2: {currentStep === 1 ? "กรอกข้อมูลทั่วไป" : "ระบุทักษะที่ต้องการ"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Progress bar */}
+                                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden shrink-0">
+                                    <div
+                                        className="bg-blue-600 h-full transition-all duration-300"
+                                        style={{ width: `${currentStep * 50}%` }}
+                                    />
+                                </div>
+
+                                {/* Form content (scrollable area) */}
+                                <div className="flex-1 overflow-y-auto py-2 pr-1 space-y-4">
+                                    {currentStep === 1 ? (
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                    ชื่อตำแหน่งงาน *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={formData.title}
+                                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                                    placeholder="เช่น Software Engineering Intern"
+                                                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                        แผนก / ฝ่าย *
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        value={formData.department}
+                                                        onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                                        placeholder="เช่น Engineering, Marketing"
+                                                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                        รูปแบบงาน
+                                                    </label>
+                                                    <select
+                                                        value={formData.type}
+                                                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                                                    >
+                                                        <option value="Hybrid">Hybrid</option>
+                                                        <option value="Remote">Remote</option>
+                                                        <option value="On-site">On-site</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                        สถานที่ทำงาน / จังหวัด *
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        value={formData.location}
+                                                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                                        placeholder="เช่น กรุงเทพมหานคร"
+                                                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                        สถานะประกาศ
+                                                    </label>
+                                                    <select
+                                                        value={formData.status}
+                                                        onChange={(e) => setFormData({ ...formData, status: e.target.value as InternshipStatus })}
+                                                        className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                                                    >
+                                                        <option value="open">Active (เปิดรับสมัคร)</option>
+                                                        <option value="closed">Closed (ปิดรับสมัคร)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                    รายละเอียดงาน (Job Description) *
+                                                </label>
+                                                <textarea
+                                                    rows={5}
+                                                    required
+                                                    value={formData.description}
+                                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                    placeholder="รายละเอียดการทำงาน หน้าที่ความรับผิดชอบ..."
+                                                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                                                    หน้าที่ความรับผิดชอบ (Responsibilities) *
+                                                </label>
+                                                <textarea
+                                                    rows={4}
+                                                    required
+                                                    value={formData.responsibilities}
+                                                    onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })}
+                                                    placeholder="ระบุหน้าที่ความรับผิดชอบสำหรับตำแหน่งงานนี้..."
+                                                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {/* Skill Selection Step */}
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                                                    พิมพ์ค้นหาและเลือกทักษะที่เกี่ยวข้อง
+                                                </label>
+                                                <div className="relative mb-4">
+                                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                    <input
+                                                        type="text"
+                                                        value={skillSearchQuery}
+                                                        onChange={(e) => setSkillSearchQuery(e.target.value)}
+                                                        placeholder="ค้นหาทักษะ... เช่น Javascript, React, Figma"
+                                                        className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Selected skills summary list */}
+                                            {selectedSkills.length > 0 && (
+                                                <div className={`p-4 rounded-2xl border space-y-2 ${selectedSkills.length >= 20 ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-100"}`}>
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                                            ทักษะที่เลือกแล้ว ({selectedSkills.length}/20)
+                                                        </h3>
+                                                        {selectedSkills.length >= 20 && (
+                                                            <span className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">เต็ม 20 แล้ว</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+                                                        {selectedSkills.map((s) => (
+                                                            <div key={s.skill_id} className="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-slate-200">
+                                                                <span className="text-sm font-semibold text-slate-700">{s.name} <span className="text-[10px] text-slate-400">({s.category})</span></span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <select
+                                                                        value={s.level || "Intermediate"}
+                                                                        onChange={(e) => handleToggleSkillLevel(s.skill_id, e.target.value)}
+                                                                        className="px-2 py-1 text-xs border border-slate-200 rounded-lg focus:outline-none bg-slate-50 font-medium"
+                                                                    >
+                                                                        <option value="Advanced">Advanced (เชี่ยวชาญ)</option>
+                                                                        <option value="Intermediate">Intermediate (พอใช้-ปานกลาง)</option>
+                                                                        <option value="Beginner">Beginner (ขั้นต้น)</option>
+                                                                    </select>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleToggleSkill({ id: s.skill_id })}
+                                                                        className="text-rose-500 hover:text-rose-700 font-bold text-sm px-1.5"
+                                                                    >
+                                                                        ✕
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {selectedSkills.length === 0 && (
+                                                <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs font-semibold text-amber-700">
+                                                    กรุณาเลือกทักษะอย่างน้อย 1 ทักษะ (Required) - มิฉะนั้นไม่สามารถสร้างประกาศได้
+                                                </div>
+                                            )}
+
+                                            {/* Master Skills list grouped by category */}
+                                            <div className="space-y-4 max-h-60 overflow-y-auto pr-1">
+                                                {Object.entries(
+                                                    masterSkills
+                                                        .filter((s) => s.name.toLowerCase().includes(skillSearchQuery.toLowerCase()))
+                                                        .reduce<Record<string, MasterSkill[]>>((acc, skill) => {
+                                                            acc[skill.category] = acc[skill.category] || [];
+                                                            acc[skill.category].push(skill);
+                                                            return acc;
+                                                        }, {})
+                                                ).map(([category, skills]) => (
+                                                    <div key={category} className="space-y-1.5">
+                                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                                            {category}
+                                                        </h4>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {skills.map((skill) => {
+                                                                const isSelected = selectedSkills.some((s) => s.skill_id === skill.id);
+                                                                const atLimit = !isSelected && selectedSkills.length >= 20;
+                                                                return (
+                                                                    <button
+                                                                        key={skill.id}
+                                                                        type="button"
+                                                                        disabled={atLimit}
+                                                                        title={atLimit ? "เต็ม 20 ทักษะแล้ว" : ""}
+                                                                        onClick={() => handleToggleSkill(skill)}
+                                                                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${isSelected
+                                                                            ? "bg-blue-600 border-blue-600 text-white"
+                                                                            : atLimit
+                                                                            ? "bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60"
+                                                                            : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                                                                            }`}
+                                                                    >
+                                                                        {skill.name}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Footer Actions */}
+                                <div className="flex items-center justify-between border-t border-slate-100 pt-4 shrink-0">
+                                    <div>
+                                        {editingInternship && currentStep === 1 ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteInternship(editingInternship.id)}
+                                                className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                                ลบประกาศนี้
+                                            </button>
+                                        ) : <div />}
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                                        {currentStep === 1 ? (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsModalOpen(false)}
+                                                    className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                                                >
+                                                    ยกเลิก
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (formData.title && formData.location && formData.description && formData.department && formData.responsibilities) {
+                                                            setCurrentStep(2);
+                                                        } else {
+                                                            toast.warning("กรุณากรอกข้อมูลจำเป็นให้ครบถ้วนก่อนไปขั้นตอนถัดไป (*)");
+                                                        }
+                                                    }}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm flex items-center gap-1.5"
+                                                >
+                                                    ถัดไป
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCurrentStep(1)}
+                                                    className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors flex items-center gap-1.5"
+                                                >
+                                                    <ChevronLeft className="w-4 h-4" />
+                                                    ย้อนกลับ
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    disabled={selectedSkills.length === 0}
+                                                    onClick={(e) => {
+                                                        if (selectedSkills.length === 0) {
+                                                            toast.warning("กรุณาเลือกทักษะอย่างน้อย 1 ทักษะก่อนสร้างประกาศรับสมัครฝึกงาน");
+                                                            return;
+                                                        }
+                                                        handleSaveInternship(e);
+                                                    }}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {editingInternship ? "บันทึกการแก้ไข" : "สร้างประกาศ"}
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                </main>
+            </div>
+        </div>
+    );
+}
+
+{/* Card Component */ }
+function InternshipCardItem({
+    item,
+    onEdit,
+    onToggleStatus,
+    onDelete,
+    onViewApplicants
+}: {
+    item: Internship;
+    onEdit: () => void;
+    onToggleStatus: (id: string, status: InternshipStatus) => void;
+    onDelete: () => void;
+    onViewApplicants: () => void;
+}) {
+    const [showDropdown, setShowDropdown] = useState(false);
+    const { status, title, department, location, applicantsCount, postedDate, skills } = item;
+
+    const getStatusStyles = () => {
+        switch (status) {
+            case "open":
+                return {
+                    borderLeft: "border-l-4 border-l-blue-600",
+                    badgeBg: "bg-blue-50 text-blue-600",
+                    dotColor: "bg-blue-600",
+                };
+            case "closed":
+                return {
+                    borderLeft: "border-l-4 border-l-rose-600",
+                    badgeBg: "bg-rose-50 text-rose-600",
+                    dotColor: "border border-rose-600",
+                };
+            default:
+                return {};
+        }
+    };
+
+    const styles = getStatusStyles();
+
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return "-";
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    };
+
+    return (
+        <div
+            className={`bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden ${styles.borderLeft}`}
+        >
+            {/* Header Info */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between relative">
+                    <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${styles.badgeBg}`}
+                    >
+                        {status === "open" ? (
+                            <>
+                                <span className={`w-1.5 h-1.5 rounded-full ${styles.dotColor}`} />
+                                Active
+                            </>
+                        ) : (
+                            <>
+                                <span className="w-1.5 h-1.5 rounded-full border border-rose-600" />
+                                Closed
+                            </>
+                        )}
+                    </span>
+
+                    {/* Action menu dropdown */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowDropdown(!showDropdown)}
+                            className="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition-colors"
+                        >
+                            <MoreVertical className="w-4 h-4" />
+                        </button>
+                        {showDropdown && (
+                            <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 text-xs">
+                                <button
+                                    onClick={() => {
+                                        setShowDropdown(false);
+                                        onEdit();
+                                    }}
+                                    className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                >
+                                    <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                                    แก้ไขประกาศ
+                                </button>
+                                {status !== "open" ? (
+                                    <button
+                                        onClick={() => {
+                                            setShowDropdown(false);
+                                            onToggleStatus(item.id, "open");
+                                        }}
+                                        className="w-full text-left px-3 py-1.5 text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+                                    >
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        เปลี่ยนเป็น Active
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => {
+                                            setShowDropdown(false);
+                                            onToggleStatus(item.id, "closed");
+                                        }}
+                                        className="w-full text-left px-3 py-1.5 text-rose-600 hover:bg-rose-50 flex items-center gap-2"
+                                    >
+                                        <XCircle className="w-3.5 h-3.5" />
+                                        เปลี่ยนเป็น Closed
+                                    </button>
+                                )}
+                                <div className="border-t border-slate-100 my-1" />
+                                <button
+                                    onClick={() => {
+                                        setShowDropdown(false);
+                                        onDelete();
+                                    }}
+                                    className="w-full text-left px-3 py-1.5 text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-semibold"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                    ลบประกาศ
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div>
+                    <h3 className="text-base font-bold text-slate-800 line-clamp-1">{title}</h3>
+                    <p className="text-xs text-slate-400 font-semibold">{department || "General Department"}</p>
+                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        {location}
+                    </p>
+                </div>
+
+                {/* Skills Section */}
+                {skills && skills.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-2">
+                        {skills.map((skill) => (
+                            <span
+                                key={skill.skill_id}
+                                className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-blue-50 text-blue-600 border-blue-200"
+                            >
+                                {skill.name} ({skill.level})
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Middle Applicants Info */}
+            <div className="flex items-baseline gap-6 pt-2 border-t border-slate-100">
+                {status === "closed" ? (
+                    <div>
+                        <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                            TOTAL APPLICANTS
+                        </p>
+                        <p className="text-xl font-bold text-slate-800 mt-0.5">{applicantsCount}</p>
+                    </div>
+                ) : (
+                    <div>
+                        <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                            APPLICANTS
+                        </p>
+                        <p className="text-xl font-bold text-slate-800 mt-0.5">
+                            {applicantsCount !== undefined ? applicantsCount : "0"}
+                        </p>
+                    </div>
+                )}
+
+                <div>
+                    <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                        {status === "closed" ? "CLOSED ON" : "POSTED"}
+                    </p>
+                    <p className="text-xs font-semibold text-slate-500 mt-1">{formatDate(postedDate)}</p>
+                </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-2">
+                {status === "open" ? (
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={onEdit}
+                            className="flex items-center justify-center gap-1.5 border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold py-2 px-3 rounded-xl transition-colors"
+                        >
+                            <Pencil className="w-3.5 h-3.5 text-blue-600" />
+                            Edit
+                        </button>
+                        <button
+                            onClick={onViewApplicants}
+                            className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 px-3 rounded-xl transition-colors shadow-sm"
+                        >
+                            <Users className="w-3.5 h-3.5" />
+                            View ({applicantsCount})
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        onClick={onViewApplicants}
+                        className="w-full flex items-center justify-center gap-1.5 text-blue-600 hover:text-blue-700 text-xs font-bold py-2 px-3 rounded-xl hover:bg-blue-50 transition-colors"
+                    >
+                        <Eye className="w-3.5 h-3.5" />
+                        View Archive ({applicantsCount})
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default function MyInternshipsPage() {
+    const [role, setRole] = useState<string | null>(getCachedRole());
+    const [isCheckingRole, setIsCheckingRole] = useState(getCachedRole() === null);
+    const router = useRouter();
+
+    useEffect(() => {
+        let isMounted = true;
+        async function checkRole() {
+            try {
+                const res = await getUserRole();
+                if (!isMounted) return;
+                if (!res.success || (res.role !== "company" && res.role !== "student")) {
+                    setCachedRole(null);
+                    router.push("/dashboard");
+                    return;
+                }
+                setCachedRole(res.role);
+                setRole(res.role);
+                setIsCheckingRole(false);
+            } catch (err) {
+                console.error("Error checking role in Internships page:", err);
+                router.push("/dashboard");
+            }
+        }
+        checkRole();
+        return () => {
+            isMounted = false;
+        };
+    }, [router]);
+
+    if (isCheckingRole) {
+        return (
+            <div className="bg-slate-50 text-slate-900 min-h-screen flex items-center justify-center antialiased w-full">
+                <div className="flex flex-col items-center justify-center">
+                    <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></span>
+                    <p className="text-sm font-semibold text-slate-500 mt-2">Checking access permissions...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (role === "student") {
+        return <StudentInternshipsView />;
+    }
+
+    return <CompanyInternshipsView />;
+}
+
+function StudentInternshipsView() {
+    const toast = useToast();
+    const { confirm } = useAppModal();
+    const [internships, setInternships] = useState<any[]>([]);
+    const [studentSkills, setStudentSkills] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedInternship, setSelectedInternship] = useState<any | null>(null);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [applyingId, setApplyingId] = useState<string | null>(null);
+    const [cancelingId, setCancelingId] = useState<string | null>(null);
+    // W4 filters
+    const [filterType, setFilterType] = useState<string>("All");
+    const [filterProvince, setFilterProvince] = useState<string>("All");
+    const [filterSkill, setFilterSkill] = useState<string>("All");
+    const [filterMatch, setFilterMatch] = useState<string>("All");
+
+    const fetchInternships = async () => {
+        setIsLoading(true);
+        try {
+            const res = await getStudentInternships();
+            if (res.success && res.internships) {
+                setInternships(res.internships);
+            }
+            const skillsRes = await getStudentSkills();
+            if (skillsRes.success && skillsRes.skills) {
+                setStudentSkills(skillsRes.skills);
+            }
+        } catch (err) {
+            console.error("Failed to load student internships or skills:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchInternships();
+    }, []);
+
+    const handleApply = async (internshipId: string) => {
+        const ok = await confirm({
+          title: "ยืนยันการสมัคร?",
+          message: "คุณแน่ใจหรือไม่ว่าต้องการสมัครตำแหน่งงานนี้?",
+          confirmText: "สมัคร",
+          cancelText: "ยกเลิก",
+          variant: "default",
+        });
+        if (!ok) return;
+        setApplyingId(internshipId);
+        try {
+            const res = await applyToInternship(internshipId);
+            if (res.success) {
+                toast.success("สมัครตำแหน่งงานเสร็จสิ้นสำเร็จเรียบร้อย! 🎉");
+                fetchInternships();
+                if (selectedInternship && selectedInternship.id === internshipId) {
+                    setSelectedInternship((prev: any) => prev ? { ...prev, has_applied: true } : null);
+                }
+            } else {
+                toast.error("เกิดข้อผิดพลาดในการสมัคร: " + res.error);
+            }
+        } catch (err) {
+            console.error("Apply error:", err);
+            toast.error("เกิดข้อผิดพลาดในการสมัคร");
+        } finally {
+            setApplyingId(null);
+        }
+    };
+
+    const handleCancelApply = async (internshipId: string) => {
+        const ok = await confirm({
+          title: "ยกเลิกการสมัคร?",
+          message: "คุณแน่ใจหรือไม่ว่าต้องการยกเลิกการสมัครสำหรับตำแหน่งงานนี้?",
+          confirmText: "ยกเลิกสมัคร",
+          cancelText: "กลับ",
+          variant: "danger",
+        });
+        if (!ok) return;
+        setCancelingId(internshipId);
+        try {
+            const res = await cancelApplication(internshipId);
+            if (res.success) {
+                toast.success("ยกเลิกการสมัครเสร็จสิ้นสำเร็จเรียบร้อย! 📥");
+                fetchInternships();
+                if (selectedInternship && selectedInternship.id === internshipId) {
+                    setSelectedInternship((prev: any) => prev ? { ...prev, has_applied: false } : null);
+                }
+            } else {
+                toast.error("เกิดข้อผิดพลาดในการยกเลิกสมัคร: " + res.error);
+            }
+        } catch (err) {
+            console.error("Cancel apply error:", err);
+            toast.error("เกิดข้อผิดพลาดในการยกเลิกสมัคร");
+        } finally {
+            setCancelingId(null);
+        }
+    };
+
+    // Unique options for filters
+    const typeOptions = useMemo(() => {
+        const vals = Array.from(new Set(internships.map((i: any) => i.internship_type).filter(Boolean)));
+        return vals as string[];
+    }, [internships]);
+    const provinceOptions = useMemo(() => {
+        const vals = Array.from(new Set(internships.map((i: any) => (i.company_province || i.location || "").trim()).filter(Boolean)));
+        return vals as string[];
+    }, [internships]);
+    const skillOptions = useMemo(() => {
+        const map = new Map<string, string>();
+        internships.forEach((intern: any) => (intern.skills || []).forEach((s: any) => { if (s.name) map.set(s.name, s.name); }));
+        return Array.from(map.values()).sort();
+    }, [internships]);
+
+    const filteredInternships = useMemo(() => {
+        return internships.filter((item) => {
+            if (searchQuery.trim() !== "") {
+                const query = searchQuery.toLowerCase();
+                const matchTitle = item.title.toLowerCase().includes(query);
+                const matchCompany = item.company_name.toLowerCase().includes(query);
+                const matchDept = (item.department || "").toLowerCase().includes(query);
+                const matchLocation = (item.location || "").toLowerCase().includes(query);
+                if (!(matchTitle || matchCompany || matchDept || matchLocation)) return false;
+            }
+            // W4-5 ประเภทงาน — case-insensitive
+            if (filterType !== "All" && (item.internship_type || "").toLowerCase() !== filterType.toLowerCase()) return false;
+            // W4-7 จังหวัด (company_province fallback to location) — case-insensitive
+            if (filterProvince !== "All") {
+                const prov = (item.company_province || item.location || "").trim().toLowerCase();
+                if (prov !== filterProvince.toLowerCase() && !prov.includes(filterProvince.toLowerCase())) return false;
+            }
+            // W4-6 Skill — case-insensitive
+            if (filterSkill !== "All") {
+                const hasSkill = (item.skills || []).some((s: any) => (s.name || "").toLowerCase() === filterSkill.toLowerCase());
+                if (!hasSkill) return false;
+            }
+            // W4-8 Match Score
+            if (filterMatch !== "All") {
+                const sc = Number(item.match_score) || 0;
+                if (filterMatch === "high" && sc < 80) return false;
+                if (filterMatch === "medium" && (sc < 50 || sc >= 80)) return false;
+                if (filterMatch === "low" && sc >= 50) return false;
+                if (filterMatch === "50plus" && sc < 50) return false;
+            }
+            return true;
+        });
+    }, [internships, searchQuery, filterType, filterProvince, filterSkill, filterMatch]);
+
+    return (
+        <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
+            <DashboardSidebar />
+            <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
+                <DashboardHeader title="My Internships" />
+                <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-bold text-slate-800">My Internships</h1>
+                            <p className="text-sm text-slate-500 mt-1">
+                                ค้นหาและยื่นใบสมัครรับเลือกเป็นนิสิตฝึกงานกับบริษัทชั้นนำ
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        <div className="flex-1 w-full">
+                            <div className="relative w-full">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="ค้นหาตามตำแหน่ง, ฝ่าย หรือบริษัท..."
+                                    className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-base text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm w-full"
+                                />
+                            </div>
+                        </div>
+                        {/* W4-5..W4-8 Filters */}
+                        <div className="flex flex-wrap gap-2 items-center bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">กรอง:</span>
+                            {/* W4-5 ประเภทงาน */}
+                            <select
+                                value={filterType}
+                                onChange={(e) => setFilterType(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer"
+                                title="W4-5 กรองตามประเภทงาน"
+                            >
+                                <option value="All">ทุกประเภท</option>
+                                {typeOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+                                {typeOptions.length === 0 && <><option value="Hybrid">Hybrid</option><option value="Remote">Remote</option><option value="On-site">On-site</option></>}
+                            </select>
+                            {/* W4-7 จังหวัด */}
+                            <select
+                                value={filterProvince}
+                                onChange={(e) => setFilterProvince(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer max-w-[160px]"
+                                title="W4-7 กรองตามจังหวัด"
+                            >
+                                <option value="All">ทุกจังหวัด</option>
+                                {provinceOptions.map((p) => <option key={p} value={p}>{p}</option>)}
+                            </select>
+                            {/* W4-6 Skill */}
+                            <select
+                                value={filterSkill}
+                                onChange={(e) => setFilterSkill(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer max-w-[160px]"
+                                title="W4-6 กรองตาม Skill"
+                            >
+                                <option value="All">ทุกทักษะ</option>
+                                {skillOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                            {/* W4-8 Match Score */}
+                            <select
+                                value={filterMatch}
+                                onChange={(e) => setFilterMatch(e.target.value)}
+                                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:bg-white cursor-pointer"
+                                title="W4-8 กรองตาม Match Score"
+                            >
+                                <option value="All">ทุกคะแนน</option>
+                                <option value="high">สูง ≥80%</option>
+                                <option value="medium">กลาง 50-79%</option>
+                                <option value="low">ต่ำ &lt;50%</option>
+                                <option value="50plus">50% ขึ้นไป</option>
+                            </select>
+                            {(filterType !== "All" || filterProvince !== "All" || filterSkill !== "All" || filterMatch !== "All") && (
+                                <button
+                                    onClick={() => { setFilterType("All"); setFilterProvince("All"); setFilterSkill("All"); setFilterMatch("All"); }}
+                                    className="ml-auto px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+                                >
+                                    ล้างตัวกรอง
+                                </button>
+                            )}
+                            <span className="text-xs text-slate-400 font-medium ml-1">
+                                พบ {filteredInternships.length} รายการ
+                            </span>
+                        </div>
+                    </div>
+
+                    {isLoading ? (
+                        <div className="flex justify-center items-center p-12">
+                            <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></span>
+                        </div>
+                    ) : filteredInternships.length === 0 ? (
+                        <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 space-y-3">
+                            <Briefcase className="w-12 h-12 text-slate-300 mx-auto" />
+                            <p className="text-base font-semibold text-slate-700">ไม่พบประกาศรับสมัครฝึกงาน</p>
+                            <p className="text-xs text-slate-400">ลองใช้คำค้นหาอื่นดูอีกครั้ง</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+                            {filteredInternships.map((item) => (
+                                <StudentInternshipCardItem
+                                    key={item.id}
+                                    item={item}
+                                    onViewDetails={() => {
+                                        setSelectedInternship(item);
+                                        setIsDetailsOpen(true);
+                                    }}
+                                    onApply={() => handleApply(item.id)}
+                                    isApplying={applyingId === item.id}
+                                    onCancel={() => handleCancelApply(item.id)}
+                                    isCanceling={cancelingId === item.id}
+                                    studentSkills={studentSkills}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {isDetailsOpen && selectedInternship && (
+                        <StudentInternshipDetailsModal
+                            item={selectedInternship}
+                            onClose={() => {
+                                setIsDetailsOpen(false);
+                                setSelectedInternship(null);
+                            }}
+                            onApply={() => handleApply(selectedInternship.id)}
+                            isApplying={applyingId === selectedInternship.id}
+                            onCancel={() => handleCancelApply(selectedInternship.id)}
+                            isCanceling={cancelingId === selectedInternship.id}
+                            studentSkills={studentSkills}
+                        />
+                    )}
+                </main>
+            </div>
+        </div>
+    );
+}
+
+function StudentInternshipCardItem({
+    item,
+    onViewDetails,
+    onApply,
+    isApplying,
+    onCancel,
+    isCanceling,
+    studentSkills
+}: {
+    item: any;
+    onViewDetails: () => void;
+    onApply: () => void;
+    isApplying: boolean;
+    onCancel: () => void;
+    isCanceling: boolean;
+    studentSkills: any[];
+}) {
+    const { title, company_name, location, internship_type, has_applied, skills, match_score } = item;
+
+    const getMatchScoreColor = (score: number) => {
+        if (score >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+        if (score >= 50) return "bg-amber-50 text-amber-700 border-amber-200";
+        return "bg-slate-50 text-slate-600 border-slate-200";
+    };
+
+    return (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden border-l-4 border-l-blue-600">
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full uppercase">
+                        {internship_type}
+                    </span>
+                    <div className="flex items-center gap-2">
+                        {has_applied && (
+                            <span className="text-[10px] font-bold tracking-wider text-green-600 bg-green-50 px-2 py-0.5 rounded-md uppercase">
+                                APPLIED
+                            </span>
+                        )}
+                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${getMatchScoreColor(match_score)}`}>
+                            {match_score}% Match
+                        </span>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 className="text-base font-bold text-slate-800 line-clamp-1">{title}</h3>
+                    <p className="text-xs text-slate-500 font-semibold mt-0.5">{company_name}</p>
+                    <p className="text-xs text-slate-400 flex items-center gap-1 mt-1 font-medium">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        {location}
+                    </p>
+                </div>
+
+                {skills && skills.length > 0 && (
+                    <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ทักษะที่ต้องการ (Required Skills)</span>
+                        <div className="flex flex-wrap gap-1.5">
+                            {skills.map((skill: any) => (
+                                <span
+                                    key={skill.skill_id}
+                                    className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-slate-50 text-slate-600 border-slate-200"
+                                >
+                                    {skill.name} ({skill.level})
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {studentSkills && studentSkills.length > 0 && (
+                    <div className="space-y-1 pt-1.5 border-t border-slate-100 mt-2">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ทักษะของคุณ (Your Skills)</span>
+                        <div className="flex flex-wrap gap-1.5">
+                            {studentSkills.map((skill: any) => {
+                                const isMatched = skills.some((req: any) => req.skill_id === skill.skill_id);
+                                return (
+                                    <span
+                                        key={skill.skill_id}
+                                        className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
+                                            isMatched
+                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                                : "bg-slate-50 text-slate-500 border-slate-200"
+                                        }`}
+                                    >
+                                        {isMatched && <span className="mr-1 text-[8px]">✓</span>}
+                                        {skill.name} ({skill.level})
+                                    </span>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="pt-2 grid grid-cols-2 gap-2">
+                <button
+                    onClick={onViewDetails}
+                    className="flex items-center justify-center gap-1.5 border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold py-2 px-3 rounded-xl transition-colors"
+                >
+                    View Details
+                </button>
+                {has_applied ? (
+                    <button
+                        onClick={onCancel}
+                        disabled={isCanceling}
+                        className="border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs font-bold py-2 px-3 rounded-xl transition-colors text-center disabled:opacity-50"
+                    >
+                        {isCanceling ? "Canceling..." : "Cancel Apply"}
+                    </button>
+                ) : (
+                    <button
+                        onClick={onApply}
+                        disabled={isApplying}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-xs font-bold py-2 px-3 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-1"
+                    >
+                        {isApplying ? "Applying..." : "Apply Now"}
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function StudentInternshipDetailsModal({
+    item,
+    onClose,
+    onApply,
+    isApplying,
+    onCancel,
+    isCanceling,
+    studentSkills
+}: {
+    item: any;
+    onClose: () => void;
+    onApply: () => void;
+    isApplying: boolean;
+    onCancel: () => void;
+    isCanceling: boolean;
+    studentSkills: any[];
+}) {
+    const { title, company_name, location, internship_type, description, responsibilities, skills, has_applied, match_score } = item;
+
+    const getMatchScoreColor = (score: number) => {
+        if (score >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+        if (score >= 50) return "bg-amber-50 text-amber-700 border-amber-200";
+        return "bg-slate-50 text-slate-600 border-slate-200";
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-250 space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+                    <div>
+                        <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+                        <p className="text-xs text-slate-500 font-semibold mt-0.5">{company_name}</p>
+                    </div>
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-2">
+                    <div className="flex flex-wrap gap-2">
+                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full uppercase">
+                            รูปแบบงาน: {internship_type}
+                        </span>
+                        <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                            สถานที่: {location}
+                        </span>
+                        <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${getMatchScoreColor(match_score)}`}>
+                            {match_score}% Match
+                        </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">รายละเอียดงาน (Job Description)</h4>
+                        <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            {description || "ไม่มีข้อมูลรายละเอียด"}
+                        </p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">หน้าที่ความรับผิดชอบ (Responsibilities)</h4>
+                        <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            {responsibilities || "ไม่มีข้อมูลหน้าที่ความรับผิดชอบ"}
+                        </p>
+                    </div>
+
+                    {skills && skills.length > 0 && (
+                        <div className="space-y-1.5">
+                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">ทักษะที่ต้องการ (Required Skills)</h4>
+                            <div className="flex flex-wrap gap-1.5">
+                                {skills.map((skill: any) => (
+                                    <span
+                                        key={skill.skill_id}
+                                        className="text-xs font-semibold px-2.5 py-1 rounded-lg border bg-blue-50 text-blue-600 border-blue-100"
+                                    >
+                                        {skill.name} ({skill.level})
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {studentSkills && studentSkills.length > 0 && (
+                        <div className="space-y-1.5">
+                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">ทักษะของคุณ (Your Skills)</h4>
+                            <div className="flex flex-wrap gap-1.5">
+                                {studentSkills.map((skill: any) => {
+                                    const isMatched = skills.some((req: any) => req.skill_id === skill.skill_id);
+                                    return (
+                                        <span
+                                            key={skill.skill_id}
+                                            className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
+                                                isMatched
+                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                                    : "bg-slate-50 text-slate-500 border-slate-200"
+                                            }`}
+                                        >
+                                            {isMatched && <span className="mr-1">✓</span>}
+                                            {skill.name} ({skill.level})
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="border-t border-slate-100 pt-3 shrink-0 flex justify-end gap-2">
+                    {has_applied ? (
+                        <button
+                            onClick={onCancel}
+                            disabled={isCanceling}
+                            className="border border-rose-200 hover:bg-rose-50 text-rose-600 text-sm font-semibold px-5 py-2 rounded-xl transition-colors disabled:opacity-50"
+                        >
+                            {isCanceling ? "Canceling..." : "Cancel Apply"}
+                        </button>
+                    ) : (
+                        <button
+                            onClick={onApply}
+                            disabled={isApplying}
+                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors"
+                        >
+                            {isApplying ? "Applying..." : "Apply Now"}
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
