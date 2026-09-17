@@ -18,9 +18,6 @@ workflow:
     - if: '$CI_COMMIT_BRANCH'
       when: always
 
-include:
-  - template: Security/SAST.gitlab-ci.yml
-  - template: Security/Secret-Detection.gitlab-ci.yml
 
 stages:
   - lint
@@ -238,10 +235,10 @@ deploy_frontend:
 # Keep SAST / secret_detection enabled for all branches.
 sast:
   stage: test
-  rules:
-    - if: '$CI_COMMIT_BRANCH'
-
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+  
 secret_detection:
   stage: secret-detection
-  rules:
-    - if: '$CI_COMMIT_BRANCH'
+
