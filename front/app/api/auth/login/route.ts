@@ -1,0 +1,98 @@
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
+
+export async function POST(request: NextRequest) {
+    try {
+        const { identity, password, rememberMe } = await request.json();
+        
+        if (!identity || !password) {
+            return NextResponse.json({ message: "กรุณากรอกข้อมูลให้ครบถ้วน" }, { status: 400 });
+        }
+
+        const cleanIdentity = identity.trim().toLowerCase();
+        const supabaseAdmin = getSupabaseAdmin();
+
+        // 1. ค้นหาผู้ใช้จากตาราง users
+        const { data: user, error: userError } = await supabaseAdmin
+            .from("users")
+            .select("id, email, username, password, role")
+            .or(`email.eq.${cleanIdentity},username.eq.${cleanIdentity}`)
+            .maybeSingle();
+
+        if (userError || !user) {
+            return NextResponse.json({ message: "ไม่พบบัญชีผู้ใช้นี้ในระบบ" }, { status: 401 });
+        }
+
+        // 2. เช็กสิทธิ์รหัสผ่าน
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return NextResponse.json({ message: "รหัสผ่านไม่ถูกต้อง" }, { status: 401 });
+        }
+
+        // 3. ดึงข้อมูล fullname หรือชื่อบริษัทตาม Role ของผู้ใช้งานเพื่อใส่ใน JWT Payload
+        let fullname = "";
+        if (user.role === "student") {
+            const { data: student } = await supabaseAdmin
+                .from("students")
+                .select("fullname")
+                .eq("user_id", user.id)
+                .maybeSingle();
+            if (student) {
+                fullname = student.fullname;
+            }
+        } else if (user.role === "company") {
+            const { data: company } = await supabaseAdmin
+                .from("companies")
+                .select("company_name")
+                .eq("user_id", user.id)
+                .maybeSingle();
+            if (company) {
+                fullname = company.company_name;
+            }
+        }
+
+        // 4. รับคีย์ลับสำหรับ JWT (ไม่อนุญาตให้ใช้ค่าเริ่มต้นที่ฮาร์ดโค้ดเพื่อความปลอดภัย)
+        const jwtSecret = process.env.JWT_SECRET || process.env.JWT_SECRET_KEY;
+        if (!jwtSecret) {
+            console.error("❌ JWT Secret Key is missing in environment variables!");
+            return NextResponse.json({ message: "เกิดข้อผิดพลาดในการกำหนดค่าระบบความปลอดภัยหลังบ้าน" }, { status: 500 });
+        }
+
+        // 5. ออกตั๋ว JWT พร้อมข้อมูลผู้ใช้งานครบถ้วน (หมดอายุใน 30 วันหากติ๊ก Remember Me, ไม่เช่นนั้นหมดอายุใน 1 วัน)
+        const token = jwt.sign(
+            { 
+                userId: user.id, 
+                email: user.email, 
+                username: user.username,
+                role: user.role,
+                fullname: fullname
+            },
+            jwtSecret,
+            { expiresIn: rememberMe ? "30d" : "1d" }
+        );
+
+        const response = NextResponse.json({ success: true, role: user.role }, { status: 200 });
+
+        // 6. บันทึก Cookie ลงในเว็บบราวเซอร์ (มีอายุ 30 วันหากติ๊ก Remember Me, หรือเป็น session cookie หากไม่ติ๊ก)
+        const cookieOptions: any = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            path: "/",
+        };
+
+        if (rememberMe) {
+            cookieOptions.maxAge = 60 * 60 * 24 * 30; // 30 วัน
+        }
+
+        response.cookies.set("auth_token", token, cookieOptions);
+
+        return response;
+
+    } catch (error) {
+        console.error("Login API Error:", error);
+        return NextResponse.json({ message: "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์" }, { status: 500 });
+    }
+}
