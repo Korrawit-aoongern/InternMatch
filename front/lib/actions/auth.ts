@@ -99,6 +99,8 @@ export async function registerUser(formData: UserRegisterFormData, role: "studen
           faculty: formData.faculty || null,
           major: formData.major || null,
           study_year: formData.study_year ? parseInt(formData.study_year.toString()) : null,
+          gpa: formData.gpa !== undefined && formData.gpa !== "" && formData.gpa !== null ? parseFloat(formData.gpa.toString()) : null,
+          internship_period: formData.internship_period || null,
           profile_image: formData.profile_image || null,
           resume_path: formData.resume_path || null,
         },
@@ -226,6 +228,14 @@ export async function updateStudentProfile(profileData: {
     ) as unknown as DecodedToken;
     
     const supabase = getSupabaseAdmin();
+    // Normalize GPA: accept string "3.50" or number, coerce to float or null; validate 0.00-4.00 range
+    let normalizedGpa: number | null = null;
+    if (profileData.gpa !== null && profileData.gpa !== "" as any) {
+      const parsed = typeof profileData.gpa === "string" ? parseFloat(profileData.gpa) : Number(profileData.gpa);
+      normalizedGpa = Number.isFinite(parsed) ? parsed : null;
+      // Clamp validation — keep null if out of range to avoid DB constraint violation
+      if (normalizedGpa !== null && (normalizedGpa < 0 || normalizedGpa > 4)) normalizedGpa = null;
+    }
     const { error } = await supabase
       .from("students")
       .update({
@@ -235,6 +245,8 @@ export async function updateStudentProfile(profileData: {
         faculty: profileData.faculty,
         major: profileData.major,
         study_year: profileData.study_year,
+        gpa: normalizedGpa,
+        internship_period: profileData.internship_period,
         profile_image: profileData.profile_image,
         resume_path: profileData.resume_path,
       })

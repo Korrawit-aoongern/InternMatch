@@ -27,6 +27,8 @@ export default function RegisterPage() {
     faculty: "",
     major: "",
     study_year: "",
+    gpa: "",
+    internship_period: "",
     profile_image: "",
     resume_path: "",
     resume_url: "",
@@ -154,6 +156,7 @@ export default function RegisterPage() {
       setFields({ 
         email: "", username: "", password: "", fullname: "", phone: "", 
         university: "", faculty: "", major: "", study_year: "", 
+        gpa: "", internship_period: "",
         profile_image: "", resume_path: "", resume_url: "" 
       });
       setTimeout(() => {
@@ -304,6 +307,18 @@ export default function RegisterPage() {
                       <option value="4">4th Year (ปี 4)</option>
                       <option value="5">Other / Graduated</option>
                     </select>
+                  </div>
+
+                  {/* GPA */}
+                  <div>
+                    <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="gpa">GPA (เกรดเฉลี่ยสะสม) <span className="text-slate-400 font-normal">0.00 - 4.00</span></label>
+                    <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 px-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="gpa" name="gpa" placeholder="3.50" type="number" min="0" max="4" step="0.01" value={fields.gpa} onChange={handleChange} />
+                  </div>
+
+                  {/* Internship Period */}
+                  <div>
+                    <label className="block text-on-surface mb-sm text-sm font-semibold" htmlFor="internship_period">Internship Period (ช่วงเวลาที่สะดวกฝึกงาน)</label>
+                    <input className="block w-full rounded-lg border border-outline-variant bg-white py-2.5 px-3 text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm" id="internship_period" name="internship_period" placeholder="มิ.ย. - ส.ค. 2568 / Jun - Aug 2025" type="text" value={fields.internship_period} onChange={handleChange} />
                   </div>
                 </div>
               </div>

@@ -1563,6 +1563,12 @@ function CompanyApplicationsView() {
                                                 {selectedApplicant.study_year ? `ปี ${selectedApplicant.study_year}` : "-"}
                                             </p>
                                         </div>
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">GPA (เกรดเฉลี่ย)</p>
+                                            <p className="text-xs font-semibold text-slate-700 mt-0.5 truncate">
+                                                {selectedApplicant.gpa || "-"}
+                                            </p>
+                                        </div>
                                         <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 col-span-2">
                                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">ช่วงเวลาที่สะดวกฝึกงาน</p>
                                             <p className="text-xs font-semibold text-slate-700 mt-0.5">
