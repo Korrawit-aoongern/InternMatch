@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { ExternalLink, Play, BookOpen, Search } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { ExternalLink, Play, BookOpen, Search, X } from "lucide-react";
 import { SkillRecommendation } from "@/lib/actions/geminiRecommendations";
 import { ensureVideoSearchUrl } from "@/lib/utils/videoUrl";
 
@@ -8,6 +8,7 @@ interface Props {
 }
 
 export default function RecommendationResourceCard({ resource }: Props) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const isVideo = resource.resource_type === "video";
   const platform = resource.platform?.toLowerCase() || "";
 
@@ -67,21 +68,49 @@ export default function RecommendationResourceCard({ resource }: Props) {
         </span>
       </div>
 
-      {/* Title & Instructor */}
+      {/* Title & Instructor - with overflow catch */}
       <div>
-        <h5 className="text-xs font-bold text-slate-800 line-clamp-2 hover:text-blue-600 leading-snug">
+        <h5 className="text-xs font-bold text-slate-800 line-clamp-2 hover:text-blue-600 leading-snug break-words break-all">
           {resource.title}
         </h5>
-        <p className="text-[11px] text-slate-500 mt-0.5">
+        <p className="text-[11px] text-slate-500 mt-0.5 truncate">
           ผู้สอน/ช่อง: <span className="font-semibold text-slate-700">{resource.author}</span>
         </p>
+        {resource.title.length > 80 && (
+          <button onClick={() => setIsExpanded(true)} className="text-[10px] font-bold text-blue-600 hover:text-blue-700 mt-1 cursor-pointer">ดูชื่อเต็ม...</button>
+        )}
       </div>
 
-      {/* Why Recommended / Reason */}
+      {/* Why Recommended / Reason - collapsed */}
       {resource.reason && (
-        <p className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-100 leading-relaxed">
-          💡 <span className="font-medium">{resource.reason}</span>
-        </p>
+        <>
+          <p className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-100 leading-relaxed break-words break-all line-clamp-3">
+            💡 <span className="font-medium">{resource.reason}</span>
+          </p>
+          {resource.reason.length > 180 && (
+            <button onClick={() => setIsExpanded(true)} className="text-[10px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer">... อ่านเหตุผลเต็ม</button>
+          )}
+        </>
+      )}
+      {isExpanded && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={() => setIsExpanded(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[520px] max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
+              <h3 className="text-sm font-bold text-slate-800 truncate pr-2">{resource.title}</h3>
+              <button onClick={() => setIsExpanded(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer shrink-0"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <p className="text-xs font-bold text-slate-700 break-words break-all">{resource.title}</p>
+              <p className="text-[11px] text-slate-500">ผู้สอน/ช่อง: <span className="font-semibold text-slate-700">{resource.author}</span> • {resource.platform} • ระดับ {resource.level} • {resource.targetSkill}</p>
+              <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border leading-relaxed break-words break-all whitespace-pre-wrap">{resource.reason}</p>
+              <p className="text-[11px] text-slate-400 break-all">{resource.url}</p>
+            </div>
+            <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center shrink-0">
+              <a href={targetUrl} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5"><ExternalLink className="w-3 h-3" /> เปิดลิงก์</a>
+              <button onClick={() => setIsExpanded(false)} className="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg cursor-pointer">ปิด</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Action Footer */}

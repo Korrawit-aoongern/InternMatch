@@ -487,6 +487,7 @@ function StudentApplicationsView() {
     // Modal state
     const [selectedApplication, setSelectedApplication] = useState<StudentApplicationItem | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [expandedText, setExpandedText] = useState<null | "title" | "description" | "responsibilities">(null);
 
     // Fetch applications
     useEffect(() => {
@@ -816,23 +817,27 @@ function StudentApplicationsView() {
                         )}
                     </div>
 
-                    {/* View Details Modal */}
+                    {/* View Details Modal - with text overflow catch */}
                     {isDetailsOpen && selectedApplication && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-                            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-250 space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
-                                <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
-                                    <div>
-                                        <h2 className="text-lg font-bold text-slate-800">
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={() => { setIsDetailsOpen(false); setSelectedApplication(null); setExpandedText(null); }}>
+                            <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-[640px] max-h-[90vh] flex flex-col shadow-xl border border-slate-100 overflow-hidden">
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0 gap-3">
+                                    <div className="min-w-0 flex-1">
+                                        <h2 className="text-lg font-bold text-slate-800 break-words line-clamp-2">
                                             {selectedApplication.title}
                                         </h2>
-                                        <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                                        <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">
                                             {selectedApplication.company_name} ({selectedApplication.company_province})
                                         </p>
+                                        {(selectedApplication.title || "").length > 60 && (
+                                            <button onClick={() => setExpandedText("title")} className="text-[11px] font-bold text-blue-600 hover:text-blue-700 mt-1 cursor-pointer">ดูชื่อตำแหน่งเต็ม...</button>
+                                        )}
                                     </div>
                                     <button
                                         onClick={() => {
                                             setIsDetailsOpen(false);
                                             setSelectedApplication(null);
+                                            setExpandedText(null);
                                         }}
                                         className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg shrink-0 cursor-pointer"
                                     >
@@ -840,34 +845,50 @@ function StudentApplicationsView() {
                                     </button>
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-2">
+                                <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-3 text-xs">
                                     <div className="flex flex-wrap gap-2">
-                                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full uppercase">
+                                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full uppercase break-all max-w-full">
                                             รูปแบบงาน: {selectedApplication.internship_type || "Hybrid"}
                                         </span>
-                                        <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                                        <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full max-w-full truncate">
                                             สถานที่: {selectedApplication.location || "Bangkok"}
                                         </span>
-                                        <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-100">
+                                        <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-100 shrink-0">
                                             Match Score: {selectedApplication.match_score}%
                                         </span>
-                                        <span className="text-xs font-bold bg-slate-50 text-slate-500 px-2.5 py-0.5 rounded-full border border-slate-100">
+                                        <span className="text-xs font-bold bg-slate-50 text-slate-500 px-2.5 py-0.5 rounded-full border border-slate-100 shrink-0">
                                             Applied on {formatDate(selectedApplication.applied_at)}
                                         </span>
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">รายละเอียดงาน (Job Description)</h4>
-                                        <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                            {selectedApplication.description || "ไม่มีข้อมูลรายละเอียดงาน"}
-                                        </p>
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">รายละเอียดงาน (Job Description)</h4>
+                                            {(selectedApplication.description || "").length > 280 && <button onClick={() => setExpandedText("description")} className="text-[11px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer shrink-0">ดูเต็ม...</button>}
+                                        </div>
+                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                            <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed break-words break-all">
+                                                {selectedApplication.description ? ((selectedApplication.description.length > 280 ? selectedApplication.description.slice(0,280).trimEnd()+"…" : selectedApplication.description)) : "ไม่มีข้อมูลรายละเอียดงาน"}
+                                            </p>
+                                            {(selectedApplication.description || "").length > 280 && (
+                                                <button onClick={() => setExpandedText("description")} className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-700 bg-white border border-blue-200 px-2.5 py-1 rounded-lg cursor-pointer">... อ่านเพิ่มเติม</button>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">หน้าที่ความรับผิดชอบ (Responsibilities)</h4>
-                                        <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                            {selectedApplication.responsibilities || "ไม่มีข้อมูลหน้าที่ความรับผิดชอบ"}
-                                        </p>
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">หน้าที่ความรับผิดชอบ (Responsibilities)</h4>
+                                            {(selectedApplication.responsibilities || "").length > 280 && <button onClick={() => setExpandedText("responsibilities")} className="text-[11px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer shrink-0">ดูเต็ม...</button>}
+                                        </div>
+                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                            <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed break-words break-all">
+                                                {selectedApplication.responsibilities ? ((selectedApplication.responsibilities.length > 280 ? selectedApplication.responsibilities.slice(0,280).trimEnd()+"…" : selectedApplication.responsibilities)) : "ไม่มีข้อมูลหน้าที่ความรับผิดชอบ"}
+                                            </p>
+                                            {(selectedApplication.responsibilities || "").length > 280 && (
+                                                <button onClick={() => setExpandedText("responsibilities")} className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-700 bg-white border border-blue-200 px-2.5 py-1 rounded-lg cursor-pointer">... อ่านเพิ่มเติม</button>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="space-y-1.5">
@@ -909,8 +930,26 @@ function StudentApplicationsView() {
                                     )}
                                 </div>
 
-
                             </div>
+                            {/* Nested text expand modals - z-[60] sibling to avoid overflow-hidden clipping */}
+                            {expandedText && (
+                                <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={() => setExpandedText(null)}>
+                                    <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[640px] max-h-[80vh] flex flex-col overflow-hidden">
+                                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
+                                            <h3 className="text-sm font-bold text-slate-800">
+                                                {expandedText === "description" ? "รายละเอียดงาน (เต็ม)" : expandedText === "responsibilities" ? "หน้าที่ความรับผิดชอบ (เต็ม)" : "ชื่อตำแหน่ง (เต็ม)"}
+                                            </h3>
+                                            <button onClick={() => setExpandedText(null)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer shrink-0"><X className="w-5 h-5" /></button>
+                                        </div>
+                                        <div className="flex-1 overflow-y-auto p-4">
+                                            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed break-words break-all">
+                                                {expandedText === "description" ? selectedApplication.description : expandedText === "responsibilities" ? selectedApplication.responsibilities : selectedApplication.title}
+                                            </p>
+                                        </div>
+                                        <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-end shrink-0"><button onClick={() => setExpandedText(null)} className="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg cursor-pointer">ปิด</button></div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </main>
@@ -956,6 +995,7 @@ function CompanyApplicationsView() {
     // Modal state
     const [selectedApplicant, setSelectedApplicant] = useState<ApplicantItem | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+    const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
     const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -1476,8 +1516,8 @@ function CompanyApplicationsView() {
 
                     {/* Applicant Details Modal */}
                     {isDetailsOpen && selectedApplicant && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
-                            <div className="bg-white rounded-2xl p-4 sm:p-5  flex flex-col shadow-2xl border max-w-400 border-slate-100 overflow-hidden">
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={() => { setIsDetailsOpen(false); setSelectedApplicant(null); setIsSkillsModalOpen(false); }}>
+                            <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-4 sm:p-5 flex flex-col shadow-2xl border border-slate-100 overflow-hidden w-full max-w-[640px] max-h-[90vh]">
                                 {/* Fixed Header */}
                                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
                                     <div className="flex items-center gap-3 min-w-0">
@@ -1506,6 +1546,7 @@ function CompanyApplicationsView() {
                                         onClick={() => {
                                             setIsDetailsOpen(false);
                                             setSelectedApplicant(null);
+                                            setIsSkillsModalOpen(false);
                                         }}
                                         className="text-slate-400 hover:text-slate-600 p-1 rounded-lg shrink-0 cursor-pointer"
                                     >
@@ -1524,55 +1565,55 @@ function CompanyApplicationsView() {
                                             Applied on {formatDate(selectedApplicant.applied_at)}
                                         </span>
                                         {selectedApplicant.email && (
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-slate-50 text-slate-600 px-2.5 py-0.5 rounded-full border border-slate-100">
-                                                <Mail className="w-3 h-3 text-slate-400" />
-                                                {selectedApplicant.email}
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-slate-50 text-slate-600 px-2.5 py-0.5 rounded-full border border-slate-100 max-w-full break-all">
+                                                <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                                                <span className="truncate">{selectedApplicant.email}</span>
                                             </span>
                                         )}
                                         {selectedApplicant.phone && (
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-slate-50 text-slate-600 px-2.5 py-0.5 rounded-full border border-slate-100">
-                                                <Phone className="w-3 h-3 text-slate-400" />
-                                                {selectedApplicant.phone}
+                                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-slate-50 text-slate-600 px-2.5 py-0.5 rounded-full border border-slate-100 max-w-full break-all">
+                                                <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                                                <span className="truncate">{selectedApplicant.phone}</span>
                                             </span>
                                         )}
                                     </div>
 
                                     {/* Compact Academic Grid */}
                                     <div className="grid grid-cols-2 gap-2">
-                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 min-w-0">
                                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">มหาวิทยาลัย</p>
-                                            <p className="text-xs font-semibold text-slate-700 mt-0.5 truncate">
+                                            <p className="text-xs font-semibold text-slate-700 mt-0.5 break-words break-all line-clamp-2">
                                                 {selectedApplicant.university || "-"}
                                             </p>
                                         </div>
-                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 min-w-0">
                                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">คณะ</p>
-                                            <p className="text-xs font-semibold text-slate-700 mt-0.5 truncate">
+                                            <p className="text-xs font-semibold text-slate-700 mt-0.5 break-words break-all line-clamp-2">
                                                 {selectedApplicant.faculty || "-"}
                                             </p>
                                         </div>
-                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 min-w-0">
                                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">สาขาวิชา</p>
-                                            <p className="text-xs font-semibold text-slate-700 mt-0.5 truncate">
+                                            <p className="text-xs font-semibold text-slate-700 mt-0.5 break-words break-all line-clamp-2">
                                                 {selectedApplicant.major || "-"}
                                             </p>
                                         </div>
-                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 min-w-0">
                                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">ชั้นปี</p>
                                             <p className="text-xs font-semibold text-slate-700 mt-0.5 truncate">
                                                 {selectedApplicant.study_year ? `ปี ${selectedApplicant.study_year}` : "-"}
                                             </p>
                                         </div>
-                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 min-w-0">
                                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">GPA (เกรดเฉลี่ย)</p>
                                             <p className="text-xs font-semibold text-slate-700 mt-0.5 truncate">
-                                                {selectedApplicant.gpa || "-"}
+                                                {selectedApplicant.gpa || "ไม่ระบุ"}
                                             </p>
                                         </div>
-                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 col-span-2">
+                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 col-span-2 min-w-0">
                                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">ช่วงเวลาที่สะดวกฝึกงาน</p>
-                                            <p className="text-xs font-semibold text-slate-700 mt-0.5">
-                                                {selectedApplicant.internship_period || "มิ.ย. - ส.ค. 2568 (โดยประมาณ)"}
+                                            <p className="text-xs font-semibold text-slate-700 mt-0.5 break-words break-all">
+                                                {selectedApplicant.internship_period || "ไม่ระบุ"}
                                             </p>
                                         </div>
                                     </div>
@@ -1605,24 +1646,39 @@ function CompanyApplicationsView() {
                                         )}
                                     </div>
 
-                                    {/* Skills */}
+                                    {/* Skills - collapsed to 5 with expand modal to fix width/overflow */}
                                     <div className="space-y-1">
-                                        <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">ทักษะและความสามารถ (Skills)</h4>
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">ทักษะและความสามารถ (Skills)</h4>
+                                            {selectedApplicant.skills && selectedApplicant.skills.length > 5 && (
+                                                <span className="text-[10px] font-semibold text-slate-400">{selectedApplicant.skills.length} skills</span>
+                                            )}
+                                        </div>
                                         {selectedApplicant.skills && selectedApplicant.skills.length > 0 ? (
-                                            <div className="flex flex-wrap gap-1.5 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                                                {selectedApplicant.skills.map((skill, index) => (
+                                            <div className="flex flex-wrap gap-1.5 bg-slate-50 p-2.5 rounded-lg border border-slate-100 items-center">
+                                                {selectedApplicant.skills.slice(0, 5).map((skill, index) => (
                                                     <span
                                                         key={skill.skill_id || index}
-                                                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700 shadow-2xs"
+                                                        className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700 shadow-2xs max-w-full"
                                                     >
-                                                        <span>{skill.name}</span>
+                                                        <span className="truncate">{skill.name}</span>
                                                         {skill.level && (
-                                                            <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1 rounded">
+                                                            <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1 rounded shrink-0">
                                                                 {skill.level}
                                                             </span>
                                                         )}
                                                     </span>
                                                 ))}
+                                                {selectedApplicant.skills.length > 5 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsSkillsModalOpen(true)}
+                                                        className="inline-flex items-center justify-center text-[11px] font-bold px-2.5 py-0.5 rounded bg-slate-800 text-white hover:bg-slate-900 border border-slate-800 transition-colors cursor-pointer shrink-0"
+                                                        title="ดูทักษะทั้งหมด"
+                                                    >
+                                                        ... +{selectedApplicant.skills.length - 5} more
+                                                    </button>
+                                                )}
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-lg p-2.5">
@@ -1718,6 +1774,45 @@ function CompanyApplicationsView() {
                                     </span>
                                 </div>
                             </div>
+                            {/* Skills Full List Modal (nested, z-[60] on top - sibling to avoid overflow-hidden clipping) */}
+                            {isSkillsModalOpen && selectedApplicant && (
+                                <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsSkillsModalOpen(false); }}>
+                                    <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
+                                            <div>
+                                                <h3 className="text-sm font-bold text-slate-800">ทักษะทั้งหมด</h3>
+                                                <p className="text-[11px] font-medium text-slate-500 mt-0.5">{selectedApplicant.fullname} • {selectedApplicant.skills.length} skills</p>
+                                            </div>
+                                            <button onClick={() => setIsSkillsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer shrink-0">
+                                                <X className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                        <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {selectedApplicant.skills.map((skill, index) => (
+                                                    <span
+                                                        key={skill.skill_id || `all-${index}`}
+                                                        className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs"
+                                                    >
+                                                        <span>{skill.name}</span>
+                                                        {skill.level && (
+                                                            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
+                                                                {skill.level}
+                                                            </span>
+                                                        )}
+                                                        {skill.category && (
+                                                            <span className="hidden sm:inline text-[9px] font-medium text-slate-400 ml-1">({skill.category})</span>
+                                                        )}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-end shrink-0">
+                                            <button onClick={() => setIsSkillsModalOpen(false)} className="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg transition-colors cursor-pointer">ปิด</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </main>

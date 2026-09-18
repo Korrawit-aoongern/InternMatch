@@ -826,6 +826,7 @@ function InternshipCardItem({
     onViewApplicants: () => void;
 }) {
     const [showDropdown, setShowDropdown] = useState(false);
+    const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
     const { status, title, department, location, applicantsCount, postedDate, skills } = item;
 
     const getStatusStyles = () => {
@@ -947,17 +948,57 @@ function InternshipCardItem({
                     </p>
                 </div>
 
-                {/* Skills Section */}
+                {/* Skills Section - collapsed to 5 + nested modal */}
                 {skills && skills.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-2">
-                        {skills.map((skill) => (
+                    <div className="flex flex-wrap gap-1.5 pt-2 items-center">
+                        {skills.slice(0, 5).map((skill) => (
                             <span
                                 key={skill.skill_id}
-                                className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-blue-50 text-blue-600 border-blue-200"
+                                className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-blue-50 text-blue-600 border-blue-200 max-w-full"
                             >
-                                {skill.name} ({skill.level})
+                                <span className="truncate">{skill.name}</span>&nbsp;({skill.level})
                             </span>
                         ))}
+                        {skills.length > 5 && (
+                            <button
+                                type="button"
+                                onClick={() => setIsSkillsModalOpen(true)}
+                                className="inline-flex items-center justify-center text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-white hover:bg-slate-900 border border-slate-800 transition-colors cursor-pointer shrink-0"
+                                title="ดูทักษะทั้งหมด"
+                            >
+                                ... +{skills.length - 5} more
+                            </button>
+                        )}
+                    </div>
+                )}
+                {/* Skills nested modal - sibling fixed to avoid card overflow clipping */}
+                {isSkillsModalOpen && (
+                    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsSkillsModalOpen(false); }}>
+                        <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden">
+                            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
+                                <div className="min-w-0">
+                                    <h3 className="text-sm font-bold text-slate-800 truncate">ทักษะทั้งหมด • {title}</h3>
+                                    <p className="text-[11px] font-medium text-slate-500 mt-0.5">{skills.length} skills</p>
+                                </div>
+                                <button onClick={() => setIsSkillsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer shrink-0 ml-2">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+                                <div className="flex flex-wrap gap-1.5">
+                                    {skills.map((skill) => (
+                                        <span key={skill.skill_id} className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs">
+                                            <span>{skill.name}</span>
+                                            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">{skill.level}</span>
+                                            {skill.category && <span className="hidden sm:inline text-[9px] font-medium text-slate-400 ml-1">({skill.category})</span>}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-end shrink-0">
+                                <button onClick={() => setIsSkillsModalOpen(false)} className="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg transition-colors cursor-pointer">ปิด</button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -1373,6 +1414,8 @@ function StudentInternshipCardItem({
     isCanceling: boolean;
     studentSkills: any[];
 }) {
+    const [isReqSkillsModalOpen, setIsReqSkillsModalOpen] = useState(false);
+    const [isYourSkillsModalOpen, setIsYourSkillsModalOpen] = useState(false);
     const { title, company_name, location, internship_type, has_applied, skills, match_score } = item;
 
     const getMatchScoreColor = (score: number) => {
@@ -1411,41 +1454,73 @@ function StudentInternshipCardItem({
 
                 {skills && skills.length > 0 && (
                     <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ทักษะที่ต้องการ (Required Skills)</span>
-                        <div className="flex flex-wrap gap-1.5">
-                            {skills.map((skill: any) => (
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ทักษะที่ต้องการ (Required Skills)</span>
+                            {skills.length > 5 && <span className="text-[10px] font-semibold text-slate-400">{skills.length} skills</span>}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                            {skills.slice(0, 5).map((skill: any) => (
                                 <span
                                     key={skill.skill_id}
-                                    className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-slate-50 text-slate-600 border-slate-200"
+                                    className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border bg-slate-50 text-slate-600 border-slate-200 max-w-full"
                                 >
-                                    {skill.name} ({skill.level})
+                                    <span className="truncate">{skill.name}</span>&nbsp;({skill.level})
                                 </span>
                             ))}
+                            {skills.length > 5 && (
+                                <button type="button" onClick={() => setIsReqSkillsModalOpen(true)} className="inline-flex items-center justify-center text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-white hover:bg-slate-900 border border-slate-800 transition-colors cursor-pointer shrink-0">... +{skills.length - 5} more</button>
+                            )}
                         </div>
+                        {isReqSkillsModalOpen && (
+                            <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsReqSkillsModalOpen(false); }}>
+                                <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden">
+                                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
+                                        <div className="min-w-0"><h3 className="text-sm font-bold text-slate-800 truncate">ทักษะที่ต้องการ • {title}</h3><p className="text-[11px] font-medium text-slate-500 mt-0.5">{skills.length} skills</p></div>
+                                        <button onClick={() => setIsReqSkillsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer shrink-0 ml-2"><X className="w-5 h-5" /></button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto p-3 sm:p-4"><div className="flex flex-wrap gap-1.5">{skills.map((skill: any) => (<span key={skill.skill_id} className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs"><span>{skill.name}</span><span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">{skill.level}</span></span>))}</div></div>
+                                    <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-end shrink-0"><button onClick={() => setIsReqSkillsModalOpen(false)} className="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg cursor-pointer">ปิด</button></div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {studentSkills && studentSkills.length > 0 && (
                     <div className="space-y-1 pt-1.5 border-t border-slate-100 mt-2">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ทักษะของคุณ (Your Skills)</span>
-                        <div className="flex flex-wrap gap-1.5">
-                            {studentSkills.map((skill: any) => {
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ทักษะของคุณ (Your Skills)</span>
+                            {studentSkills.length > 5 && <span className="text-[10px] font-semibold text-slate-400">{studentSkills.length} skills</span>}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                            {studentSkills.slice(0, 5).map((skill: any) => {
                                 const isMatched = skills.some((req: any) => req.skill_id === skill.skill_id);
                                 return (
                                     <span
                                         key={skill.skill_id}
-                                        className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border ${
-                                            isMatched
-                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                                : "bg-slate-50 text-slate-500 border-slate-200"
-                                        }`}
+                                        className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-md border max-w-full ${isMatched ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-500 border-slate-200"}`}
                                     >
                                         {isMatched && <span className="mr-1 text-[8px]">✓</span>}
-                                        {skill.name} ({skill.level})
+                                        <span className="truncate">{skill.name}</span>&nbsp;({skill.level})
                                     </span>
                                 );
                             })}
+                            {studentSkills.length > 5 && (
+                                <button type="button" onClick={() => setIsYourSkillsModalOpen(true)} className="inline-flex items-center justify-center text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-white hover:bg-slate-900 border border-slate-800 transition-colors cursor-pointer shrink-0">... +{studentSkills.length - 5} more</button>
+                            )}
                         </div>
+                        {isYourSkillsModalOpen && (
+                            <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsYourSkillsModalOpen(false); }}>
+                                <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden">
+                                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
+                                        <div className="min-w-0"><h3 className="text-sm font-bold text-slate-800">ทักษะของคุณ</h3><p className="text-[11px] font-medium text-slate-500 mt-0.5">{studentSkills.length} skills • ✓ = ตรงกับที่งานต้องการ</p></div>
+                                        <button onClick={() => setIsYourSkillsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer shrink-0 ml-2"><X className="w-5 h-5" /></button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4"><div className="flex flex-wrap gap-1.5">{studentSkills.map((skill: any) => { const isMatched = skills.some((req: any) => req.skill_id === skill.skill_id); return (<span key={skill.skill_id} className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border ${isMatched ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-600 border-slate-200"}`}><span>{skill.name}</span><span className="text-[10px] font-bold bg-white/80 px-1 rounded">{skill.level}</span></span>); })}</div></div>
+                                    <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-end shrink-0"><button onClick={() => setIsYourSkillsModalOpen(false)} className="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg cursor-pointer">ปิด</button></div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -1497,6 +1572,9 @@ function StudentInternshipDetailsModal({
     studentSkills: any[];
 }) {
     const { title, company_name, location, internship_type, description, responsibilities, skills, has_applied, match_score } = item;
+    const [isReqSkillsModalOpen, setIsReqSkillsModalOpen] = useState(false);
+    const [isYourSkillsModalOpen, setIsYourSkillsModalOpen] = useState(false);
+    const [expandedText, setExpandedText] = useState<null | "description" | "responsibilities" | "title">(null);
 
     const getMatchScoreColor = (score: number) => {
         if (score >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200";
@@ -1504,26 +1582,32 @@ function StudentInternshipDetailsModal({
         return "bg-slate-50 text-slate-600 border-slate-200";
     };
 
+    const isLong = (text: string, limit = 280) => (text || "").length > limit;
+    const truncate = (text: string, limit = 280) => (text.length > limit ? text.slice(0, limit).trimEnd() + "…" : text);
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-            <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-250 space-y-4 md:space-y-5 shadow-xl border border-slate-100 overflow-hidden">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
-                    <div>
-                        <h2 className="text-lg font-bold text-slate-800">{title}</h2>
-                        <p className="text-xs text-slate-500 font-semibold mt-0.5">{company_name}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={onClose}>
+            <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-[640px] max-h-[90vh] flex flex-col shadow-xl border border-slate-100 overflow-hidden">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0 gap-3">
+                    <div className="min-w-0 flex-1">
+                        <h2 className="text-lg font-bold text-slate-800 break-words line-clamp-2">{title}</h2>
+                        <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">{company_name}</p>
+                        {isLong(title, 60) && (
+                            <button onClick={() => setExpandedText("title")} className="text-[11px] font-bold text-blue-600 hover:text-blue-700 mt-1 cursor-pointer">ดูชื่อตำแหน่งเต็ม...</button>
+                        )}
                     </div>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg shrink-0 cursor-pointer">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-2">
+                <div className="flex-1 overflow-y-auto pr-1 space-y-4 py-3 text-xs">
                     <div className="flex flex-wrap gap-2">
-                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full uppercase">
+                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full uppercase break-all">
                             รูปแบบงาน: {internship_type}
                         </span>
-                        <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full">
-                            สถานที่: {location}
+                        <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full max-w-full truncate">
+                            สถานที่: {location || "-"}
                         </span>
                         <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${getMatchScoreColor(match_score)}`}>
                             {match_score}% Match
@@ -1531,55 +1615,73 @@ function StudentInternshipDetailsModal({
                     </div>
 
                     <div className="space-y-1.5">
-                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">รายละเอียดงาน (Job Description)</h4>
-                        <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            {description || "ไม่มีข้อมูลรายละเอียด"}
-                        </p>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">รายละเอียดงาน (Job Description)</h4>
+                            {isLong(description) && <button onClick={() => setExpandedText("description")} className="text-[11px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer shrink-0">ดูเต็ม...</button>}
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed break-words break-all">
+                                {description ? (isLong(description) ? truncate(description) : description) : "ไม่มีข้อมูลรายละเอียด"}
+                            </p>
+                            {isLong(description) && (
+                                <button onClick={() => setExpandedText("description")} className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-700 bg-white border border-blue-200 px-2.5 py-1 rounded-lg cursor-pointer">... อ่านเพิ่มเติม</button>
+                            )}
+                        </div>
                     </div>
 
                     <div className="space-y-1.5">
-                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">หน้าที่ความรับผิดชอบ (Responsibilities)</h4>
-                        <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            {responsibilities || "ไม่มีข้อมูลหน้าที่ความรับผิดชอบ"}
-                        </p>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">หน้าที่ความรับผิดชอบ (Responsibilities)</h4>
+                            {isLong(responsibilities) && <button onClick={() => setExpandedText("responsibilities")} className="text-[11px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer shrink-0">ดูเต็ม...</button>}
+                        </div>
+                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed break-words break-all">
+                                {responsibilities ? (isLong(responsibilities) ? truncate(responsibilities) : responsibilities) : "ไม่มีข้อมูลหน้าที่ความรับผิดชอบ"}
+                            </p>
+                            {isLong(responsibilities) && (
+                                <button onClick={() => setExpandedText("responsibilities")} className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-700 bg-white border border-blue-200 px-2.5 py-1 rounded-lg cursor-pointer">... อ่านเพิ่มเติม</button>
+                            )}
+                        </div>
                     </div>
 
                     {skills && skills.length > 0 && (
                         <div className="space-y-1.5">
-                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">ทักษะที่ต้องการ (Required Skills)</h4>
-                            <div className="flex flex-wrap gap-1.5">
-                                {skills.map((skill: any) => (
-                                    <span
-                                        key={skill.skill_id}
-                                        className="text-xs font-semibold px-2.5 py-1 rounded-lg border bg-blue-50 text-blue-600 border-blue-100"
-                                    >
-                                        {skill.name} ({skill.level})
+                            <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">ทักษะที่ต้องการ (Required Skills)</h4>
+                                {skills.length > 5 && <span className="text-[10px] font-semibold text-slate-400">{skills.length} skills</span>}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                {skills.slice(0, 5).map((skill: any) => (
+                                    <span key={skill.skill_id} className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-lg border bg-blue-50 text-blue-600 border-blue-100 max-w-full">
+                                        <span className="truncate">{skill.name}</span>&nbsp;({skill.level})
                                     </span>
                                 ))}
+                                {skills.length > 5 && (
+                                    <button type="button" onClick={() => setIsReqSkillsModalOpen(true)} className="inline-flex items-center justify-center text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-800 text-white hover:bg-slate-900 border border-slate-800 transition-colors cursor-pointer shrink-0">... +{skills.length - 5} more</button>
+                                )}
                             </div>
                         </div>
                     )}
 
                     {studentSkills && studentSkills.length > 0 && (
                         <div className="space-y-1.5">
-                            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">ทักษะของคุณ (Your Skills)</h4>
-                            <div className="flex flex-wrap gap-1.5">
-                                {studentSkills.map((skill: any) => {
+                            <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">ทักษะของคุณ (Your Skills)</h4>
+                                {studentSkills.length > 5 && <span className="text-[10px] font-semibold text-slate-400">{studentSkills.length} skills</span>}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 items-center bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                {studentSkills.slice(0, 5).map((skill: any) => {
                                     const isMatched = skills.some((req: any) => req.skill_id === skill.skill_id);
                                     return (
-                                        <span
-                                            key={skill.skill_id}
-                                            className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${
-                                                isMatched
-                                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                                    : "bg-slate-50 text-slate-500 border-slate-200"
-                                            }`}
-                                        >
+                                        <span key={skill.skill_id} className={`inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-lg border max-w-full ${isMatched ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-50 text-slate-500 border-slate-200"}`}>
                                             {isMatched && <span className="mr-1">✓</span>}
-                                            {skill.name} ({skill.level})
+                                            <span className="truncate">{skill.name}</span>&nbsp;({skill.level})
                                         </span>
                                     );
                                 })}
+                                {studentSkills.length > 5 && (
+                                    <button type="button" onClick={() => setIsYourSkillsModalOpen(true)} className="inline-flex items-center justify-center text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-800 text-white hover:bg-slate-900 border border-slate-800 transition-colors cursor-pointer shrink-0">... +{studentSkills.length - 5} more</button>
+                                )}
                             </div>
                         </div>
                     )}
@@ -1587,24 +1689,50 @@ function StudentInternshipDetailsModal({
 
                 <div className="border-t border-slate-100 pt-3 shrink-0 flex justify-end gap-2">
                     {has_applied ? (
-                        <button
-                            onClick={onCancel}
-                            disabled={isCanceling}
-                            className="border border-rose-200 hover:bg-rose-50 text-rose-600 text-sm font-semibold px-5 py-2 rounded-xl transition-colors disabled:opacity-50"
-                        >
-                            {isCanceling ? "Canceling..." : "Cancel Apply"}
-                        </button>
+                        <button onClick={onCancel} disabled={isCanceling} className="border border-rose-200 hover:bg-rose-50 text-rose-600 text-sm font-semibold px-5 py-2 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"> {isCanceling ? "Canceling..." : "Cancel Apply"} </button>
                     ) : (
-                        <button
-                            onClick={onApply}
-                            disabled={isApplying}
-                            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors"
-                        >
-                            {isApplying ? "Applying..." : "Apply Now"}
-                        </button>
+                        <button onClick={onApply} disabled={isApplying} className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors cursor-pointer"> {isApplying ? "Applying..." : "Apply Now"} </button>
                     )}
                 </div>
             </div>
+
+            {/* Nested text expand modals - z-[70] */}
+            {expandedText && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setExpandedText(null); }}>
+                    <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[640px] max-h-[80vh] flex flex-col overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
+                            <h3 className="text-sm font-bold text-slate-800">
+                                {expandedText === "description" ? "รายละเอียดงาน (เต็ม)" : expandedText === "responsibilities" ? "หน้าที่ความรับผิดชอบ (เต็ม)" : "ชื่อตำแหน่ง (เต็ม)"}
+                            </h3>
+                            <button onClick={() => setExpandedText(null)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer shrink-0"><X className="w-5 h-5" /></button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4">
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed break-words break-all">
+                                {expandedText === "description" ? description : expandedText === "responsibilities" ? responsibilities : title}
+                            </p>
+                        </div>
+                        <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-end shrink-0"><button onClick={() => setExpandedText(null)} className="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg cursor-pointer">ปิด</button></div>
+                    </div>
+                </div>
+            )}
+            {isReqSkillsModalOpen && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsReqSkillsModalOpen(false); }}>
+                    <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0"><h3 className="text-sm font-bold text-slate-800">ทักษะที่ต้องการทั้งหมด</h3><button onClick={() => setIsReqSkillsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"><X className="w-5 h-5" /></button></div>
+                        <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4"><div className="flex flex-wrap gap-1.5">{skills.map((skill: any) => (<span key={skill.skill_id} className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs"><span>{skill.name}</span><span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">{skill.level}</span></span>))}</div></div>
+                        <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-end shrink-0"><button onClick={() => setIsReqSkillsModalOpen(false)} className="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg cursor-pointer">ปิด</button></div>
+                    </div>
+                </div>
+            )}
+            {isYourSkillsModalOpen && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsYourSkillsModalOpen(false); }}>
+                    <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0"><div><h3 className="text-sm font-bold text-slate-800">ทักษะของคุณ</h3><p className="text-[11px] font-medium text-slate-500 mt-0.5">✓ = ตรงกับที่งานต้องการ</p></div><button onClick={() => setIsYourSkillsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"><X className="w-5 h-5" /></button></div>
+                        <div className="flex-1 overflow-y-auto p-3 sm:p-4"><div className="flex flex-wrap gap-1.5">{studentSkills.map((skill: any) => { const isMatched = skills.some((req: any) => req.skill_id === skill.skill_id); return (<span key={skill.skill_id} className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border ${isMatched ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-600 border-slate-200"}`}><span>{skill.name}</span><span className="text-[10px] font-bold bg-white/70 px-1 rounded">{skill.level}</span></span>); })}</div></div>
+                        <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-end shrink-0"><button onClick={() => setIsYourSkillsModalOpen(false)} className="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg cursor-pointer">ปิด</button></div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

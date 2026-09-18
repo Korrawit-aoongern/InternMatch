@@ -40,6 +40,7 @@ export default function MatchesInternshipDetailsModal({
   const [isCached, setIsCached] = useState(false);
   const [isGeminiRefining, setIsGeminiRefining] = useState(false);
   const [activeFilter, setActiveFilter] = useState<"all" | "video" | "course">("all");
+  const [isAiExpanded, setIsAiExpanded] = useState(false);
 
   const isMountedRef = useRef(true);
 
@@ -156,8 +157,8 @@ export default function MatchesInternshipDetailsModal({
   const courseCount = useMemo(() => recommendations.filter((r) => r.resource_type === "course").length, [recommendations]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-5xl shadow-2xl border border-slate-100 grid grid-cols-1 md:grid-cols-2 overflow-y-auto max-h-[90vh] my-auto animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl w-full max-w-5xl shadow-2xl border border-slate-100 grid grid-cols-1 md:grid-cols-2 overflow-hidden max-h-[90vh] my-auto animate-in fade-in zoom-in-95 duration-200">
         
         {/* Left Side: General Internship Details & Skill Gaps */}
         <InternshipDetailsLeftPane
@@ -167,7 +168,7 @@ export default function MatchesInternshipDetailsModal({
         />
 
         {/* Right Side: Gemini AI Analysis & Recommendations */}
-        <div className="w-full min-w-0 p-5 md:p-6 bg-slate-50 flex flex-col justify-between space-y-4">
+        <div className="w-full min-w-0 p-5 md:p-6 bg-slate-50 flex flex-col space-y-4 overflow-y-auto overscroll-contain max-h-[90vh]">
           <div className="hidden md:flex justify-between items-center mb-1 shrink-0 sticky top-0 bg-slate-50/95 backdrop-blur-xs py-1.5 z-10">
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-100/70 border border-blue-200/80 px-2.5 py-1 rounded-full">
@@ -191,23 +192,43 @@ export default function MatchesInternshipDetailsModal({
 
           <div className="flex-1 flex flex-col justify-start space-y-4">
             <div className="space-y-4">
-              {/* AI Advice Bubble */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50/40 border border-blue-100 p-4 rounded-2xl text-xs text-blue-950 whitespace-pre-wrap leading-relaxed shadow-2xs">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-blue-700 flex items-center gap-1">
+              {/* AI Advice Bubble - with overflow catch */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50/40 border border-blue-100 p-4 rounded-2xl text-xs text-blue-950 leading-relaxed shadow-2xs">
+                <div className="flex items-center justify-between mb-2 gap-2">
+                  <span className="font-bold text-blue-700 flex items-center gap-1 shrink-0">
                     <Sparkles className="w-3 h-3 fill-blue-500 text-blue-500" />
                     คำแนะนำและ Roadmaps จาก AI
                   </span>
                   <button 
                     onClick={() => loadAiRecommendations(true)}
                     title="ขอคำแนะนำใหม่อีกครั้ง"
-                    className="text-[10px] text-blue-600 hover:text-blue-800 flex items-center gap-1 font-semibold"
+                    className="text-[10px] text-blue-600 hover:text-blue-800 flex items-center gap-1 font-semibold shrink-0 cursor-pointer"
                   >
                     <RefreshCw className={`w-2.5 h-2.5 ${isGeminiRefining ? "animate-spin" : ""}`} /> วิเคราะห์ใหม่
                   </button>
                 </div>
-                {aiText}
+                <div className="whitespace-pre-wrap break-words break-all line-clamp-6">
+                  {aiText.length > 500 ? aiText.slice(0, 500).trimEnd() + "…" : aiText}
+                </div>
+                {aiText.length > 500 && (
+                  <button onClick={() => setIsAiExpanded(true)} className="mt-2 text-[11px] font-bold text-blue-700 hover:text-blue-800 bg-white border border-blue-200 px-2.5 py-1 rounded-lg cursor-pointer">... อ่านคำแนะนำเต็ม</button>
+                )}
               </div>
+              {/* AI full text nested modal */}
+              {isAiExpanded && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsAiExpanded(false); }}>
+                  <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[640px] max-h-[80vh] flex flex-col overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
+                      <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-blue-600 fill-blue-600" /> คำแนะนำจาก AI (เต็ม)</h3>
+                      <button onClick={() => setIsAiExpanded(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"><X className="w-5 h-5" /></button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4">
+                      <p className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed break-words break-all">{aiText}</p>
+                    </div>
+                    <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-end shrink-0"><button onClick={() => setIsAiExpanded(false)} className="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg cursor-pointer">ปิด</button></div>
+                  </div>
+                </div>
+              )}
 
               {/* Filter Tabs & Recommendations */}
               {recommendations.length > 0 && (
