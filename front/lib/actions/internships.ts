@@ -1088,7 +1088,12 @@ export async function getStudentApplications() {
             ),
             internship_skills (
               skill_id,
-              level
+              level,
+              skills (
+                id,
+                name,
+                category
+              )
             )
           )
         `)
@@ -1148,7 +1153,13 @@ export async function getStudentApplications() {
         description: app.internships?.description || "",
         responsibilities: app.internships?.responsibilities || "",
         location: app.internships?.location || "",
-        internship_type: app.internships?.internship_type || ""
+        internship_type: app.internships?.internship_type || "",
+        skills: (app.internships?.internship_skills || []).map((is: any) => ({
+          skill_id: Number(is.skill_id),
+          name: is.skills?.name || "Unknown",
+          category: is.skills?.category || "Unknown",
+          level: is.level || "Intermediate",
+        })),
       };
     });
 
