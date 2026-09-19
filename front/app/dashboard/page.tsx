@@ -5,6 +5,7 @@ import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import StudentDashboard from "@/components/dashboard/StudentDashboard";
 import CompanyDashboard from "@/components/dashboard/CompanyDashboard";
+import { getStudentDashboardData, getCompanyDashboardData } from "@/lib/actions/dashboard";
 
 interface DecodedToken {
   userId: string;
@@ -41,11 +42,17 @@ export default async function DashboardPage() {
   const displayName = user?.fullname || user?.username || "Guest User";
   const role = user?.role || "student";
 
+  // Pre-fetch dashboard data concurrently on server for instant zero-latency render
+  const [studentData, companyData] = await Promise.all([
+    role === "student" ? getStudentDashboardData() : Promise.resolve(null),
+    role === "company" ? getCompanyDashboardData() : Promise.resolve(null),
+  ]);
+
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
       
       {/* Sidebar */}
-      <DashboardSidebar />
+      <DashboardSidebar role={role} />
 
       {/* Main Content Wrapper */}
       <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
@@ -55,9 +62,9 @@ export default async function DashboardPage() {
 
         {/* Dashboard Canvas Content based on user role */}
         {role === "company" ? (
-          <CompanyDashboard displayName={displayName} />
+          <CompanyDashboard displayName={displayName} initialData={companyData || undefined} />
         ) : (
-          <StudentDashboard displayName={displayName} />
+          <StudentDashboard displayName={displayName} initialData={studentData || undefined} />
         )}
       </div>
     </div>

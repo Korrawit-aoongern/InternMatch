@@ -432,19 +432,32 @@ export async function getInternshipApplicants(internshipId: string) {
       };
     });
 
-    // Generate signed URLs for resumes if they exist
-    for (const applicant of applicants) {
-      if (applicant.resume_path) {
-        try {
-          const { data: signData, error: signError } = await supabase.storage
-            .from("resumes")
-            .createSignedUrl(applicant.resume_path, 60 * 60);
-          if (!signError && signData) {
-            applicant.resume_url = signData.signedUrl;
-          }
-        } catch (err) {
-          console.error("Error signing resume URL:", err);
+    // Generate signed URLs for resumes in batch if they exist
+    const resumePaths = applicants
+      .map((a: any) => a.resume_path)
+      .filter(Boolean);
+
+    if (resumePaths.length > 0) {
+      try {
+        const { data: signData, error: signError } = await supabase.storage
+          .from("resumes")
+          .createSignedUrls(resumePaths, 60 * 60);
+
+        if (!signError && signData) {
+          const urlMap = new Map<string, string>();
+          signData.forEach((item: any) => {
+            if (item.signedUrl && item.path) {
+              urlMap.set(item.path, item.signedUrl);
+            }
+          });
+          applicants.forEach((applicant: any) => {
+            if (applicant.resume_path && urlMap.has(applicant.resume_path)) {
+              applicant.resume_url = urlMap.get(applicant.resume_path)!;
+            }
+          });
         }
+      } catch (err) {
+        console.error("Error batch signing resume URLs:", err);
       }
     }
 
@@ -553,17 +566,32 @@ export async function getCompanyApplications() {
       };
     });
 
-    // Generate signed resume URLs
-    for (const applicant of applicants) {
-      if (applicant.resume_path) {
-        try {
-          const { data: signData, error: signError } = await supabase.storage
-            .from("resumes")
-            .createSignedUrl(applicant.resume_path, 60 * 60);
-          if (!signError && signData) applicant.resume_url = signData.signedUrl;
-        } catch (err) {
-          console.error("Error signing resume URL:", err);
+    // Generate signed resume URLs in batch
+    const resumePaths = applicants
+      .map((a: any) => a.resume_path)
+      .filter(Boolean);
+
+    if (resumePaths.length > 0) {
+      try {
+        const { data: signData, error: signError } = await supabase.storage
+          .from("resumes")
+          .createSignedUrls(resumePaths, 60 * 60);
+
+        if (!signError && signData) {
+          const urlMap = new Map<string, string>();
+          signData.forEach((item: any) => {
+            if (item.signedUrl && item.path) {
+              urlMap.set(item.path, item.signedUrl);
+            }
+          });
+          applicants.forEach((applicant: any) => {
+            if (applicant.resume_path && urlMap.has(applicant.resume_path)) {
+              applicant.resume_url = urlMap.get(applicant.resume_path)!;
+            }
+          });
         }
+      } catch (err) {
+        console.error("Error batch signing resume URLs:", err);
       }
     }
 
@@ -711,7 +739,6 @@ export async function getStudentInternships() {
     const token = cookieStore.get("auth_token")?.value || cookieStore.get("token")?.value;
     
     let studentId: string | null = null;
-    let studentSkillsData: any[] = [];
     
     if (token) {
       try {
@@ -729,16 +756,6 @@ export async function getStudentInternships() {
             
           if (student) {
             studentId = student.id;
-            
-            // Fetch student skills with level
-            const { data: skillsData } = await supabase
-              .from("student_skills")
-              .select("skill_id, level")
-              .eq("student_id", studentId);
-              
-            if (skillsData) {
-              studentSkillsData = skillsData;
-            }
           }
         }
       } catch (e) {
@@ -746,48 +763,70 @@ export async function getStudentInternships() {
       }
     }
 
-    const { data: internships, error } = await supabase
-      .from("internships")
-      .select(`
-        *,
-        companies (
-          company_name,
-          logo,
-          province
-        ),
-        applications (
+    // Parallel fetch: open internships, student skills, and only this student's applications
+    const [internshipsRes, skillsRes, myAppsRes] = await Promise.all([
+      supabase
+        .from("internships")
+        .select(`
           id,
-          student_id,
-          status
-        ),
-        internship_skills (
-          id,
-          skill_id,
-          level,
-          skills (
+          company_id,
+          title,
+          department,
+          description,
+          responsibilities,
+          location,
+          internship_type,
+          status,
+          created_at,
+          companies (
+            company_name,
+            logo,
+            province
+          ),
+          internship_skills (
             id,
-            name,
-            category
+            skill_id,
+            level,
+            skills (
+              id,
+              name,
+              category
+            )
           )
-        )
-      `)
-      .eq("status", "open")
-      .order("created_at", { ascending: false });
+        `)
+        .eq("status", "open")
+        .order("created_at", { ascending: false }),
+      studentId
+        ? supabase
+            .from("student_skills")
+            .select("skill_id, level")
+            .eq("student_id", studentId)
+        : Promise.resolve({ data: [] }),
+      studentId
+        ? supabase
+            .from("applications")
+            .select("internship_id, status")
+            .eq("student_id", studentId)
+        : Promise.resolve({ data: [] }),
+    ]);
 
-    if (error) {
-      console.error("Error fetching student internships:", error);
-      return { success: false, error: error.message };
+    if (internshipsRes.error) {
+      console.error("Error fetching student internships:", internshipsRes.error);
+      return { success: false, error: internshipsRes.error.message };
     }
 
-    const mappedInternships = (internships || []).map((item: any) => {
-      const hasApplied = studentId 
-        ? (item.applications || []).some((app: any) => app.student_id === studentId) 
-        : false;
-      
-      const applicationStatus = studentId 
-        ? (item.applications || []).find((app: any) => app.student_id === studentId)?.status || null 
-        : null;
+    const studentSkillsData = skillsRes.data || [];
+    const myApps = myAppsRes.data || [];
+    const appliedMap = new Map<string, string>();
+    myApps.forEach((app: any) => {
+      if (app.internship_id) {
+        appliedMap.set(app.internship_id, app.status || "pending");
+      }
+    });
 
+    const mappedInternships = (internshipsRes.data || []).map((item: any) => {
+      const hasApplied = studentId ? appliedMap.has(item.id) : false;
+      const applicationStatus = studentId ? (appliedMap.get(item.id) || null) : null;
       const matchScore = calculateMatchScoreHelper(studentSkillsData, item.internship_skills);
 
       return {
@@ -1012,51 +1051,50 @@ export async function getStudentApplications() {
       return { success: false, error: "Student profile not found" };
     }
 
-    // Fetch student skills for dynamic recalculation
-    const { data: studentSkills, error: studentSkillsError } = await supabase
-      .from("student_skills")
-      .select("skill_id, level")
-      .eq("student_id", student.id);
-
-    if (studentSkillsError) {
-      console.error("Error fetching student skills in getStudentApplications:", studentSkillsError);
-      return { success: false, error: "Failed to load candidate skills profile" };
-    }
-
-    const { data, error } = await supabase
-      .from("applications")
-      .select(`
-        id,
-        match_score,
-        status,
-        applied_at,
-        internship_id,
-        internships (
-          title,
-          company_id,
-          description,
-          responsibilities,
-          location,
-          internship_type,
-          companies (
-            company_name,
-            logo,
-            province,
-            user_id
-          ),
-          internship_skills (
-            skill_id,
-            level
+    // Fetch student skills and applications concurrently
+    const [skillsRes, appsRes] = await Promise.all([
+      supabase
+        .from("student_skills")
+        .select("skill_id, level")
+        .eq("student_id", student.id),
+      supabase
+        .from("applications")
+        .select(`
+          id,
+          match_score,
+          status,
+          applied_at,
+          internship_id,
+          internships (
+            title,
+            company_id,
+            description,
+            responsibilities,
+            location,
+            internship_type,
+            companies (
+              company_name,
+              logo,
+              province,
+              user_id
+            ),
+            internship_skills (
+              skill_id,
+              level
+            )
           )
-        )
-      `)
-      .eq("student_id", student.id)
-      .order("applied_at", { ascending: false });
+        `)
+        .eq("student_id", student.id)
+        .order("applied_at", { ascending: false }),
+    ]);
 
-    if (error) {
-      console.error("Error fetching student applications:", error);
-      return { success: false, error: error.message };
+    if (appsRes.error) {
+      console.error("Error fetching student applications:", appsRes.error);
+      return { success: false, error: appsRes.error.message };
     }
+
+    const studentSkills = skillsRes.data || [];
+    const data = appsRes.data || [];
 
     // Fetch emails for companies associated with the applications
     const companyUserIds = Array.from(

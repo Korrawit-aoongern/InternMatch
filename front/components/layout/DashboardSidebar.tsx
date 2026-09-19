@@ -14,11 +14,22 @@ import {
 import { getUserRole } from "@/lib/actions/auth";
 import { getCachedRole, setCachedRole } from "@/lib/utils/roleCache";
 
-export default function DashboardSidebar() {
+interface DashboardSidebarProps {
+  role?: string;
+}
+
+export default function DashboardSidebar({ role: initialRole }: DashboardSidebarProps = {}) {
   const pathname = usePathname();
-  const [role, setRole] = useState<string | null>(getCachedRole());
+  const [role, setRole] = useState<string | null>(initialRole || getCachedRole());
 
   useEffect(() => {
+    if (initialRole) {
+      setCachedRole(initialRole);
+      setRole(initialRole);
+      return;
+    }
+    if (role) return;
+
     let isMounted = true;
     async function loadRole() {
       try {
@@ -36,7 +47,7 @@ export default function DashboardSidebar() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [initialRole, role]);
 
   const menuItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },

@@ -4,23 +4,14 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, Bell, User } from "lucide-react";
-import { getStudentProfile, getCompanyProfile } from "@/lib/actions/auth";
-import { getStudentApplications, getCompanyApplications } from "@/lib/actions/internships";
+import { getHeaderData, HeaderNotificationItem } from "@/lib/actions/notifications";
 
 interface DashboardHeaderProps {
   title: string;
   avatarUrl?: string;
 }
 
-interface NotificationItem {
-  id: string;
-  title: string;
-  description: string;
-  time: string;
-  status?: string;
-  isRead?: boolean;
-  link: string;
-}
+type NotificationItem = HeaderNotificationItem;
 
 export default function DashboardHeader({ title, avatarUrl }: DashboardHeaderProps) {
   const [avatar, setAvatar] = useState<string | null>(null);
@@ -33,107 +24,30 @@ export default function DashboardHeader({ title, avatarUrl }: DashboardHeaderPro
   useEffect(() => {
     let isMounted = true;
 
-    async function loadProfileAndNotifications() {
-      try {
-        if (avatarUrl) {
-          // Avatar is provided explicitly
-        } else {
-          // Fetch avatar & role
-          const studentRes = await getStudentProfile();
-          if (studentRes.success && studentRes.profile) {
-            if (isMounted) {
-              setRole("student");
-              if (studentRes.profile.profile_image) setAvatar(studentRes.profile.profile_image);
-            }
-          } else {
-            const companyRes = await getCompanyProfile();
-            if (companyRes.success && companyRes.profile) {
-              if (isMounted) {
-                setRole("company");
-                if (companyRes.profile.logo) setAvatar(companyRes.profile.logo);
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load header profile:", err);
-      }
-    }
-
-    loadProfileAndNotifications();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [avatarUrl]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function fetchNotifications() {
+    async function loadHeader() {
       setLoadingNotifications(true);
       try {
-        // Try student applications first
-        const studentApps = await getStudentApplications();
-        if (studentApps.success && studentApps.applications) {
-          if (!isMounted) return;
-          setRole("student");
-          const apps = studentApps.applications;
-          const notifs: NotificationItem[] = apps.map((app: any) => {
-            let statusText = "ส่งใบสมัครแล้ว (Pending)";
-            if (app.status === "reviewing") statusText = "กำลังอยู่ระหว่างพิจารณา (Reviewing)";
-            if (app.status === "accepted") statusText = "ได้รับการตอบรับฝึกงาน! 🎉 (Accepted)";
-            if (app.status === "rejected") statusText = "ไม่ผ่านการคัดเลือก (Rejected)";
-
-            return {
-              id: app.id,
-              title: app.title,
-              description: `${app.company_name} - สถานะ: ${statusText}`,
-              time: app.applied_at ? new Date(app.applied_at).toLocaleDateString("th-TH", { month: "short", day: "numeric" }) : "เร็วๆ นี้",
-              status: app.status,
-              link: `/dashboard/applications?id=${app.id}`
-            };
-          });
-
-          setNotifications(notifs);
-          setUnreadCount(notifs.filter(n => n.status === "accepted" || n.status === "reviewing" || n.status === "pending").length);
-          setLoadingNotifications(false);
-          return;
-        }
-
-        // Try company applicants
-        const companyApps = await getCompanyApplications();
-        if (companyApps.success && companyApps.applicants) {
-          if (!isMounted) return;
-          setRole("company");
-          const applicants = companyApps.applicants;
-          const notifs: NotificationItem[] = applicants.map((app: any) => ({
-            id: app.application_id,
-            title: `ใบสมัครใหม่: ${app.fullname}`,
-            description: `สมัครตำแหน่ง ${app.internship_title} (${app.university})`,
-            time: app.applied_at ? new Date(app.applied_at).toLocaleDateString("th-TH", { month: "short", day: "numeric" }) : "ล่าสุด",
-            status: app.status,
-            link: `/dashboard/applications?position=${app.internship_id}&appId=${app.application_id}`
-          }));
-
-          setNotifications(notifs);
-          setUnreadCount(notifs.filter(n => n.status === "pending").length);
-          setLoadingNotifications(false);
-          return;
+        const res = await getHeaderData();
+        if (!isMounted) return;
+        if (res.success) {
+          setRole(res.role);
+          if (res.avatar && !avatarUrl) setAvatar(res.avatar);
+          setNotifications(res.notifications);
+          setUnreadCount(res.unreadCount);
         }
       } catch (err) {
-        console.error("Error fetching notifications:", err);
+        console.error("Error loading header data:", err);
       } finally {
         if (isMounted) setLoadingNotifications(false);
       }
     }
 
-    fetchNotifications();
+    loadHeader();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [avatarUrl]);
 
   const displayAvatar = avatarUrl || avatar;
   const router = useRouter();
