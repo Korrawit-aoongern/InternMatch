@@ -1076,6 +1076,7 @@ export async function getStudentApplications() {
           internships (
             title,
             company_id,
+            status,
             description,
             responsibilities,
             location,
@@ -1138,6 +1139,8 @@ export async function getStudentApplications() {
       const compUserId = app.internships?.companies?.user_id;
       const compEmail = (compUserId && emailMap.get(compUserId)) || "";
 
+      const internshipExists = !!app.internships;
+      const rawInternshipStatus = app.internships?.status || null;
       return {
         id: app.id,
         match_score: recalculatedScore,
@@ -1154,6 +1157,8 @@ export async function getStudentApplications() {
         responsibilities: app.internships?.responsibilities || "",
         location: app.internships?.location || "",
         internship_type: app.internships?.internship_type || "",
+        internship_status: rawInternshipStatus,
+        internship_exists: internshipExists,
         skills: (app.internships?.internship_skills || []).map((is: any) => ({
           skill_id: Number(is.skill_id),
           name: is.skills?.name || "Unknown",

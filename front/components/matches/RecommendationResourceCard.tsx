@@ -68,10 +68,10 @@ export default function RecommendationResourceCard({ resource }: Props) {
         </span>
       </div>
 
-      {/* Title & Instructor - with overflow catch */}
+      {/* Title & Instructor - reuse see-more logic (char limit, no line-clamp) */}
       <div>
-        <h5 className="text-xs font-bold text-slate-800 line-clamp-2 hover:text-blue-600 leading-snug break-words break-all">
-          {resource.title}
+        <h5 className="text-xs font-bold text-slate-800 hover:text-blue-600 leading-snug break-words break-all">
+          {resource.title.length > 80 ? resource.title.slice(0, 80).trimEnd() + "…" : resource.title}
         </h5>
         <p className="text-[11px] text-slate-500 mt-0.5 truncate">
           ผู้สอน/ช่อง: <span className="font-semibold text-slate-700">{resource.author}</span>
@@ -81,11 +81,11 @@ export default function RecommendationResourceCard({ resource }: Props) {
         )}
       </div>
 
-      {/* Why Recommended / Reason - collapsed */}
+      {/* Why Recommended / Reason - reuse same see-more logic */}
       {resource.reason && (
         <>
-          <p className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-100 leading-relaxed break-words break-all line-clamp-3">
-            💡 <span className="font-medium">{resource.reason}</span>
+          <p className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-lg border border-slate-100 leading-relaxed break-words break-all">
+            💡 <span className="font-medium">{resource.reason.length > 180 ? resource.reason.slice(0, 180).trimEnd() + "…" : resource.reason}</span>
           </p>
           {resource.reason.length > 180 && (
             <button onClick={() => setIsExpanded(true)} className="text-[10px] font-bold text-blue-600 hover:text-blue-700 cursor-pointer">... อ่านเหตุผลเต็ม</button>

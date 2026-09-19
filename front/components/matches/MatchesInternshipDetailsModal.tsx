@@ -207,11 +207,11 @@ export default function MatchesInternshipDetailsModal({
                     <RefreshCw className={`w-2.5 h-2.5 ${isGeminiRefining ? "animate-spin" : ""}`} /> วิเคราะห์ใหม่
                   </button>
                 </div>
-                <div className="whitespace-pre-wrap break-words break-all line-clamp-6">
+                <div className="whitespace-pre-wrap break-words break-all">
                   {aiText.length > 500 ? aiText.slice(0, 500).trimEnd() + "…" : aiText}
                 </div>
                 {aiText.length > 500 && (
-                  <button onClick={() => setIsAiExpanded(true)} className="mt-2 text-[11px] font-bold text-blue-700 hover:text-blue-800 bg-white border border-blue-200 px-2.5 py-1 rounded-lg cursor-pointer">... อ่านคำแนะนำเต็ม</button>
+                  <button onClick={() => setIsAiExpanded(true)} className="mt-2 text-[11px] font-bold text-blue-700 hover:text-blue-800 bg-white border border-blue-200 px-2.5 py-1 rounded-lg cursor-pointer">... อ่านคำแนะนำเต็ม ({aiText.length} ตัวอักษร)</button>
                 )}
               </div>
               {/* AI full text nested modal */}

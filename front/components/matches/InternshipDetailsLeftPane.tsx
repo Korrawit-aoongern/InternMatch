@@ -20,6 +20,10 @@ export default function InternshipDetailsLeftPane({
 }: LeftPaneProps) {
   const { title, company_name, location, internship_type, description, responsibilities, skills, match_score } = item;
   const [expandedText, setExpandedText] = useState<null | "title" | "description" | "responsibilities">(null);
+  const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
+  const SKILLS_LIMIT = 5;
+  const hasMoreSkills = (skills?.length || 0) > SKILLS_LIMIT;
+  const displayedSkills = hasMoreSkills ? skills.slice(0, SKILLS_LIMIT) : skills;
 
   const getMatchColor = (score: number) => {
     if (score >= 80) return "bg-emerald-50 text-emerald-700 border-emerald-200";
@@ -93,8 +97,8 @@ export default function InternshipDetailsLeftPane({
           <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">เปรียบเทียบทักษะที่ต้องการ</h4>
           <span className="text-[11px] font-semibold text-slate-400">{skills?.length || 0} ทักษะ</span>
         </div>
-        <div className="flex flex-col gap-2 max-h-[320px] overflow-y-auto overscroll-contain pr-1">
-          {skills?.map((req: any) => {
+        <div className="flex flex-col gap-2 pr-1">
+          {(displayedSkills || []).map((req: any) => {
             const reqName = req.name || req.skills?.name || `Skill #${req.skill_id}`;
             const studentSkill = studentSkills.find((s: any) => {
               const sName = s.name || s.skills?.name || "";
@@ -130,6 +134,15 @@ export default function InternshipDetailsLeftPane({
               </div>
             );
           })}
+          {hasMoreSkills && (
+            <button
+              type="button"
+              onClick={() => setIsSkillsModalOpen(true)}
+              className="inline-flex items-center justify-center text-xs font-bold px-3 py-1.5 rounded-lg bg-slate-800 text-white hover:bg-slate-900 border border-slate-800 transition-colors cursor-pointer"
+            >
+              ... +{skills.length - SKILLS_LIMIT} more
+            </button>
+          )}
         </div>
       </div>
       
@@ -140,6 +153,52 @@ export default function InternshipDetailsLeftPane({
         </div>
       </div>
     </div>
+      {/* Skills full list modal - same see-more logic as Internships/applications pages */}
+      {isSkillsModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={(e) => { e.stopPropagation(); setIsSkillsModalOpen(false); }}>
+          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[520px] max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-slate-800 truncate pr-2">ทักษะทั้งหมด • {title}</h3>
+                <p className="text-[11px] font-medium text-slate-500 mt-0.5">{skills?.length || 0} ทักษะ • ✓ = ตรงเกณฑ์, ⚠ = ต้องอัปเกรด</p>
+              </div>
+              <button onClick={() => setIsSkillsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer shrink-0"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4">
+              <div className="flex flex-col gap-2">
+                {skills?.map((req: any) => {
+                  const reqName = req.name || req.skills?.name || `Skill #${req.skill_id}`;
+                  const studentSkill = studentSkills.find((s: any) => Number(s.skill_id) === Number(req.skill_id) || (s.name || s.skills?.name || "").toLowerCase() === reqName.toLowerCase());
+                  const reqLevelStr = (req.level || "Intermediate").toLowerCase();
+                  const studentLevelStr = studentSkill ? (studentSkill.level || "").toLowerCase() : "";
+                  const isUnderLeveled = studentSkill && (LEVEL_WEIGHTS[studentLevelStr] || 0) < (LEVEL_WEIGHTS[reqLevelStr] || 2);
+                  return (
+                    <div key={req.skill_id || reqName} className="flex flex-wrap items-center justify-between gap-2 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100 text-xs">
+                      <span className="font-semibold text-slate-700">{reqName}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-400">เกณฑ์: {req.level}</span>
+                        {studentSkill ? (
+                          isUnderLeveled ? (
+                            <span className="flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-semibold">
+                              <AlertTriangle className="w-3 h-3 text-amber-500" /> ต้องการอัปเกรด ({studentSkill.level})
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-semibold">✓ ผ่านเกณฑ์ ({studentSkill.level})</span>
+                          )
+                        ) : (
+                          <span className="text-[10px] text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 font-semibold">✕ ขาดทักษะนี้</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-end shrink-0"><button onClick={() => setIsSkillsModalOpen(false)} className="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg cursor-pointer">ปิด</button></div>
+          </div>
+        </div>
+      )}
+
       {/* Nested text expand modals - z-[70] outside scroll container to prevent clipping/flicker */}
       {expandedText && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={(e) => { e.stopPropagation(); setExpandedText(null); }}>

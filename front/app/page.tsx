@@ -42,14 +42,117 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <div className="relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-2xl">
-            <div
-              className="absolute inset-0 bg-cover bg-center w-full h-full rounded-2xl"
-              data-alt="A clean, modern corporate illustration depicting a highly organized, professional dashboard interface floating in abstract space. The design uses high-key, soft white lighting with a pristine white background. Elements include glassmorphism panels, subtle shadows, and crisp blue accents (#2563EB) showcasing charts, profile cards, and AI-driven match metrics. The mood is intelligent, efficient, and forward-thinking."
-              style={{
-                backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCtf2cv8-5z4FKnE0yDnVlvn0pz7W0sGREWodggVhFsDYvIO-eOxIjlLjSg-AyBG3FcLKEni-y5rwuDREvwcE7CsJ-DetGXQX2KInYw26uqGxwyoNiUQIpgGRefOTul1bZW6tw-VoNP5DgCfR-MGXtK4L9utDfJdvUGQ-jjzQE2c9zqvCh4japovLJsO0_LT_1Cs2KPfwcaZJ7FCVl33q1pkdqHeFYsfKLe7iVYSbpq5JnmmFtV0wYhd7I-aKXpgfZUxQTUNmoI0FdT')"
-              }}
-            />
+          {/* Product UI Mock - Option 2 */}
+          <div className="relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-2xl bg-slate-50 border border-slate-200 p-3 md:p-5 flex flex-col gap-3 md:gap-4">
+            {/* Browser chrome */}
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-400" />
+                <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                <div className="w-3 h-3 rounded-full bg-green-400" />
+              </div>
+              <div className="flex-1 bg-white rounded-full h-7 border border-slate-200 flex items-center px-3 gap-2 text-xs text-slate-400">
+                <div className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
+                internmatch.co.th/dashboard
+              </div>
+            </div>
+
+            {/* Mock header */}
+            <div className="bg-white rounded-xl border border-slate-200 p-3 md:p-4 flex justify-between items-center shrink-0">
+              <div>
+                <div className="text-[11px] font-bold text-primary-container uppercase tracking-wider">Student Dashboard</div>
+                <div className="text-sm font-bold text-slate-800">Welcome back, Alex!</div>
+                <div className="text-[11px] text-slate-500">Here&apos;s your career progress at a glance.</div>
+              </div>
+              <div className="hidden sm:flex bg-primary-container text-white text-xs font-semibold px-3 py-1.5 rounded-lg items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5" /> AI Resume Review
+              </div>
+            </div>
+
+            {/* Stats row */}
+            <div className="grid grid-cols-3 gap-2 md:gap-3 shrink-0">
+              <div className="bg-white rounded-xl border border-slate-200 p-2.5 md:p-3">
+                <div className="text-[10px] font-bold text-slate-500 uppercase">Match Score</div>
+                <div className="text-sm font-black text-slate-800">High (82%)</div>
+                <div className="mt-1.5 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full w-[82%] bg-emerald-500 rounded-full" />
+                </div>
+              </div>
+              <div className="bg-white rounded-xl border border-slate-200 p-2.5 md:p-3">
+                <div className="text-[10px] font-bold text-slate-500 uppercase">Applied</div>
+                <div className="text-sm font-black text-slate-800">5 Positions</div>
+                <div className="text-[11px] text-primary-container font-semibold mt-1">View →</div>
+              </div>
+              <div className="bg-white rounded-xl border border-slate-200 p-2.5 md:p-3">
+                <div className="text-[10px] font-bold text-slate-500 uppercase">Recommended</div>
+                <div className="text-sm font-black text-emerald-600">12 Matches</div>
+                <div className="text-[11px] text-slate-500 mt-1">Top 92% fit</div>
+              </div>
+            </div>
+
+            {/* Internships list + AI Insights */}
+            <div className="flex-1 grid grid-cols-5 gap-3 min-h-0">
+              <div className="col-span-3 bg-white rounded-xl border border-slate-200 p-3 flex flex-col gap-2.5 overflow-hidden">
+                <div className="flex justify-between items-center shrink-0">
+                  <span className="text-xs font-bold text-slate-800">Recommended for you</span>
+                  <span className="text-[11px] font-semibold text-primary-container">View All</span>
+                </div>
+                {/* Card 1 */}
+                <div className="bg-slate-50 rounded-lg border border-slate-100 p-2.5 space-y-1">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="text-xs font-bold text-slate-800 leading-tight">Frontend Intern — SCB TechX</div>
+                    <span className="shrink-0 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">92% Match</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">Bangkok • React • Tailwind</div>
+                  <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full w-[92%] bg-primary-container rounded-full" />
+                  </div>
+                </div>
+                {/* Card 2 */}
+                <div className="bg-slate-50 rounded-lg border border-slate-100 p-2.5 space-y-1">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="text-xs font-bold text-slate-800 leading-tight">Data Science Intern — Agoda</div>
+                    <span className="shrink-0 bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">78% Match</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">Bangkok • Python • SQL</div>
+                  <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full w-[78%] bg-primary-container rounded-full" />
+                  </div>
+                </div>
+                <div className="text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-2 py-1.5 font-medium">
+                  ⚠️ Skill Gap: ขาด Docker (แนะนำคอร์ส 2 ชม.)
+                </div>
+              </div>
+
+              {/* AI Insights mini */}
+              <div className="col-span-2 bg-white rounded-xl border border-slate-200 p-3 flex flex-col gap-2 overflow-hidden">
+                <div className="flex items-center gap-1.5 text-primary-container shrink-0">
+                  <Cpu className="w-4 h-4" />
+                  <span className="text-xs font-bold text-slate-800">AI Insights</span>
+                  <span className="ml-auto text-[9px] font-bold bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded-full">SE 100%</span>
+                </div>
+                <div className="bg-gradient-to-br from-blue-50/60 to-white rounded-lg border border-blue-100 p-2.5 space-y-2 flex-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">Resume Score</span>
+                    <span className="text-sm font-black text-primary-container">86<span className="text-[10px] text-slate-400">/100</span></span>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-[10px]"><span className="text-slate-600">Structure</span><span className="font-bold">90/100</span></div>
+                    <div className="h-1 bg-slate-100 rounded-full overflow-hidden"><div className="h-full w-[90%] bg-emerald-500 rounded-full" /></div>
+                    <div className="flex justify-between text-[10px]"><span className="text-slate-600">Skills</span><span className="font-bold">78/100</span></div>
+                    <div className="h-1 bg-slate-100 rounded-full overflow-hidden"><div className="h-full w-[78%] bg-amber-500 rounded-full" /></div>
+                    <div className="flex justify-between text-[10px]"><span className="text-slate-600">Experience</span><span className="font-bold">85/100</span></div>
+                    <div className="h-1 bg-slate-100 rounded-full overflow-hidden"><div className="h-full w-[85%] bg-emerald-500 rounded-full" /></div>
+                  </div>
+                  <div className="text-[10px] font-semibold text-white bg-primary-container rounded-md px-2 py-1.5 text-center">
+                    ดูรายงานฉบับเต็ม →
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* subtle glow */}
+            <div className="pointer-events-none absolute -bottom-10 -right-10 w-40 h-40 bg-primary-container/10 rounded-full blur-2xl" />
           </div>
         </section>
 
@@ -57,15 +160,15 @@ export default function Home() {
         <section className="bg-primary-container py-xl">
           <div className="max-w-container-max mx-auto px-lg grid grid-cols-1 md:grid-cols-3 gap-lg text-center">
             <div className="space-y-2">
-              <div className="font-h1 text-h1 text-white">10,000+</div>
+              <div className="font-h1 text-h1 text-white">1000+</div>
               <div className="font-body-sm text-body-sm text-primary-fixed-dim">นักศึกษา</div>
             </div>
             <div className="space-y-2 border-y md:border-y-0 md:border-x border-white/20 py-md md:py-0">
-              <div className="font-h1 text-h1 text-white">500+</div>
+              <div className="font-h1 text-h1 text-white">50+</div>
               <div className="font-body-sm text-body-sm text-primary-fixed-dim">บริษัทชั้นนำ</div>
             </div>
             <div className="space-y-2">
-              <div className="font-h1 text-h1 text-white">92%</div>
+              <div className="font-h1 text-h1 text-white">95.9%</div>
               <div className="font-body-sm text-body-sm text-primary-fixed-dim">อัตราการจับคู่สำเร็จ</div>
             </div>
           </div>

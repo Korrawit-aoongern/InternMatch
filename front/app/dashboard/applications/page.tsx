@@ -30,7 +30,9 @@ import {
     Globe,
     Code,
     Link2,
-    Download
+    Download,
+    Archive,
+    Lock
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toaster";
 import { useAppModal } from "@/components/ui/AppModal";
@@ -51,6 +53,8 @@ interface StudentApplicationItem {
     responsibilities: string;
     location: string;
     internship_type: string;
+    internship_status?: string | null;
+    internship_exists?: boolean;
     skills?: { skill_id: number; name: string; category: string; level: string }[];
 }
 
@@ -154,6 +158,45 @@ const renderStatusBadge = (status: string) => {
                 </span>
             );
     }
+};
+
+const renderInternshipBadge = (item: StudentApplicationItem) => {
+    // Archived: internship row deleted (hard delete) -> internships is null
+    if (item.internship_exists === false || (!item.internship_status && item.title === "Unknown Position")) {
+        return (
+            <span
+                title="ประกาศนี้ถูกลบหรือเก็บถาวรแล้ว จึงไม่แสดงในหน้า Internships (แสดงเฉพาะ open)"
+                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-white border border-slate-700"
+            >
+                <Archive className="w-3 h-3" />
+                Archived
+            </span>
+        );
+    }
+    const s = (item.internship_status || "").toLowerCase();
+    if (s === "closed") {
+        return (
+            <span
+                title="ตำแหน่งนี้ปิดรับสมัครแล้ว จึงไม่แสดงในหน้า Internships (แสดงเฉพาะ open) - ใบสมัครของคุณยังถูกติดตามที่นี่"
+                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200"
+            >
+                <Lock className="w-3 h-3" />
+                Closed
+            </span>
+        );
+    }
+    if (s === "archived") {
+        return (
+            <span
+                title="ประกาศนี้ถูกเก็บถาวรแล้ว จึงไม่แสดงในหน้า Internships"
+                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-white border border-slate-700"
+            >
+                <Archive className="w-3 h-3" />
+                Archived
+            </span>
+        );
+    }
+    return null;
 };
 
 export default function ApplicationsPage() {
@@ -684,8 +727,12 @@ function StudentApplicationsView() {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-slate-100">
-                                        {paginatedApplications.map((item) => (
-                                            <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                                        {paginatedApplications.map((item) => {
+                                            const isClosedOrArchived =
+                                                item.internship_exists === false ||
+                                                ["closed", "archived"].includes((item.internship_status || "").toLowerCase());
+                                            return (
+                                            <tr key={item.id} className={`hover:bg-slate-50/50 transition-colors ${isClosedOrArchived ? "bg-slate-50/60" : ""}`}>
                                                 {/* Company & Position */}
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center gap-3">
@@ -700,13 +747,19 @@ function StudentApplicationsView() {
                                                                 item.company_name.substring(0, 2).toUpperCase()
                                                             )}
                                                         </div>
-                                                        <div className="flex flex-col">
+                                                        <div className="flex flex-col min-w-0">
                                                             <span className="text-sm font-bold text-slate-800">
                                                                 {item.company_name}
                                                             </span>
-                                                            <span className="text-xs text-slate-400 font-medium">
+                                                            <span className="text-xs text-slate-400 font-medium truncate max-w-[180px]">
                                                                 {item.title}
                                                             </span>
+                                                            {renderInternshipBadge(item) && (
+                                                                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                                                    {renderInternshipBadge(item)}
+                                                                    <span className="text-[10px] text-slate-400 font-medium">ไม่แสดงใน Internships</span>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -774,7 +827,8 @@ function StudentApplicationsView() {
                                                     )}
                                                 </td>
                                             </tr>
-                                        ))}
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
@@ -864,7 +918,28 @@ function StudentApplicationsView() {
                                         <span className="text-xs font-bold bg-slate-50 text-slate-500 px-2.5 py-0.5 rounded-full border border-slate-100 shrink-0">
                                             Applied on {formatDate(selectedApplication.applied_at)}
                                         </span>
+                                        {renderInternshipBadge(selectedApplication) && (
+                                            <span className="inline-flex">{renderInternshipBadge(selectedApplication)}</span>
+                                        )}
                                     </div>
+
+                                    {/* Closed/Archived explanation banner */}
+                                    {renderInternshipBadge(selectedApplication) && (
+                                        <div
+                                            className={`flex items-start gap-2.5 rounded-xl px-3 py-2.5 border text-xs leading-relaxed ${
+                                                selectedApplication.internship_exists === false || (selectedApplication.internship_status || "").toLowerCase() === "archived"
+                                                    ? "bg-slate-800 text-white border-slate-700"
+                                                    : "bg-amber-50 text-amber-800 border-amber-200"
+                                            }`}
+                                        >
+                                            <span className="shrink-0 mt-0.5">{renderInternshipBadge(selectedApplication)}</span>
+                                            <span className="font-medium">
+                                                {selectedApplication.internship_exists === false || (selectedApplication.internship_status || "").toLowerCase() === "archived"
+                                                    ? "ประกาศนี้ถูกลบหรือเก็บถาวรโดยบริษัท จึงไม่แสดงในหน้า Internships (แสดงเฉพาะตำแหน่งที่เปิดรับ) — ใบสมัครของคุณยังถูกเก็บไว้ที่นี่"
+                                                    : "ตำแหน่งนี้ปิดรับสมัครแล้ว (Closed) จึงไม่แสดงในหน้า Internships ซึ่งแสดงเฉพาะตำแหน่งที่เปิดรับ (open) — ใบสมัครของคุณยังอยู่ที่นี่และบริษัทยังพิจารณาได้ตามปกติ"}
+                                            </span>
+                                        </div>
+                                    )}
 
                                     <div className="space-y-1.5">
                                         <div className="flex items-center justify-between">
