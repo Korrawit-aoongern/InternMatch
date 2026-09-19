@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toaster";
 import { useAppModal } from "@/components/ui/AppModal";
+import CompanyProfileModal from "@/components/ui/CompanyProfileModal";
 
 interface StudentApplicationItem {
     id: string;
@@ -43,6 +44,7 @@ interface StudentApplicationItem {
     status: string;
     applied_at: string;
     internship_id: string;
+    company_id?: string | null;
     title: string;
     company_name: string;
     company_logo: string;
@@ -535,6 +537,7 @@ function StudentApplicationsView() {
     const [studentSkills, setStudentSkills] = useState<any[]>([]);
     const [isReqSkillsModalOpen, setIsReqSkillsModalOpen] = useState(false);
     const [isYourSkillsModalOpen, setIsYourSkillsModalOpen] = useState(false);
+    const [companyModal, setCompanyModal] = useState<{ id: string | null; name: string } | null>(null);
 
     // Fetch applications + student skills for skills-comparison in modal (like Internships page)
     useEffect(() => {
@@ -748,9 +751,17 @@ function StudentApplicationsView() {
                                                             )}
                                                         </div>
                                                         <div className="flex flex-col min-w-0">
-                                                            <span className="text-sm font-bold text-slate-800">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (item.company_id) setCompanyModal({ id: item.company_id, name: item.company_name });
+                                                                }}
+                                                                disabled={!item.company_id}
+                                                                className={`text-sm font-bold text-left truncate max-w-[180px] ${item.company_id ? "text-slate-800 hover:text-blue-600 hover:underline cursor-pointer" : "text-slate-800 cursor-default"}`}
+                                                                title={item.company_id ? "ดูโปรไฟล์บริษัท" : undefined}
+                                                            >
                                                                 {item.company_name}
-                                                            </span>
+                                                            </button>
                                                             <span className="text-xs text-slate-400 font-medium truncate max-w-[180px]">
                                                                 {item.title}
                                                             </span>
@@ -883,9 +894,14 @@ function StudentApplicationsView() {
                                         <h2 className="text-lg font-bold text-slate-800 break-words line-clamp-2">
                                             {selectedApplication.title}
                                         </h2>
-                                        <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">
-                                            {selectedApplication.company_name} ({selectedApplication.company_province})
-                                        </p>
+                                        <button
+                                            onClick={() => selectedApplication.company_id && setCompanyModal({ id: selectedApplication.company_id, name: selectedApplication.company_name })}
+                                            disabled={!selectedApplication.company_id}
+                                            className={`text-xs font-semibold mt-0.5 truncate text-left ${selectedApplication.company_id ? "text-blue-600 hover:underline cursor-pointer" : "text-slate-500 cursor-default"}`}
+                                            title={selectedApplication.company_id ? "ดูโปรไฟล์บริษัท" : undefined}
+                                        >
+                                            {selectedApplication.company_name} ({selectedApplication.company_province}) {selectedApplication.company_id ? "↗" : ""}
+                                        </button>
                                         {(selectedApplication.title || "").length > 60 && (
                                             <button onClick={() => setExpandedText("title")} className="text-[11px] font-bold text-blue-600 hover:text-blue-700 mt-1 cursor-pointer">ดูชื่อตำแหน่งเต็ม...</button>
                                         )}
@@ -1115,6 +1131,13 @@ function StudentApplicationsView() {
                         </div>
                     )}
                 </main>
+            {companyModal && (
+                <CompanyProfileModal
+                    companyId={companyModal.id}
+                    companyNameFallback={companyModal.name}
+                    onClose={() => setCompanyModal(null)}
+                />
+            )}
         </>
     );
 }

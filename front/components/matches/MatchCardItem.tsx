@@ -6,6 +6,7 @@ interface MatchCardItemProps {
     id: number | string;
     title: string;
     company_name: string;
+    company_id?: string;
     location: string;
     internship_type: string;
     match_score: number;
@@ -15,9 +16,10 @@ interface MatchCardItemProps {
     }>;
   };
   onSelect: () => void;
+  onViewCompany?: (companyId: string, name: string) => void;
 }
 
-export default function MatchCardItem({ item, onSelect }: MatchCardItemProps) {
+export default function MatchCardItem({ item, onSelect, onViewCompany }: MatchCardItemProps) {
   const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false);
   const { title, company_name, location, internship_type, match_score, skills } = item;
 
@@ -45,7 +47,17 @@ export default function MatchCardItem({ item, onSelect }: MatchCardItemProps) {
 
           <div className="min-w-0">
             <h3 className="text-base font-bold text-slate-800 line-clamp-1 break-words break-all">{title}</h3>
-            <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">{company_name}</p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if ((item as any).company_id && onViewCompany) onViewCompany((item as any).company_id, company_name);
+              }}
+              disabled={!(item as any).company_id || !onViewCompany}
+              className={`text-xs font-semibold mt-0.5 truncate text-left max-w-full ${(item as any).company_id && onViewCompany ? "text-slate-500 hover:text-blue-600 hover:underline cursor-pointer" : "text-slate-500 cursor-default"}`}
+              title={(item as any).company_id ? "ดูโปรไฟล์บริษัท" : undefined}
+            >
+              {company_name} {(item as any).company_id ? "↗" : ""}
+            </button>
             <p className="text-xs text-slate-400 flex items-center gap-1 mt-1 font-medium truncate">
               <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <span className="truncate">{location}</span>

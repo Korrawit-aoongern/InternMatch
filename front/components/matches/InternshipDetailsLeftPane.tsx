@@ -5,6 +5,7 @@ interface LeftPaneProps {
   item: any;
   studentSkills: any[];
   onClose: () => void;
+  onViewCompany?: (companyId: string, name: string) => void;
 }
 
 const LEVEL_WEIGHTS: Record<string, number> = {
@@ -17,6 +18,7 @@ export default function InternshipDetailsLeftPane({
   item,
   studentSkills,
   onClose,
+  onViewCompany,
 }: LeftPaneProps) {
   const { title, company_name, location, internship_type, description, responsibilities, skills, match_score } = item;
   const [expandedText, setExpandedText] = useState<null | "title" | "description" | "responsibilities">(null);
@@ -40,7 +42,14 @@ export default function InternshipDetailsLeftPane({
       <div className="flex justify-between items-start sticky top-0 bg-white py-1 z-10 gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-xl font-bold text-slate-800 break-words line-clamp-2">{title}</h2>
-          <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">{company_name}</p>
+          <button
+            onClick={() => item.company_id && onViewCompany?.(item.company_id, company_name)}
+            disabled={!item.company_id || !onViewCompany}
+            className={`text-xs font-semibold mt-0.5 truncate text-left ${item.company_id && onViewCompany ? "text-blue-600 hover:underline cursor-pointer" : "text-slate-500 cursor-default"}`}
+            title={item.company_id ? "ดูโปรไฟล์บริษัท" : undefined}
+          >
+            {company_name} {item.company_id ? "↗" : ""}
+          </button>
           {isLong(title, 60) && (
             <button onClick={() => setExpandedText("title")} className="text-[11px] font-bold text-blue-600 hover:text-blue-700 mt-1 cursor-pointer">ดูชื่อเต็ม...</button>
           )}

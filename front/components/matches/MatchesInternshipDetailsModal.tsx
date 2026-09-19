@@ -17,11 +17,11 @@ import {
 import { generateMockAiUpskilling } from "@/lib/utils/mockAnalysis";
 import RecommendationResourceCard from "./RecommendationResourceCard";
 import InternshipDetailsLeftPane from "./InternshipDetailsLeftPane";
-
 interface ModalProps {
   item: any;
   studentSkills: any[];
   onClose: () => void;
+  onViewCompany?: (companyId: string, name: string) => void;
 }
 
 // Global in-memory cache to make reopening instant (0ms)
@@ -31,6 +31,7 @@ export default function MatchesInternshipDetailsModal({
   item,
   studentSkills,
   onClose,
+  onViewCompany,
 }: ModalProps) {
   const { title, description, skills } = item;
 
@@ -157,7 +158,7 @@ export default function MatchesInternshipDetailsModal({
   const courseCount = useMemo(() => recommendations.filter((r) => r.resource_type === "course").length, [recommendations]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-900/60 overflow-y-auto" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-900/50 overflow-y-auto" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl w-full max-w-5xl shadow-2xl border border-slate-100 grid grid-cols-1 md:grid-cols-2 overflow-hidden max-h-[90vh] my-auto animate-in fade-in zoom-in-95 duration-200">
         
         {/* Left Side: General Internship Details & Skill Gaps */}
@@ -165,6 +166,7 @@ export default function MatchesInternshipDetailsModal({
           item={item}
           studentSkills={studentSkills}
           onClose={onClose}
+          onViewCompany={onViewCompany}
         />
 
         {/* Right Side: Gemini AI Analysis & Recommendations */}

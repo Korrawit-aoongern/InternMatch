@@ -7,6 +7,7 @@ import { getStudentInternships } from "@/lib/actions/internships";
 import { getStudentSkills } from "@/lib/actions/skills";
 import MatchCardItem from "@/components/matches/MatchCardItem";
 import MatchesInternshipDetailsModal from "@/components/matches/MatchesInternshipDetailsModal";
+import CompanyProfileModal from "@/components/ui/CompanyProfileModal";
 import { Brain, Briefcase, Sparkles } from "lucide-react";
 
 export default function MatchesPage() {
@@ -14,6 +15,7 @@ export default function MatchesPage() {
   const [studentSkills, setStudentSkills] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedInternship, setSelectedInternship] = useState<any | null>(null);
+  const [companyModal, setCompanyModal] = useState<{ id: string | null; name: string } | null>(null);
 
   const fetchMatchesData = async () => {
     setIsLoading(true);
@@ -90,6 +92,7 @@ export default function MatchesPage() {
                   key={item.id}
                   item={item}
                   onSelect={() => setSelectedInternship(item)}
+                  onViewCompany={(companyId, name) => setCompanyModal({ id: companyId, name })}
                 />
               ))}
             </div>
@@ -101,9 +104,13 @@ export default function MatchesPage() {
               item={selectedInternship}
               studentSkills={studentSkills}
               onClose={() => setSelectedInternship(null)}
+              onViewCompany={(companyId, name) => setCompanyModal({ id: companyId, name })}
             />
           )}
         </main>
+        {companyModal && (
+          <CompanyProfileModal companyId={companyModal.id} companyNameFallback={companyModal.name} onClose={() => setCompanyModal(null)} />
+        )}
       </div>
     </div>
   );

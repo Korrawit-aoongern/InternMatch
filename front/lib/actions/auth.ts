@@ -537,6 +537,51 @@ export async function changeUserPassword(currentPassword: string, newPassword: s
   }
 }
 
+export async function getCompanyPublicProfile(companyId: string) {
+  try {
+    if (!companyId) return { success: false, error: "Missing company id" };
+    const supabase = getSupabaseAdmin();
+    const { data: company, error } = await supabase
+      .from("companies")
+      .select("id, company_name, description, province, address, logo, website")
+      .eq("id", companyId)
+      .maybeSingle();
+    if (error) {
+      console.error("Error fetching public company profile:", error);
+      return { success: false, error: error.message };
+    }
+    if (!company) return { success: false, error: "Company not found" };
+
+    // Count open internships for this company (public signal)
+    const { count: openCount } = await supabase
+      .from("internships")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", companyId)
+      .eq("status", "open");
+
+    // Also fetch up to 3 recent open internship titles for preview
+    const { data: recentInternships } = await supabase
+      .from("internships")
+      .select("id, title, internship_type, location")
+      .eq("company_id", companyId)
+      .eq("status", "open")
+      .order("created_at", { ascending: false })
+      .limit(3);
+
+    return {
+      success: true,
+      profile: {
+        ...company,
+        openInternshipsCount: openCount ?? 0,
+        recentInternships: recentInternships || [],
+      },
+    };
+  } catch (err) {
+    console.error("Error in getCompanyPublicProfile:", err);
+    return { success: false, error: "Failed to fetch company profile" };
+  }
+}
+
 export async function getUserRole() {
   try {
     const cookieStore = await cookies();

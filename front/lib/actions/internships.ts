@@ -839,6 +839,7 @@ export async function getStudentInternships() {
 
       return {
         id: item.id,
+        company_id: item.company_id,
         company_name: item.companies?.company_name || "Unknown Company",
         company_logo: item.companies?.logo || "",
         company_province: item.companies?.province || "",
@@ -1147,6 +1148,7 @@ export async function getStudentApplications() {
         status: app.status || "pending",
         applied_at: app.applied_at || "",
         internship_id: app.internship_id,
+        company_id: app.internships?.company_id || null,
         title: app.internships?.title || "Unknown Position",
         company_name: app.internships?.companies?.company_name || "Unknown Company",
         company_logo: app.internships?.companies?.logo || "",

@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/Toaster";
 import { useAppModal } from "@/components/ui/AppModal";
+import CompanyProfileModal from "@/components/ui/CompanyProfileModal";
 
 export type InternshipStatus = "open" | "closed";
 
@@ -1115,6 +1116,7 @@ function StudentInternshipsView() {
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [applyingId, setApplyingId] = useState<string | null>(null);
     const [cancelingId, setCancelingId] = useState<string | null>(null);
+    const [companyModal, setCompanyModal] = useState<{ id: string | null; name: string } | null>(null);
     // W4 filters
     const [filterType, setFilterType] = useState<string>("All");
     const [filterProvince, setFilterProvince] = useState<string>("All");
@@ -1364,6 +1366,7 @@ function StudentInternshipsView() {
                                     onCancel={() => handleCancelApply(item.id)}
                                     isCanceling={cancelingId === item.id}
                                     studentSkills={studentSkills}
+                                    onViewCompany={(companyId: string, name: string) => setCompanyModal({ id: companyId, name })}
                                 />
                             ))}
                         </div>
@@ -1381,9 +1384,13 @@ function StudentInternshipsView() {
                             onCancel={() => handleCancelApply(selectedInternship.id)}
                             isCanceling={cancelingId === selectedInternship.id}
                             studentSkills={studentSkills}
+                            onViewCompany={(companyId: string, name: string) => setCompanyModal({ id: companyId, name })}
                         />
                     )}
                 </main>
+            {companyModal && (
+                <CompanyProfileModal companyId={companyModal.id} companyNameFallback={companyModal.name} onClose={() => setCompanyModal(null)} />
+            )}
         </>
     );
 }
@@ -1395,7 +1402,8 @@ function StudentInternshipCardItem({
     isApplying,
     onCancel,
     isCanceling,
-    studentSkills
+    studentSkills,
+    onViewCompany
 }: {
     item: any;
     onViewDetails: () => void;
@@ -1404,6 +1412,7 @@ function StudentInternshipCardItem({
     onCancel: () => void;
     isCanceling: boolean;
     studentSkills: any[];
+    onViewCompany?: (companyId: string, name: string) => void;
 }) {
     const [isReqSkillsModalOpen, setIsReqSkillsModalOpen] = useState(false);
     const [isYourSkillsModalOpen, setIsYourSkillsModalOpen] = useState(false);
@@ -1436,7 +1445,17 @@ function StudentInternshipCardItem({
 
                 <div>
                     <h3 className="text-base font-bold text-slate-800 line-clamp-1">{title}</h3>
-                    <p className="text-xs text-slate-500 font-semibold mt-0.5">{company_name}</p>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (item.company_id && onViewCompany) onViewCompany(item.company_id, company_name);
+                        }}
+                        disabled={!item.company_id || !onViewCompany}
+                        className={`text-xs font-semibold mt-0.5 text-left truncate max-w-full ${item.company_id && onViewCompany ? "text-slate-500 hover:text-blue-600 hover:underline cursor-pointer" : "text-slate-500 cursor-default"}`}
+                        title={item.company_id ? "ดูโปรไฟล์บริษัท" : undefined}
+                    >
+                        {company_name} {item.company_id ? "↗" : ""}
+                    </button>
                     <p className="text-xs text-slate-400 flex items-center gap-1 mt-1 font-medium">
                         <MapPin className="w-3.5 h-3.5 text-slate-400" />
                         {location}
@@ -1552,7 +1571,8 @@ function StudentInternshipDetailsModal({
     isApplying,
     onCancel,
     isCanceling,
-    studentSkills
+    studentSkills,
+    onViewCompany
 }: {
     item: any;
     onClose: () => void;
@@ -1561,6 +1581,7 @@ function StudentInternshipDetailsModal({
     onCancel: () => void;
     isCanceling: boolean;
     studentSkills: any[];
+    onViewCompany?: (companyId: string, name: string) => void;
 }) {
     const { title, company_name, location, internship_type, description, responsibilities, skills, has_applied, match_score } = item;
     const [isReqSkillsModalOpen, setIsReqSkillsModalOpen] = useState(false);
@@ -1582,7 +1603,14 @@ function StudentInternshipDetailsModal({
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0 gap-3">
                     <div className="min-w-0 flex-1">
                         <h2 className="text-lg font-bold text-slate-800 break-words line-clamp-2">{title}</h2>
-                        <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">{company_name}</p>
+                        <button
+                            onClick={() => item.company_id && onViewCompany?.(item.company_id, company_name)}
+                            disabled={!item.company_id || !onViewCompany}
+                            className={`text-xs font-semibold mt-0.5 truncate text-left ${item.company_id && onViewCompany ? "text-blue-600 hover:underline cursor-pointer" : "text-slate-500 cursor-default"}`}
+                            title={item.company_id ? "ดูโปรไฟล์บริษัท" : undefined}
+                        >
+                            {company_name} {item.company_id ? "↗" : ""}
+                        </button>
                         {isLong(title, 60) && (
                             <button onClick={() => setExpandedText("title")} className="text-[11px] font-bold text-blue-600 hover:text-blue-700 mt-1 cursor-pointer">ดูชื่อตำแหน่งเต็ม...</button>
                         )}
