@@ -24,7 +24,7 @@ import DashboardHeader from "@/components/layout/DashboardHeader";
 import SkillsManagement from "@/components/ui/SkillsManagement";
 import { useToast } from "@/components/ui/Toaster";
 import { useAppModal } from "@/components/ui/AppModal";
-import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile, uploadProfileImage, changeUserPassword, uploadResume } from "@/lib/actions/auth";
+import { getStudentProfile, updateStudentProfile, getCompanyProfile, updateCompanyProfile, uploadProfileImage, changeUserPassword, uploadResume, getUserRole } from "@/lib/actions/auth";
 import { getStudentSkills, updateStudentSkills } from "@/lib/actions/skills";
 import { getStudentPortfolios, updateStudentPortfolios } from "@/lib/actions/portfolios";
 
@@ -240,13 +240,58 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const studentRes = await getStudentProfile();
+        const roleRes = await getUserRole();
+        const userRole = roleRes.success && roleRes.role === "company" ? "company" : "student";
+        setRole(userRole);
+
+        if (userRole === "company") {
+          const companyRes = await getCompanyProfile();
+          if (companyRes.success && companyRes.profile) {
+            const c = companyRes.profile;
+            const userEmail = c.users ? (Array.isArray(c.users) ? c.users[0]?.email : (c.users as any).email) : "";
+
+            let parsedLinks: string[] = [];
+            if (c.website) {
+              try {
+                if (c.website.startsWith("[")) {
+                  parsedLinks = JSON.parse(c.website);
+                } else {
+                  parsedLinks = c.website.split(",").map((s: string) => s.trim()).filter(Boolean);
+                }
+              } catch {
+                parsedLinks = [c.website];
+              }
+            }
+            if (parsedLinks.length === 0) parsedLinks = [""];
+            setCompanyLinks(parsedLinks.slice(0, 3));
+
+            setProfile((prev) => ({
+              ...prev,
+              company_name: c.company_name || "",
+              description: c.description || "",
+              website: c.website || "",
+              address: c.address || "",
+              province: c.province || "",
+              logo: c.logo || "",
+              email: userEmail || "",
+            }));
+            return;
+          } else {
+            router.replace("/auth/login");
+            return;
+          }
+        }
+
+        // Student branch: fetch profile, portfolios, and skills concurrently
+        const [studentRes, portfoliosRes, skillsRes] = await Promise.all([
+          getStudentProfile(),
+          getStudentPortfolios(),
+          getStudentSkills(),
+        ]);
+
         if (studentRes.success && studentRes.profile) {
-          setRole("student");
           const p = studentRes.profile;
 
-          // โหลด Portfolio/External Links ของนักศึกษาจริงๆ จากฐานข้อมูล
-          const portfoliosRes = await getStudentPortfolios();
           let linkedinUrl = "";
           let githubUrl = "";
           let portfolioUrl = "";
@@ -258,7 +303,6 @@ export default function ProfilePage() {
             });
           }
 
-          // โหลดข้อมูลอีเมล
           const userEmail = p.users ? (Array.isArray(p.users) ? p.users[0]?.email : (p.users as any).email) : "";
 
           setProfile((prev) => ({
@@ -280,52 +324,13 @@ export default function ProfilePage() {
             email: userEmail || "",
           }));
 
-          // โหลดทักษะของนักศึกษาจริงๆ จากฐานข้อมูล
-          const skillsRes = await getStudentSkills();
           if (skillsRes.success && skillsRes.skills) {
             setSkills(skillsRes.skills as Skill[]);
           }
           return;
         }
 
-        const companyRes = await getCompanyProfile();
-        if (companyRes.success && companyRes.profile) {
-          setRole("company");
-          const c = companyRes.profile;
-          const userEmail = c.users ? (Array.isArray(c.users) ? c.users[0]?.email : (c.users as any).email) : "";
-
-          let parsedLinks: string[] = [];
-          if (c.website) {
-            try {
-              if (c.website.startsWith("[")) {
-                parsedLinks = JSON.parse(c.website);
-              } else {
-                parsedLinks = c.website.split(",").map((s: string) => s.trim()).filter(Boolean);
-              }
-            } catch {
-              parsedLinks = [c.website];
-            }
-          }
-          if (parsedLinks.length === 0) parsedLinks = [""];
-          setCompanyLinks(parsedLinks.slice(0, 3));
-
-          setProfile((prev) => ({
-            ...prev,
-            company_name: c.company_name || "",
-            description: c.description || "",
-            website: c.website || "",
-            address: c.address || "",
-            province: c.province || "",
-            logo: c.logo || "",
-            email: userEmail || "",
-          }));
-          return;
-        }
-
-        if (!studentRes.success && !companyRes.success) {
-          router.replace("/auth/login");
-          return;
-        }
+        router.replace("/auth/login");
       } finally {
         setIsLoadingProfile(false);
       }
@@ -432,7 +437,7 @@ export default function ProfilePage() {
   if (isLoadingProfile) {
     return (
       <div className="bg-slate-50 text-slate-900 min-h-screen flex antialiased w-full">
-        <DashboardSidebar />
+        <DashboardSidebar role={role} />
         <main className="flex-1 flex flex-col min-w-0 md:ml-[260px] relative">
           <DashboardHeader title="Profile Settings" />
           <div className="p-12 flex flex-col items-center justify-center min-h-[60vh]">
@@ -447,7 +452,7 @@ export default function ProfilePage() {
   return (
     <div className="bg-slate-50 text-slate-900 min-h-screen flex antialiased w-full">
       {/* SideNavBar */}
-      <DashboardSidebar />
+      <DashboardSidebar role={role} />
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 md:ml-[260px] relative">

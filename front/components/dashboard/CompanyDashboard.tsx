@@ -4,10 +4,11 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import StatsCard from "@/components/ui/StatsCard";
 import { Send, Users, Megaphone, ChevronRight, PlusCircle } from "lucide-react";
-import { getCompanyInternships, getCompanyApplications } from "@/lib/actions/internships";
+import { getCompanyDashboardData, CompanyDashboardData } from "@/lib/actions/dashboard";
 
 interface CompanyDashboardProps {
   displayName: string;
+  initialData?: CompanyDashboardData;
 }
 
 interface StatsData {
@@ -17,66 +18,36 @@ interface StatsData {
   pendingActionAlerts: number;
 }
 
-export default function CompanyDashboard({ displayName }: CompanyDashboardProps) {
-  const [stats, setStats] = useState<StatsData>({
+export default function CompanyDashboard({ displayName, initialData }: CompanyDashboardProps) {
+  const [stats, setStats] = useState<StatsData>(() => initialData?.stats || {
     avgMatchRate: 0,
     totalApplicants: 0,
     activeJobPosts: 0,
     pendingActionAlerts: 0,
   });
-  const [loadingStats, setLoadingStats] = useState<boolean>(true);
-  const [recentApplicants, setRecentApplicants] = useState<any[]>([]);
-  const [loadingApplicants, setLoadingApplicants] = useState<boolean>(true);
+  const [loadingStats, setLoadingStats] = useState<boolean>(!initialData?.success);
+  const [recentApplicants, setRecentApplicants] = useState<any[]>(() => initialData?.recentApplicants || []);
+  const [loadingApplicants, setLoadingApplicants] = useState<boolean>(!initialData?.success);
 
   useEffect(() => {
+    // Skip client fetch if SSR initialData is present
+    if (initialData?.success) {
+      setLoadingStats(false);
+      setLoadingApplicants(false);
+      return;
+    }
+
     let isMounted = true;
 
     async function loadDashboardData() {
       try {
-        const [internshipsRes, appsRes] = await Promise.all([
-          getCompanyInternships(),
-          getCompanyApplications(),
-        ]);
-
+        const res = await getCompanyDashboardData();
         if (!isMounted) return;
 
-        let activeJobPosts = 0;
-        if (internshipsRes.success && internshipsRes.internships) {
-          activeJobPosts = internshipsRes.internships.filter(
-            (item: any) => item.status === "open"
-          ).length;
+        if (res.success) {
+          setStats(res.stats);
+          setRecentApplicants(res.recentApplicants);
         }
-
-        let totalApplicants = 0;
-        let avgMatchRate = 0;
-        let pendingActionAlerts = 0;
-        let appsList: any[] = [];
-
-        if (appsRes.success && appsRes.applicants) {
-          appsList = appsRes.applicants;
-          totalApplicants = appsList.length;
-
-          if (totalApplicants > 0) {
-            const sumMatch = appsList.reduce(
-              (acc: number, item: any) => acc + (item.match_score || 0),
-              0
-            );
-            avgMatchRate = Math.round(sumMatch / totalApplicants);
-          }
-
-          pendingActionAlerts = appsList.filter(
-            (item: any) => item.status === "pending" || item.status === "reviewing"
-          ).length;
-        }
-
-        setStats({
-          avgMatchRate,
-          totalApplicants,
-          activeJobPosts,
-          pendingActionAlerts,
-        });
-
-        setRecentApplicants(appsList.slice(0, 5));
       } catch (error) {
         console.error("Failed to fetch company dashboard stats:", error);
       } finally {
@@ -92,7 +63,7 @@ export default function CompanyDashboard({ displayName }: CompanyDashboardProps)
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [initialData]);
 
   const getMatchLabel = (rate: number) => {
     if (rate >= 80) return "High";

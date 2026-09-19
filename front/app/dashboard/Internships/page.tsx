@@ -363,7 +363,7 @@ function CompanyInternshipsView() {
     return (
         <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
             {/* Sidebar */}
-            <DashboardSidebar />
+            <DashboardSidebar role="company" />
 
             {/* Main Content Wrapper */}
             <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
@@ -1132,11 +1132,13 @@ function StudentInternshipsView() {
     const fetchInternships = async () => {
         setIsLoading(true);
         try {
-            const res = await getStudentInternships();
+            const [res, skillsRes] = await Promise.all([
+                getStudentInternships(),
+                getStudentSkills()
+            ]);
             if (res.success && res.internships) {
                 setInternships(res.internships);
             }
-            const skillsRes = await getStudentSkills();
             if (skillsRes.success && skillsRes.skills) {
                 setStudentSkills(skillsRes.skills);
             }
@@ -1260,7 +1262,7 @@ function StudentInternshipsView() {
 
     return (
         <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
-            <DashboardSidebar />
+            <DashboardSidebar role="student" />
             <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
                 <DashboardHeader title="My Internships" />
                 <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">

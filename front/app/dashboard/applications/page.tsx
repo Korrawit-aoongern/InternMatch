@@ -576,7 +576,7 @@ function StudentApplicationsView() {
 
     return (
         <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
-            <DashboardSidebar />
+            <DashboardSidebar role="student" />
             <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
                 <DashboardHeader title="Applications" />
                 <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
@@ -1210,7 +1210,7 @@ function CompanyApplicationsView() {
 
     return (
         <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
-            <DashboardSidebar />
+            <DashboardSidebar role="company" />
             <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
                 <DashboardHeader title="Applications" />
                 <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
