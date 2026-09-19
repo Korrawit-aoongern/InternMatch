@@ -83,7 +83,7 @@ export default function MatchCardItem({ item, onSelect }: MatchCardItemProps) {
         </div>
       </div>
       {isSkillsModalOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsSkillsModalOpen(false); }}>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={(e) => { e.stopPropagation(); setIsSkillsModalOpen(false); }}>
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
               <h3 className="text-sm font-bold text-slate-800 truncate pr-2">{title} • ทักษะทั้งหมด ({skills?.length || 0})</h3>

@@ -69,7 +69,7 @@ export function AppModalProvider({ children }: { children: React.ReactNode }) {
     <AppModalContext.Provider value={{ confirm }}>
       {children}
       {state.open && (
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 bg-slate-900/50 animate-in fade-in">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-100 p-6 space-y-5 animate-in zoom-in-95">
             <div className="flex items-start gap-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>

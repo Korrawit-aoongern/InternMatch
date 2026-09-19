@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import jwt from "jsonwebtoken";
-import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import StudentDashboard from "@/components/dashboard/StudentDashboard";
 import CompanyDashboard from "@/components/dashboard/CompanyDashboard";
@@ -49,25 +48,14 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
-      
-      {/* Sidebar */}
-      <DashboardSidebar role={role} />
-
-      {/* Main Content Wrapper */}
-      <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
-        
-        {/* Header */}
-        <DashboardHeader title="Dashboard" />
-
-        {/* Dashboard Canvas Content based on user role */}
-        {role === "company" ? (
-          <CompanyDashboard displayName={displayName} initialData={companyData || undefined} />
-        ) : (
-          <StudentDashboard displayName={displayName} initialData={studentData || undefined} />
-        )}
-      </div>
-    </div>
+    <>
+      <DashboardHeader title="Dashboard" />
+      {role === "company" ? (
+        <CompanyDashboard displayName={displayName} initialData={companyData || undefined} />
+      ) : (
+        <StudentDashboard displayName={displayName} initialData={studentData || undefined} />
+      )}
+    </>
   );
 }
 

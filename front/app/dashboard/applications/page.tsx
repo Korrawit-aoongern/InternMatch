@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import { getUserRole } from "@/lib/actions/auth";
 import { getCachedRole, setCachedRole } from "@/lib/utils/roleCache";
@@ -575,17 +574,15 @@ function StudentApplicationsView() {
     };
 
     return (
-        <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
-            <DashboardSidebar role="student" />
-            <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
-                <DashboardHeader title="Applications" />
-                <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-slate-800 font-sans">Applications</h1>
-                        <p className="text-sm text-slate-500 mt-1 font-sans">
-                            ติดตามสถานะการสมัครงานและประเมินผลคะแนนความเหมาะสมของคุณ
-                        </p>
-                    </div>
+        <>
+            <DashboardHeader title="Applications" />
+            <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-800 font-sans">Applications</h1>
+                    <p className="text-sm text-slate-500 mt-1 font-sans">
+                        ติดตามสถานะการสมัครงานและประเมินผลคะแนนความเหมาะสมของคุณ
+                    </p>
+                </div>
 
                     {/* Header Controls */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -819,7 +816,7 @@ function StudentApplicationsView() {
 
                     {/* View Details Modal - with text overflow catch */}
                     {isDetailsOpen && selectedApplication && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={() => { setIsDetailsOpen(false); setSelectedApplication(null); setExpandedText(null); }}>
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={() => { setIsDetailsOpen(false); setSelectedApplication(null); setExpandedText(null); }}>
                             <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-[640px] max-h-[90vh] flex flex-col shadow-xl border border-slate-100 overflow-hidden">
                                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0 gap-3">
                                     <div className="min-w-0 flex-1">
@@ -933,7 +930,7 @@ function StudentApplicationsView() {
                             </div>
                             {/* Nested text expand modals - z-[60] sibling to avoid overflow-hidden clipping */}
                             {expandedText && (
-                                <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={() => setExpandedText(null)}>
+                                <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={() => setExpandedText(null)}>
                                     <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[640px] max-h-[80vh] flex flex-col overflow-hidden">
                                         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
                                             <h3 className="text-sm font-bold text-slate-800">
@@ -953,8 +950,7 @@ function StudentApplicationsView() {
                         </div>
                     )}
                 </main>
-            </div>
-        </div>
+        </>
     );
 }
 
@@ -1209,19 +1205,17 @@ function CompanyApplicationsView() {
     };
 
     return (
-        <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
-            <DashboardSidebar role="company" />
-            <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
-                <DashboardHeader title="Applications" />
-                <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-slate-800 font-sans">Applications</h1>
-                        <p className="text-sm text-slate-500 mt-1 font-sans">
-                            จัดการผู้สมัครฝึกงานรายตำแหน่ง ตรวจสอบคะแนนความเหมาะสม และอัปเดตสถานะใบสมัคร
-                        </p>
-                    </div>
+        <>
+            <DashboardHeader title="Applications" />
+            <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+                <div>
+                    <h1 className="text-2xl md:text-3xl font-bold text-slate-800 font-sans">Applications</h1>
+                    <p className="text-sm text-slate-500 mt-1 font-sans">
+                        จัดการผู้สมัครฝึกงานรายตำแหน่ง ตรวจสอบคะแนนความเหมาะสม และอัปเดตสถานะใบสมัคร
+                    </p>
+                </div>
 
-                    {isLoadingPositions ? (
+                {isLoadingPositions ? (
                         <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
                             <div className="flex justify-center items-center p-12">
                                 <span className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></span>
@@ -1516,7 +1510,7 @@ function CompanyApplicationsView() {
 
                     {/* Applicant Details Modal */}
                     {isDetailsOpen && selectedApplicant && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={() => { setIsDetailsOpen(false); setSelectedApplicant(null); setIsSkillsModalOpen(false); }}>
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={() => { setIsDetailsOpen(false); setSelectedApplicant(null); setIsSkillsModalOpen(false); }}>
                             <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-4 sm:p-5 flex flex-col shadow-2xl border border-slate-100 overflow-hidden w-full max-w-[640px] max-h-[90vh]">
                                 {/* Fixed Header */}
                                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
@@ -1776,7 +1770,7 @@ function CompanyApplicationsView() {
                             </div>
                             {/* Skills Full List Modal (nested, z-[60] on top - sibling to avoid overflow-hidden clipping) */}
                             {isSkillsModalOpen && selectedApplicant && (
-                                <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsSkillsModalOpen(false); }}>
+                                <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={(e) => { e.stopPropagation(); setIsSkillsModalOpen(false); }}>
                                     <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
                                         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
                                             <div>
@@ -1816,7 +1810,6 @@ function CompanyApplicationsView() {
                         </div>
                     )}
                 </main>
-            </div>
-        </div>
+        </>
     );
 }

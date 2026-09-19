@@ -23,7 +23,7 @@ export default function RegisterPortalPage() {
         </div>
 
         {/* การ์ดแก้วตัวเลือกทางเข้า */}
-        <div className="bg-white/80 backdrop-blur-xl border border-white/50 shadow-xl rounded-2xl p-6 md:p-8 space-y-6">
+        <div className="bg-white border border-white/50 shadow-xl rounded-2xl p-6 md:p-8 space-y-6">
           <div className="text-center">
             <h2 className="text-xl font-bold text-slate-800 mb-1">Join Us</h2>
             <p className="text-sm text-slate-500">

@@ -93,7 +93,7 @@ export default function RecommendationResourceCard({ resource }: Props) {
         </>
       )}
       {isExpanded && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={() => setIsExpanded(false)}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={() => setIsExpanded(false)}>
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[520px] max-h-[80vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
               <h3 className="text-sm font-bold text-slate-800 truncate pr-2">{resource.title}</h3>

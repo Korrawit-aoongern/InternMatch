@@ -33,7 +33,7 @@ export default function InternshipDetailsLeftPane({
   return (
     <>
       <div className="min-w-0 p-5 md:p-6 border-b md:border-b-0 md:border-r border-slate-200 space-y-4 bg-white flex flex-col overflow-y-auto overscroll-contain max-h-[90vh]">
-      <div className="flex justify-between items-start sticky top-0 bg-white/95 backdrop-blur-xs py-1 z-10 gap-3">
+      <div className="flex justify-between items-start sticky top-0 bg-white py-1 z-10 gap-3">
         <div className="min-w-0 flex-1">
           <h2 className="text-xl font-bold text-slate-800 break-words line-clamp-2">{title}</h2>
           <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">{company_name}</p>
@@ -142,7 +142,7 @@ export default function InternshipDetailsLeftPane({
     </div>
       {/* Nested text expand modals - z-[70] outside scroll container to prevent clipping/flicker */}
       {expandedText && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setExpandedText(null); }}>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={(e) => { e.stopPropagation(); setExpandedText(null); }}>
           <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[640px] max-h-[80vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
               <h3 className="text-sm font-bold text-slate-800">{expandedText === "description" ? "รายละเอียดงาน (เต็ม)" : expandedText === "responsibilities" ? "หน้าที่ความรับผิดชอบ (เต็ม)" : "ชื่อตำแหน่ง (เต็ม)"}</h3>

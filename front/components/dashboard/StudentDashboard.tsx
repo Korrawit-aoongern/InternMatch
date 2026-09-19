@@ -191,7 +191,7 @@ export default function StudentDashboard({ displayName, initialData }: StudentDa
 
         {/* Right Box (AI Insights - Standard Resume Review 100%) */}
         <div className="lg:col-span-4">
-          <div className="bg-white/80 backdrop-blur-md border border-slate-200 shadow-sm rounded-2xl p-6 lg:sticky lg:top-24 space-y-4">
+          <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-6 lg:sticky lg:top-24 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2 text-blue-600">
                 <Brain className="w-5 h-5" />
@@ -277,7 +277,7 @@ export default function StudentDashboard({ displayName, initialData }: StudentDa
 
       {/* AI Resume Review Modal - Comprehensive Report */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 overflow-y-auto">
           <div className="bg-white rounded-2xl p-6  my-8 space-y-6 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
             <button
               onClick={() => setIsModalOpen(false)}

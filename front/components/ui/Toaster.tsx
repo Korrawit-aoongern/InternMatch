@@ -83,7 +83,7 @@ export function ToasterProvider({ children }: { children: React.ReactNode }) {
           return (
             <div
               key={t.id}
-              className={`pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm animate-in slide-in-from-top-2 ${styles[t.type]}`}
+              className={`pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl border shadow-lg animate-in slide-in-from-top-2 ${styles[t.type]}`}
             >
               <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${iconColor}`} />
               <p className="text-sm font-semibold leading-snug flex-1 whitespace-pre-wrap break-words">{t.message}</p>

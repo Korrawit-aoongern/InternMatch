@@ -157,7 +157,7 @@ export default function MatchesInternshipDetailsModal({
   const courseCount = useMemo(() => recommendations.filter((r) => r.resource_type === "course").length, [recommendations]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-900/60 overflow-y-auto" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl w-full max-w-5xl shadow-2xl border border-slate-100 grid grid-cols-1 md:grid-cols-2 overflow-hidden max-h-[90vh] my-auto animate-in fade-in zoom-in-95 duration-200">
         
         {/* Left Side: General Internship Details & Skill Gaps */}
@@ -169,7 +169,7 @@ export default function MatchesInternshipDetailsModal({
 
         {/* Right Side: Gemini AI Analysis & Recommendations */}
         <div className="w-full min-w-0 p-5 md:p-6 bg-slate-50 flex flex-col space-y-4 overflow-y-auto overscroll-contain max-h-[90vh]">
-          <div className="hidden md:flex justify-between items-center mb-1 shrink-0 sticky top-0 bg-slate-50/95 backdrop-blur-xs py-1.5 z-10">
+          <div className="hidden md:flex justify-between items-center mb-1 shrink-0 sticky top-0 bg-slate-50 py-1.5 z-10">
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-100/70 border border-blue-200/80 px-2.5 py-1 rounded-full">
                 <Sparkles className="w-3.5 h-3.5 text-blue-600 fill-blue-600" />
@@ -216,7 +216,7 @@ export default function MatchesInternshipDetailsModal({
               </div>
               {/* AI full text nested modal */}
               {isAiExpanded && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsAiExpanded(false); }}>
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={(e) => { e.stopPropagation(); setIsAiExpanded(false); }}>
                   <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[640px] max-h-[80vh] flex flex-col overflow-hidden">
                     <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
                       <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-blue-600 fill-blue-600" /> คำแนะนำจาก AI (เต็ม)</h3>

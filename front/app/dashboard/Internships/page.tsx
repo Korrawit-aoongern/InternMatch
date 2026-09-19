@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import { getUserRole } from "@/lib/actions/auth";
 import { getCachedRole, setCachedRole } from "@/lib/utils/roleCache";
@@ -361,16 +360,10 @@ function CompanyInternshipsView() {
     };
 
     return (
-        <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
-            {/* Sidebar */}
-            <DashboardSidebar role="company" />
+        <>
+            <DashboardHeader title="My Internships" />
 
-            {/* Main Content Wrapper */}
-            <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
-                {/* Header */}
-                <DashboardHeader title="My Internships" />
-
-                <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+            <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
                     {/* Header Section */}
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
@@ -496,7 +489,7 @@ function CompanyInternshipsView() {
 
                     {/* Modal: Create & Edit Internship (Multi-step) */}
                     {isModalOpen && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 overflow-y-auto">
                             <div className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-4xl space-y-4 md:space-y-5 shadow-xl border border-slate-100 max-h-[calc(100vh-2rem)] md:max-h-[90vh] flex flex-col justify-between overflow-hidden">
 
                                 {/* Header */}
@@ -806,8 +799,7 @@ function CompanyInternshipsView() {
                     )}
 
                 </main>
-            </div>
-        </div>
+        </>
     );
 }
 
@@ -973,7 +965,7 @@ function InternshipCardItem({
                 )}
                 {/* Skills nested modal - sibling fixed to avoid card overflow clipping */}
                 {isSkillsModalOpen && (
-                    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsSkillsModalOpen(false); }}>
+                    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={(e) => { e.stopPropagation(); setIsSkillsModalOpen(false); }}>
                         <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden">
                             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
                                 <div className="min-w-0">
@@ -1261,19 +1253,17 @@ function StudentInternshipsView() {
     }, [internships, searchQuery, filterType, filterProvince, filterSkill, filterMatch]);
 
     return (
-        <div className="bg-slate-50 text-slate-900 min-h-screen flex flex-col md:flex-row antialiased w-full">
-            <DashboardSidebar role="student" />
-            <div className="flex-1 flex flex-col md:ml-[260px] min-h-screen w-full">
-                <DashboardHeader title="My Internships" />
-                <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div>
-                            <h1 className="text-2xl md:text-3xl font-bold text-slate-800">My Internships</h1>
-                            <p className="text-sm text-slate-500 mt-1">
-                                ค้นหาและยื่นใบสมัครรับเลือกเป็นนิสิตฝึกงานกับบริษัทชั้นนำ
-                            </p>
-                        </div>
+        <>
+            <DashboardHeader title="My Internships" />
+            <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 className="text-2xl md:text-3xl font-bold text-slate-800">My Internships</h1>
+                        <p className="text-sm text-slate-500 mt-1">
+                            ค้นหาและยื่นใบสมัครรับเลือกเป็นนิสิตฝึกงานกับบริษัทชั้นนำ
+                        </p>
                     </div>
+                </div>
 
                     <div className="flex flex-col gap-3">
                         <div className="flex-1 w-full">
@@ -1394,8 +1384,7 @@ function StudentInternshipsView() {
                         />
                     )}
                 </main>
-            </div>
-        </div>
+        </>
     );
 }
 
@@ -1474,7 +1463,7 @@ function StudentInternshipCardItem({
                             )}
                         </div>
                         {isReqSkillsModalOpen && (
-                            <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsReqSkillsModalOpen(false); }}>
+                            <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={(e) => { e.stopPropagation(); setIsReqSkillsModalOpen(false); }}>
                                 <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden">
                                     <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
                                         <div className="min-w-0"><h3 className="text-sm font-bold text-slate-800 truncate">ทักษะที่ต้องการ • {title}</h3><p className="text-[11px] font-medium text-slate-500 mt-0.5">{skills.length} skills</p></div>
@@ -1512,13 +1501,13 @@ function StudentInternshipCardItem({
                             )}
                         </div>
                         {isYourSkillsModalOpen && (
-                            <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsYourSkillsModalOpen(false); }}>
+                            <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={(e) => { e.stopPropagation(); setIsYourSkillsModalOpen(false); }}>
                                 <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden">
                                     <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
                                         <div className="min-w-0"><h3 className="text-sm font-bold text-slate-800">ทักษะของคุณ</h3><p className="text-[11px] font-medium text-slate-500 mt-0.5">{studentSkills.length} skills • ✓ = ตรงกับที่งานต้องการ</p></div>
                                         <button onClick={() => setIsYourSkillsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer shrink-0 ml-2"><X className="w-5 h-5" /></button>
                                     </div>
-                                    <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4"><div className="flex flex-wrap gap-1.5">{studentSkills.map((skill: any) => { const isMatched = skills.some((req: any) => req.skill_id === skill.skill_id); return (<span key={skill.skill_id} className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border ${isMatched ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-600 border-slate-200"}`}><span>{skill.name}</span><span className="text-[10px] font-bold bg-white/80 px-1 rounded">{skill.level}</span></span>); })}</div></div>
+                                    <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4"><div className="flex flex-wrap gap-1.5">{studentSkills.map((skill: any) => { const isMatched = skills.some((req: any) => req.skill_id === skill.skill_id); return (<span key={skill.skill_id} className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border ${isMatched ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-600 border-slate-200"}`}><span>{skill.name}</span><span className="text-[10px] font-bold bg-white px-1 rounded">{skill.level}</span></span>); })}</div></div>
                                     <div className="px-4 py-3 border-t border-slate-100 bg-slate-50/50 flex justify-end shrink-0"><button onClick={() => setIsYourSkillsModalOpen(false)} className="px-4 py-2 text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white rounded-lg cursor-pointer">ปิด</button></div>
                                 </div>
                             </div>
@@ -1588,7 +1577,7 @@ function StudentInternshipDetailsModal({
     const truncate = (text: string, limit = 280) => (text.length > limit ? text.slice(0, limit).trimEnd() + "…" : text);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={onClose}>
             <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl p-4 md:p-6 w-full max-w-[640px] max-h-[90vh] flex flex-col shadow-xl border border-slate-100 overflow-hidden">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0 gap-3">
                     <div className="min-w-0 flex-1">
@@ -1700,7 +1689,7 @@ function StudentInternshipDetailsModal({
 
             {/* Nested text expand modals - z-[70] */}
             {expandedText && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setExpandedText(null); }}>
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={(e) => { e.stopPropagation(); setExpandedText(null); }}>
                     <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[640px] max-h-[80vh] flex flex-col overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
                             <h3 className="text-sm font-bold text-slate-800">
@@ -1718,7 +1707,7 @@ function StudentInternshipDetailsModal({
                 </div>
             )}
             {isReqSkillsModalOpen && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsReqSkillsModalOpen(false); }}>
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={(e) => { e.stopPropagation(); setIsReqSkillsModalOpen(false); }}>
                     <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0"><h3 className="text-sm font-bold text-slate-800">ทักษะที่ต้องการทั้งหมด</h3><button onClick={() => setIsReqSkillsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"><X className="w-5 h-5" /></button></div>
                         <div className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4"><div className="flex flex-wrap gap-1.5">{skills.map((skill: any) => (<span key={skill.skill_id} className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 shadow-2xs"><span>{skill.name}</span><span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">{skill.level}</span></span>))}</div></div>
@@ -1727,7 +1716,7 @@ function StudentInternshipDetailsModal({
                 </div>
             )}
             {isYourSkillsModalOpen && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); setIsYourSkillsModalOpen(false); }}>
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-slate-900/50" onClick={(e) => { e.stopPropagation(); setIsYourSkillsModalOpen(false); }}>
                     <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-[480px] max-h-[80vh] flex flex-col overflow-hidden">
                         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0"><div><h3 className="text-sm font-bold text-slate-800">ทักษะของคุณ</h3><p className="text-[11px] font-medium text-slate-500 mt-0.5">✓ = ตรงกับที่งานต้องการ</p></div><button onClick={() => setIsYourSkillsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"><X className="w-5 h-5" /></button></div>
                         <div className="flex-1 overflow-y-auto p-3 sm:p-4"><div className="flex flex-wrap gap-1.5">{studentSkills.map((skill: any) => { const isMatched = skills.some((req: any) => req.skill_id === skill.skill_id); return (<span key={skill.skill_id} className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border ${isMatched ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-50 text-slate-600 border-slate-200"}`}><span>{skill.name}</span><span className="text-[10px] font-bold bg-white/70 px-1 rounded">{skill.level}</span></span>); })}</div></div>

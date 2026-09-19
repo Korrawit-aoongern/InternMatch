@@ -19,7 +19,6 @@ import {
   Loader2,
   Plus,
 } from "lucide-react";
-import DashboardSidebar from "@/components/layout/DashboardSidebar";
 import DashboardHeader from "@/components/layout/DashboardHeader";
 import SkillsManagement from "@/components/ui/SkillsManagement";
 import { useToast } from "@/components/ui/Toaster";
@@ -68,7 +67,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const toast = useToast();
   const { confirm } = useAppModal();
-  const [role, setRole] = useState<"student" | "company">("student");
+  const [role, setRole] = useState<"student" | "company" | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const resumeInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploadingResume, setIsUploadingResume] = useState(false);
@@ -434,29 +433,21 @@ export default function ProfilePage() {
     }
   };
 
-  if (isLoadingProfile) {
+  if (isLoadingProfile || !role) {
     return (
-      <div className="bg-slate-50 text-slate-900 min-h-screen flex antialiased w-full">
-        <DashboardSidebar role={role} />
-        <main className="flex-1 flex flex-col min-w-0 md:ml-[260px] relative">
-          <DashboardHeader title="Profile Settings" />
-          <div className="p-12 flex flex-col items-center justify-center min-h-[60vh]">
-            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
-            <p className="text-sm font-semibold text-slate-500">Loading Profile...</p>
-          </div>
-        </main>
-      </div>
+      <>
+        <DashboardHeader title="Profile Settings" />
+        <div className="p-12 flex flex-col items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
+          <p className="text-sm font-semibold text-slate-500">Loading Profile...</p>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="bg-slate-50 text-slate-900 min-h-screen flex antialiased w-full">
-      {/* SideNavBar */}
-      <DashboardSidebar role={role} />
-
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 md:ml-[260px] relative">
-        <DashboardHeader title="Profile Settings" avatarUrl={role === "company" ? profile.logo : profile.profile_image} />
+    <>
+      <DashboardHeader title="Profile Settings" avatarUrl={role === "company" ? profile.logo : profile.profile_image} />
 
         <div className="p-6 md:p-10 max-w-7xl mx-auto w-full flex-1">
           <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -1092,7 +1083,6 @@ export default function ProfilePage() {
 
           </div>
         </div>
-      </main>
-    </div>
+      </>
   );
 }

@@ -58,7 +58,7 @@ export default function DashboardHeader({ title, avatarUrl }: DashboardHeaderPro
   };
 
   return (
-    <header className="sticky top-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 py-3 shadow-sm">
+    <header className="sticky top-0 w-full z-40 bg-white border-b border-slate-200 flex items-center justify-between px-6 py-3 shadow-sm">
       <div className="flex items-center gap-4">
         <button className="md:hidden text-slate-600 hover:bg-slate-100 rounded-full p-2 transition-colors">
           <Menu className="w-6 h-6 text-blue-600" />

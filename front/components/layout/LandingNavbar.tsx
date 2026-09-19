@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function LandingNavbar() {
   return (
-    <nav className="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md dark:bg-surface/70 border-b border-white/20 shadow-sm transition-transform duration-200">
+    <nav className="fixed top-0 w-full z-50 bg-white/70 dark:bg-surface/70 border-b border-white/20 shadow-sm transition-transform duration-200">
       <div className="flex items-center justify-between px-lg py-md max-w-container-max mx-auto">
         <div className="font-h2 text-h2 font-bold text-primary">InternMatch</div>
         <div className="hidden md:flex items-center gap-lg font-body-lg text-body-lg">
