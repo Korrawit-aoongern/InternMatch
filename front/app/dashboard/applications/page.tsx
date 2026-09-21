@@ -523,7 +523,7 @@ function StudentApplicationsView() {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-    const [sortField, setSortField] = useState<"applied_at" | "match_score">("applied_at");
+    const [sortField, setSortField] = useState<"applied_at" | "match_score">("match_score");
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
     // Pagination States
@@ -1169,7 +1169,7 @@ function CompanyApplicationsView() {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
-    const [sortField, setSortField] = useState<"applied_at" | "match_score">("applied_at");
+    const [sortField, setSortField] = useState<"applied_at" | "match_score">("match_score");
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
     // Pagination States

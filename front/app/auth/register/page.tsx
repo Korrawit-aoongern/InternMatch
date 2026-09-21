@@ -42,7 +42,7 @@ export default function RegisterPortalPage() {
                 Student
               </span>
               <span className="text-[11px] text-slate-400 mt-1 block">
-                สมัครรับทุนและฝึกงาน
+                สมัครและฝึกงาน
               </span>
             </Link>
 
