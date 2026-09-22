@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "../supabase/server";
-import { sendStudentAcceptedEmail } from "../utils/email";
+import { sendStudentAcceptedEmail, sendStudentRejectedEmail } from "../utils/email";
 
 interface DecodedToken {
   userId: string;
@@ -657,8 +657,8 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
     }
 
     let emailSent = false;
-    // When status is changed to "accepted", automatically send notification email to the student
-    if (newStatus === "accepted") {
+    // When status is changed to "accepted" or "rejected", automatically send notification email to the student
+    if (newStatus === "accepted" || newStatus === "rejected") {
       try {
         let studentEmail = "";
         let studentName = "นักศึกษา";
@@ -702,22 +702,36 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
         const internshipType = intData?.internship_type || "";
 
         if (studentEmail) {
-          console.log(`Sending acceptance email to student: ${studentEmail} (${studentName})...`);
-          const emailRes = await sendStudentAcceptedEmail({
-            studentEmail,
-            studentName,
-            internshipTitle,
-            companyName,
-            location,
-            internshipType,
-            applicationId,
-          });
-          emailSent = emailRes.success;
+          if (newStatus === "accepted") {
+            console.log(`Sending acceptance email to student: ${studentEmail} (${studentName})...`);
+            const emailRes = await sendStudentAcceptedEmail({
+              studentEmail,
+              studentName,
+              internshipTitle,
+              companyName,
+              location,
+              internshipType,
+              applicationId,
+            });
+            emailSent = emailRes.success;
+          } else {
+            console.log(`Sending rejection email to student: ${studentEmail} (${studentName})...`);
+            const emailRes = await sendStudentRejectedEmail({
+              studentEmail,
+              studentName,
+              internshipTitle,
+              companyName,
+              location,
+              internshipType,
+              applicationId,
+            });
+            emailSent = emailRes.success;
+          }
         } else {
           console.warn(`No student email found for student_id: ${appRow.student_id}`);
         }
       } catch (emailErr) {
-        console.error("Error sending student acceptance notification email:", emailErr);
+        console.error(`Error sending student ${newStatus} notification email:`, emailErr);
       }
     }
 
@@ -725,11 +739,16 @@ export async function updateApplicationStatus(applicationId: string, newStatus: 
       success: true,
       application: data,
       emailSent,
-      message: newStatus === "accepted"
-        ? (emailSent
+      message:
+        newStatus === "accepted"
+          ? emailSent
             ? "เปลี่ยนสถานะเป็น Accepted และส่งอีเมลแจ้งผลการคัดเลือกไปยังนักศึกษาเรียบร้อยแล้ว! 📧🎉"
-            : "เปลี่ยนสถานะเป็น Accepted สำเร็จเรียบร้อย! 🎉")
-        : "อัปเดตสถานะใบสมัครสำเร็จเรียบร้อย! 🎉",
+            : "เปลี่ยนสถานะเป็น Accepted สำเร็จเรียบร้อย! 🎉"
+          : newStatus === "rejected"
+            ? emailSent
+              ? "เปลี่ยนสถานะเป็น Rejected และส่งอีเมลแจ้งผลการคัดเลือกไปยังนักศึกษาเรียบร้อยแล้ว! 📧"
+              : "เปลี่ยนสถานะเป็น Rejected สำเร็จเรียบร้อย!"
+            : "อัปเดตสถานะใบสมัครสำเร็จเรียบร้อย! 🎉",
     };
   } catch (err: unknown) {
     console.error("Exception in updateApplicationStatus:", err);

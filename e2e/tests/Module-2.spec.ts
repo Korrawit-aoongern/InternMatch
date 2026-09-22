@@ -96,18 +96,11 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
       // Clear cookies to simulate expired session
       await context.clearCookies();
 
-      const dialogPromise = page.waitForEvent('dialog', { timeout: 3000 }).catch(() => null);
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      if (dialog) {
-        expect(dialog.message()).toMatch(/authenticated|error|เกิดข้อผิดพลาด/i);
-        await dialog.accept();
-      }
-
-      // Expect unauthorized error alert or redirect
-      await page.waitForURL('**/auth/login', { timeout: 5000 }).catch(() => {});
-      const isLoggedOut = page.url().includes('/auth/login') || (await page.locator('div, form').filter({ hasText: /error|authenticated|เกิดข้อผิดพลาด/i }).count()) > 0 || !!dialog;
-      expect(isLoggedOut).toBe(true);
+      // App shows toast error via Toaster, not dialog/redirect — verify toast appears
+      await expect(page.locator('div').filter({ hasText: /เกิดข้อผิดพลาด|Not authenticated|error/i }).first()).toBeVisible({ timeout: 8000 });
+      // Stays on profile page (no redirect to login for this action)
+      await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible({ timeout: 5000 });
     });
 
     test('TC-I1-W3-8-003: ทดสอบการดึงข้อมูลอีเมลจากโครงสร้าง Nested Object/Array ของ Supabase (Nested Schema Edge Case)', async ({ page }) => {
@@ -140,11 +133,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
       await page.locator('input[name="major"]').fill('CS');
       await page.locator('select[name="study_year"]').selectOption('4');
 
-      const dialogPromise = page.waitForEvent('dialog');
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      expect(dialog.message()).toContain('สำเร็จ');
-      await dialog.accept();
+      await expect(page.getByText(/บันทึกสำเร็จ|สำเร็จ/).first()).toBeVisible({ timeout: 10000 });
 
       await page.reload();
       await expect(page.getByRole('heading', { name: 'Student Profile' })).toBeVisible({ timeout: 15000 });
@@ -213,11 +203,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
         await addReactBtn.click();
       }
 
-      const dialogPromise = page.waitForEvent('dialog');
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      expect(dialog.message()).toContain('สำเร็จ');
-      await dialog.accept();
+      await expect(page.getByText(/บันทึกสำเร็จ|สำเร็จ/).first()).toBeVisible({ timeout: 10000 });
     });
 
     test('TC-I1-W4-1-002: พยายามเพิ่มทักษะซ้ำที่มีอยู่แล้วในรายการโปรไฟล์นักศึกษา (Worst Duplicate Skill Case)', async ({ page }) => {
@@ -254,10 +241,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
         await skillButtons.nth(i).click().catch(() => {});
       }
 
-      const dialogPromise = page.waitForEvent('dialog');
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      await dialog.accept();
+      await expect(page.getByText(/บันทึกสำเร็จ|สำเร็จ/).first()).toBeVisible({ timeout: 10000 });
     });
 
   });
@@ -317,10 +302,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
         await dropdowns.nth(i).selectOption('remove').catch(() => {});
       }
 
-      const dialogPromise = page.waitForEvent('dialog');
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      await dialog.accept();
+      await expect(page.getByText(/บันทึกสำเร็จ|สำเร็จ/).first()).toBeVisible({ timeout: 10000 });
     });
 
   });
@@ -446,11 +429,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
       await page.locator('input[name="major"]').fill('Information Technology');
       await page.locator('select[name="study_year"]').selectOption('3');
 
-      const dialogPromise = page.waitForEvent('dialog');
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      expect(dialog.message()).toContain('สำเร็จ');
-      await dialog.accept();
+      await expect(page.getByText(/บันทึกสำเร็จ|สำเร็จ/).first()).toBeVisible({ timeout: 10000 });
 
       await page.reload();
       await expect(page.locator('input[name="university"]')).toHaveValue('King Mongkut\'s University of Technology Thonburi');
@@ -472,10 +452,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
       const longUniName = "King Mongkut's University of Technology Thonburi (KMUTT) - International Program & Research Center".repeat(2);
       await page.locator('input[name="university"]').fill(longUniName);
 
-      const dialogPromise = page.waitForEvent('dialog');
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      await dialog.accept();
+      await expect(page.getByText(/บันทึกสำเร็จ|สำเร็จ/).first()).toBeVisible({ timeout: 10000 });
     });
 
   });
@@ -495,11 +473,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
       await page.locator('input[name="github"]').fill('github.com/somchai-dev');
       await page.locator('input[name="portfolio"]').fill('https://somchai-portfolio.vercel.app');
 
-      const dialogPromise = page.waitForEvent('dialog');
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      expect(dialog.message()).toContain('สำเร็จ');
-      await dialog.accept();
+      await expect(page.getByText(/บันทึกสำเร็จ|สำเร็จ/).first()).toBeVisible({ timeout: 10000 });
 
       await page.reload();
       await expect(page.locator('input[name="linkedin"]')).toHaveValue('linkedin.com/in/somchai-student');
@@ -510,10 +485,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
       await page.goto('/dashboard/profile');
 
       await page.locator('input[name="portfolio"]').fill('htp://not_a_valid_url_$$$');
-      const dialogPromise = page.waitForEvent('dialog');
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      await dialog.accept();
+      await expect(page.getByText(/บันทึกสำเร็จ|สำเร็จ|เกิดข้อผิดพลาด/).first()).toBeVisible({ timeout: 10000 });
     });
 
     test('TC-I1-W4-7-003: กรอกลิงก์ Portfolio ที่มีความยาวมากเป็นพิเศษพร้อม Query Parameters หลายตัว (Very Long URL Edge Case)', async ({ page }) => {
@@ -523,10 +496,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
       const longUrl = 'https://myportfolio.com/projects/detail?id=99999&referrer=google_search&utm_source=internmatch_platform&utm_medium=profile_link';
       await page.locator('input[name="portfolio"]').fill(longUrl);
 
-      const dialogPromise = page.waitForEvent('dialog');
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      await dialog.accept();
+      await expect(page.getByText(/บันทึกสำเร็จ|สำเร็จ/).first()).toBeVisible({ timeout: 10000 });
     });
 
   });
@@ -542,11 +513,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
 
       await page.locator('input[name="portfolio"]').fill('');
 
-      const dialogPromise = page.waitForEvent('dialog');
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      expect(dialog.message()).toContain('สำเร็จ');
-      await dialog.accept();
+      await expect(page.getByText(/บันทึกสำเร็จ|สำเร็จ/).first()).toBeVisible({ timeout: 10000 });
 
       await page.reload();
       await expect(page.locator('input[name="portfolio"]')).toHaveValue('');
@@ -569,10 +537,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
       await page.locator('input[name="github"]').fill('');
       await page.locator('input[name="portfolio"]').fill('');
 
-      const dialogPromise = page.waitForEvent('dialog');
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      await dialog.accept();
+      await expect(page.getByText(/บันทึกสำเร็จ|สำเร็จ/).first()).toBeVisible({ timeout: 10000 });
     });
 
   });
@@ -647,10 +613,8 @@ test.describe('Module 2: Profile Settings, Skills, Education, Portfolio & Resume
       });
       await page.waitForTimeout(1000);
 
-      const dialogPromise = page.waitForEvent('dialog', { timeout: 15000 });
       await page.getByRole('button', { name: 'Save Changes' }).click();
-      const dialog = await dialogPromise;
-      await dialog.accept();
+      await expect(page.getByText(/บันทึกสำเร็จ|สำเร็จ/).first()).toBeVisible({ timeout: 10000 });
     });
 
     test('TC-I1-W4-10-002: เปลี่ยน Resume โดยเลือกไฟล์นามสกุลที่ไม่ได้รับอนุญาต เช่น .exe หรือ .bat (Worst Disallowed Extension Case)', async ({ page }) => {

@@ -23,3 +23,6 @@ playwright/.cache/
 npm-debug.log*
 yarn-error.log*
 .DS_Store
+docs/seed-list.md
+list.md
+scripts/seed-presentation.mjs
